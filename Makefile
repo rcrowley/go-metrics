@@ -7,10 +7,12 @@ GOFILES=\
 	gauge.go\
 	healthcheck.go\
 	histogram.go\
+	log.go\
 	meter.go\
 	metrics.go\
 	registry.go\
 	sample.go\
+	syslog.go\
 	timer.go\
 
 include $(GOROOT)/src/Make.pkg

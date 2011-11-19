@@ -1,12 +1,28 @@
 package metrics
 
 type Registry interface{
+
+	Counters() map[string]Counter
+	Gauges() map[string]Gauge
+	Healthchecks() map[string]Healthcheck
+	Histograms() map[string]Histogram
+	Meters() map[string]Meter
+	Timers() map[string]Timer
+
+	GetCounter(string) (Counter, bool)
+	GetGauge(string) (Gauge, bool)
+	GetHealthcheck(string) (Healthcheck, bool)
+	GetHistogram(string) (Histogram, bool)
+	GetMeter(string) (Meter, bool)
+	GetTimer(string) (Timer, bool)
+
 	RegisterCounter(string, Counter)
 	RegisterGauge(string, Gauge)
 	RegisterHealthcheck(string, Healthcheck)
 	RegisterHistogram(string, Histogram)
 	RegisterMeter(string, Meter)
 	RegisterTimer(string, Timer)
+
 }
 
 type registry struct {
@@ -27,6 +43,30 @@ func NewRegistry() Registry {
 		make(map[string]Meter),
 		make(map[string]Timer),
 	}
+}
+
+func (r *registry) Counters() map[string]Counter {
+	return r.counters
+}
+
+func (r *registry) Gauges() map[string]Gauge {
+	return r.gauges
+}
+
+func (r *registry) Healthchecks() map[string]Healthcheck {
+	return r.healthchecks
+}
+
+func (r *registry) Histograms() map[string]Histogram {
+	return r.histograms
+}
+
+func (r *registry) Meters() map[string]Meter {
+	return r.meters
+}
+
+func (r *registry) Timers() map[string]Timer {
+	return r.timers
 }
 
 func (r *registry) GetCounter(name string) (Counter, bool) {
