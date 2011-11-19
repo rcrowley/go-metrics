@@ -56,7 +56,8 @@ func main() {
 	}
 */
 
-	s := metrics.NewUniformSample(1028)
+	s := metrics.NewExpDecaySample(1028, 0.015)
+//	s := metrics.NewUniformSample(1028)
 	h := metrics.NewHistogram(s)
 	r.RegisterHistogram("baz", h)
 	for i := 0; i < 1000; i++ {
