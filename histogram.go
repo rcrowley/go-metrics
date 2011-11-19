@@ -85,17 +85,19 @@ func (h *histogram) Percentiles(ps []float64) []float64 {
 	scores := make([]float64, len(ps))
 	values := Int64Slice(h.s.Values())
 	size := len(values)
-	sort.Sort(values)
-	for i, p := range ps {
-		pos := p * float64(size + 1)
-		if pos < 1.0 {
-			scores[i] = float64(values[0])
-		} else if pos >= float64(size) {
-			scores[i] = float64(values[size - 1])
-		} else {
-			lower := float64(values[int(pos) - 1])
-			upper := float64(values[int(pos)])
-			scores[i] = lower + (pos - math.Floor(pos)) * (upper - lower)
+	if size > 0 {
+		sort.Sort(values)
+		for i, p := range ps {
+			pos := p * float64(size + 1)
+			if pos < 1.0 {
+				scores[i] = float64(values[0])
+			} else if pos >= float64(size) {
+				scores[i] = float64(values[size - 1])
+			} else {
+				lower := float64(values[int(pos) - 1])
+				upper := float64(values[int(pos)])
+				scores[i] = lower + (pos - math.Floor(pos)) * (upper - lower)
+			}
 		}
 	}
 	return scores
