@@ -1,5 +1,7 @@
 *.[68]
 *.a
+*.out
 *.swp
 _obj
 cmd/metrics/metrics
+_testmain.go
