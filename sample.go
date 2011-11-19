@@ -54,13 +54,13 @@ func (s *expDecaySample) Values() []int64 {
 func (s *expDecaySample) arbiter() {
 	count := 0
 	values := make(map[float64]int64)
-	tsStart := time.Nanoseconds()
-	tsNext := tsStart + rescaleThreshold
+	tsStart := time.Seconds()
+	tsNext := time.Nanoseconds() + rescaleThreshold
 	var valuesCopy []int64
 	for {
 		select {
 		case v := <-s.in:
-			ts := time.Nanoseconds()
+			ts := time.Seconds()
 			k := math.Exp(float64(ts - tsStart) * s.alpha) / rand.Float64()
 			count++
 			values[k] = v
@@ -74,10 +74,11 @@ func (s *expDecaySample) arbiter() {
 			} else {
 				valuesCopy = make([]int64, count)
 			}
-			if ts > tsNext {
+			tsNano := time.Nanoseconds()
+			if tsNano > tsNext {
 				tsOldStart := tsStart
-				tsStart = time.Nanoseconds()
-				tsNext = ts + rescaleThreshold
+				tsStart = time.Seconds()
+				tsNext = tsNano + rescaleThreshold
 				oldValues := values
 				values = make(map[float64]int64, len(oldValues))
 				for k, v := range oldValues {
@@ -95,8 +96,8 @@ func (s *expDecaySample) arbiter() {
 			count = 0
 			values = make(map[float64]int64)
 			valuesCopy = make([]int64, 0)
-			tsStart = time.Nanoseconds()
-			tsNext = tsStart + 1e9 * 60 * 60
+			tsStart = time.Seconds()
+			tsNext = tsStart + rescaleThreshold
 		}
 	}
 }
