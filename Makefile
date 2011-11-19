@@ -3,6 +3,7 @@ include $(GOROOT)/src/Make.inc
 TARG=metrics
 GOFILES=\
 	counter.go\
+	ewma.go\
 	gauge.go\
 	healthcheck.go\
 	histogram.go\
