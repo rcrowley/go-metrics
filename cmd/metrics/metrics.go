@@ -56,7 +56,8 @@ func main() {
 	}
 */
 
-	h := metrics.NewHistogram()
+	s := metrics.NewUniformSample(1028)
+	h := metrics.NewHistogram(s)
 	r.RegisterHistogram("baz", h)
 	for i := 0; i < 1000; i++ {
 		go func() {
@@ -73,7 +74,12 @@ func main() {
 		}()
 	}
 	for {
-		fmt.Printf("h: %v %v %v %v %v %v\n", h.Count(), h.Sum(), h.Min(), h.Max(), h.StdDev(), h.Variance())
+		fmt.Printf(
+			"h: %v %v %v %v %v %v %v %v %v\n",
+			h.Count(), h.Sum(), h.Min(), h.Max(),
+			h.Percentile(95.0), h.Percentile(99.0), h.Percentile(99.9),
+			h.StdDev(), h.Variance(),
+		)
 		time.Sleep(500e6)
 	}
 

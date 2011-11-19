@@ -9,6 +9,7 @@ GOFILES=\
 	meter.go\
 	metrics.go\
 	registry.go\
+	sample.go\
 	timer.go\
 
 include $(GOROOT)/src/Make.pkg

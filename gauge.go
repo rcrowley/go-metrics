@@ -15,8 +15,8 @@ func NewGauge() Gauge {
 	return g
 }
 
-func (g *gauge) Update(i int64) {
-	g.in <- i
+func (g *gauge) Update(v int64) {
+	g.in <- v
 }
 
 func (g *gauge) Value() int64 {
@@ -27,7 +27,7 @@ func (g *gauge) arbiter() {
 	var value int64
 	for {
 		select {
-		case i := <-g.in: value = i
+		case v := <-g.in: value = v
 		case g.out <- value:
 		}
 	}
