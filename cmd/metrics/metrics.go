@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
+//	"log"
 	"metrics"
 //	"os"
-	"syslog"
+//	"syslog"
 	"time"
 )
 
