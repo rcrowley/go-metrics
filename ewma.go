@@ -58,9 +58,9 @@ func (a *ewma) Update(n int64) {
 }
 
 func (a *ewma) arbiter() {
-	initialized := false
 	var uncounted int64
 	var rate float64
+	var initialized bool
 	for {
 		select {
 		case n := <-a.in: uncounted += n
