@@ -13,8 +13,9 @@ func Log(r Registry, interval int, l *log.Logger) {
 		for name, g := range r.Gauges() {
 			l.Printf("gauge %s\n\tvalue:\t%9d\n", name, g.Value())
 		}
+		r.RunHealthchecks()
 		for name, h := range r.Healthchecks() {
-			l.Printf("healthcheck %s TODO\n", name, h)
+			l.Printf("healthcheck %s\n\terror: %v\n", name, h.Error())
 		}
 		for name, h := range r.Histograms() {
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
@@ -62,7 +63,40 @@ func Log(r Registry, interval int, l *log.Logger) {
 			)
 		}
 		for name, t := range r.Timers() {
-			l.Printf("timer %s TODO\n", name, t)
+			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+			l.Printf(
+				`timer %s
+	count:	%9d
+	min:	%9d
+	max:	%9d
+	mean:	%12.2f
+	stddev:	%12.2f
+	median:	%12.2f
+	75%%:	%12.2f
+	95%%:	%12.2f
+	99%%:	%12.2f
+	99.9%%:	%12.2f
+	1-min:	%12.2f
+	5-min:	%12.2f
+	15-min:	%12.2f
+	mean:	%12.2f
+`,
+				name,
+				t.Count(),
+				t.Min(),
+				t.Max(),
+				t.Mean(),
+				t.StdDev(),
+				ps[0],
+				ps[1],
+				ps[2],
+				ps[3],
+				ps[4],
+				t.Rate1(),
+				t.Rate5(),
+				t.Rate15(),
+				t.RateMean(),
+			)
 		}
 		time.Sleep(int64(1e9) * int64(interval))
 	}

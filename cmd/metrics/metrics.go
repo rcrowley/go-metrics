@@ -1,9 +1,10 @@
 package main
 
 import (
-//	"log"
+	"log"
 	"metrics"
-//	"os"
+	"os"
+	"rand"
 //	"syslog"
 	"time"
 )
@@ -48,10 +49,19 @@ func main() {
 		}()
 	}
 
+	hc := metrics.NewHealthcheck(func(h metrics.Healthcheck) {
+		if 0 < rand.Intn(2) {
+			h.Healthy()
+		} else {
+			h.Unhealthy(os.NewError("baz"))
+		}
+	})
+	r.RegisterHealthcheck("baz", hc)
+
 	s := metrics.NewExpDecaySample(1028, 0.015)
 //	s := metrics.NewUniformSample(1028)
 	h := metrics.NewHistogram(s)
-	r.RegisterHistogram("baz", h)
+	r.RegisterHistogram("bang", h)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {
@@ -68,7 +78,7 @@ func main() {
 	}
 
 	m := metrics.NewMeter()
-	r.RegisterMeter("bang", m)
+	r.RegisterMeter("quux", m)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {
@@ -84,7 +94,22 @@ func main() {
 		}()
 	}
 
-//	metrics.Log(r, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+	t := metrics.NewTimer()
+	r.RegisterTimer("hooah", t)
+	for i := 0; i < fanout; i++ {
+		go func() {
+			for {
+				t.Time(func() { time.Sleep(300e6) })
+			}
+		}()
+		go func() {
+			for {
+				t.Time(func() { time.Sleep(400e6) })
+			}
+		}()
+	}
+
+	metrics.Log(r, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 
 /*
 	w, err := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")

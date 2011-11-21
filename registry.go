@@ -9,6 +9,8 @@ type Registry interface{
 	Meters() map[string]Meter
 	Timers() map[string]Timer
 
+	RunHealthchecks()
+
 	GetCounter(string) (Counter, bool)
 	GetGauge(string) (Gauge, bool)
 	GetHealthcheck(string) (Healthcheck, bool)
@@ -74,6 +76,10 @@ func (r *registry) Meters() map[string]Meter {
 
 func (r *registry) Timers() map[string]Timer {
 	return r.timers
+}
+
+func (r *registry) RunHealthchecks() {
+	for _, h := range r.healthchecks { h.Check() }
 }
 
 func (r *registry) GetCounter(name string) (Counter, bool) {
