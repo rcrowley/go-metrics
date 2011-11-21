@@ -14,7 +14,6 @@ type Meter interface {
 type meter struct {
 	in chan int64
 	out chan meterV
-	reset chan bool
 	ticker *time.Ticker
 }
 
@@ -27,15 +26,10 @@ func NewMeter() Meter {
 	m := &meter{
 		make(chan int64),
 		make(chan meterV),
-		make(chan bool),
 		time.NewTicker(5e9),
 	}
 	go m.arbiter()
 	return m
-}
-
-func (m *meter) Clear() {
-	m.reset <- true
 }
 
 func (m *meter) Count() int64 {
@@ -78,9 +72,6 @@ func (m *meter) arbiter() {
 			mv.rateMean = float64(1e9 * mv.count) / float64(
 				time.Nanoseconds() - tsStart)
 		case m.out <- mv:
-		case <-m.reset:
-			mv = meterV{}
-			tsStart = time.Nanoseconds()
 		case <-m.ticker.C:
 			a1.Tick()
 			a5.Tick()
