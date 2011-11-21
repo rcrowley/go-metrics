@@ -2,10 +2,10 @@ package metrics
 
 import (
 	"math"
+	"sync/atomic"
 )
 
 type EWMA interface {
-	Clear()
 	Rate() float64
 	Tick()
 	Update(int64)
@@ -13,19 +13,15 @@ type EWMA interface {
 
 type ewma struct {
 	alpha float64
-	in chan int64
-	out chan float64
-	reset, tick chan bool
+	uncounted int64
+	rate float64
+	initialized bool
+	tick chan bool
 }
 
 func NewEWMA(alpha float64) EWMA {
-	a := &ewma{
-		alpha,
-		make(chan int64),
-		make(chan float64),
-		make(chan bool), make(chan bool),
-	}
-	go a.arbiter()
+	a := &ewma{alpha, 0, 0.0, false, make(chan bool)}
+	go a.ticker()
 	return a
 }
 
@@ -41,12 +37,8 @@ func NewEWMA15() EWMA {
 	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 15))
 }
 
-func (a *ewma) Clear() {
-	a.reset <- true
-}
-
 func (a *ewma) Rate() float64 {
-	return <-a.out * float64(1e9)
+	return a.rate * float64(1e9)
 }
 
 func (a *ewma) Tick() {
@@ -54,29 +46,19 @@ func (a *ewma) Tick() {
 }
 
 func (a *ewma) Update(n int64) {
-	a.in <- n
+	atomic.AddInt64(&a.uncounted, n)
 }
 
-func (a *ewma) arbiter() {
-	var uncounted int64
-	var rate float64
-	var initialized bool
-	for {
-		select {
-		case n := <-a.in: uncounted += n
-		case a.out <- rate:
-		case <-a.reset:
-			uncounted = 0
-			rate = 0.0
-		case <-a.tick:
-			instantRate := float64(uncounted) / float64(5e9)
-			if initialized {
-				rate += a.alpha * (instantRate - rate)
-			} else {
-				initialized = true
-				rate = instantRate
-			}
-			uncounted = 0
+func (a *ewma) ticker() {
+	for <-a.tick {
+		count := a.uncounted
+		atomic.AddInt64(&a.uncounted, -count)
+		instantRate := float64(count) / float64(5e9)
+		if a.initialized {
+			a.rate += a.alpha * (instantRate - a.rate)
+		} else {
+			a.initialized = true
+			a.rate = instantRate
 		}
 	}
 }

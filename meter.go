@@ -82,9 +82,6 @@ func (m *meter) arbiter() {
 		case m.out <- mv:
 		case <-m.reset:
 			mv = meterV{}
-			a1.Clear()
-			a5.Clear()
-			a15.Clear()
 			tsStart = time.Nanoseconds()
 		case <-m.ticker.C:
 			a1.Tick()

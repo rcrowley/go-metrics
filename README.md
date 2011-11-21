@@ -243,35 +243,35 @@ VmSwap:        0 kB
 1000 meters:
 
 ```
-VmPeak:    84876 kB
-VmSize:    84876 kB
+VmPeak:    74504 kB
+VmSize:    74504 kB
 VmLck:         0 kB
-VmHWM:     25992 kB
-VmRSS:     25992 kB
-VmData:    77712 kB
+VmHWM:     24124 kB
+VmRSS:     24124 kB
+VmData:    67340 kB
 VmStk:       136 kB
 VmExe:      1040 kB
 VmLib:      1848 kB
-VmPTE:        96 kB
+VmPTE:        92 kB
 VmSwap:        0 kB
 ```
 
-**42.272 kB virtual, 24.872 kB resident per meter.**
+**31.9 kB virtual, 23.004 kB resident per meter.**
 
 10000 meters:
 
 ```
-VmPeak:   306956 kB
-VmSize:   306956 kB
+VmPeak:   278920 kB
+VmSize:   278920 kB
 VmLck:         0 kB
-VmHWM:    245788 kB
-VmRSS:    245788 kB
-VmData:   299792 kB
+VmHWM:    227300 kB
+VmRSS:    227300 kB
+VmData:   271756 kB
 VmStk:       136 kB
 VmExe:      1040 kB
 VmLib:      1848 kB
-VmPTE:       532 kB
+VmPTE:       488 kB
 VmSwap:        0 kB
 ```
 
-**26.4352 kB virtual, 24.4668 kB resident per meter.**
+**23.6316 kB virtual, 22.618 kB resident per meter.**
