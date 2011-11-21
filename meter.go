@@ -16,7 +16,8 @@ type Meter interface {
 type meter struct {
 	in chan int64
 	out chan meterV
-	reset, tick chan bool
+	reset chan bool
+	ticker *time.Ticker
 }
 
 type meterV struct {
@@ -28,10 +29,10 @@ func NewMeter() Meter {
 	m := &meter{
 		make(chan int64),
 		make(chan meterV),
-		make(chan bool), make(chan bool),
+		make(chan bool),
+		time.NewTicker(5e9),
 	}
 	go m.arbiter()
-	go m.ticker()
 	return m
 }
 
@@ -85,17 +86,10 @@ func (m *meter) arbiter() {
 			a5.Clear()
 			a15.Clear()
 			tsStart = time.Nanoseconds()
-		case <-m.tick:
+		case <-m.ticker.C:
 			a1.Tick()
 			a5.Tick()
 			a15.Tick()
 		}
-	}
-}
-
-func (m *meter) ticker() {
-	for {
-		time.Sleep(5e9)
-		m.tick <- true
 	}
 }
