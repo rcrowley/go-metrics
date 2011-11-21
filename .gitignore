@@ -4,4 +4,5 @@
 *.swp
 _obj
 cmd/metrics/metrics
+cmd/metrics-bench/metrics-bench
 _testmain.go
