@@ -1,10 +1,6 @@
 package metrics
 
-import (
-	"testing"
-)
-
-// <https://github.com/codahale/metrics/blob/development/metrics-core/src/test/java/com/yammer/metrics/stats/tests/ExponentiallyDecayingSampleTest.java>
+import "testing"
 
 func TestExpDecaySample10(t *testing.T) {
 	s := NewExpDecaySample(100, 0.99)

@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestEWMA1(t *testing.T) {
 	a := NewEWMA1()

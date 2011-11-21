@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestEmptyHistogram(t *testing.T) {
 	h := NewHistogram(NewUniformSample(100))

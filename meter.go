@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"time"
-)
+import "time"
 
 type Meter interface {
 	Count() int64

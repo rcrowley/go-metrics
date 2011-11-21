@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestGauge(t *testing.T) {
 	g := NewGauge()

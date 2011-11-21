@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestCounterZero(t *testing.T) {
 	c := NewCounter()

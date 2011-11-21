@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"os"
-)
+import "os"
 
 type Healthcheck interface {
 	Check()
