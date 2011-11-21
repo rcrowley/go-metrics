@@ -14,7 +14,6 @@ type Histogram interface {
 	Percentile(float64) float64
 	Percentiles([]float64) []float64
 	StdDev() float64
-	Sum() int64
 	Update(int64)
 	Variance() float64
 }
@@ -105,10 +104,6 @@ func (h *histogram) Percentiles(ps []float64) []float64 {
 
 func (h *histogram) StdDev() float64 {
 	return math.Sqrt(h.Variance())
-}
-
-func (h *histogram) Sum() int64 {
-	return (<-h.out).sum
 }
 
 func (h *histogram) Update(v int64) {
