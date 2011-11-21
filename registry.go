@@ -23,6 +23,13 @@ type Registry interface{
 	RegisterMeter(string, Meter)
 	RegisterTimer(string, Timer)
 
+	UnregisterCounter(string)
+	UnregisterGauge(string)
+	UnregisterHealthcheck(string)
+	UnregisterHistogram(string)
+	UnregisterMeter(string)
+	UnregisterTimer(string)
+
 }
 
 type registry struct {
@@ -121,4 +128,28 @@ func (r *registry) RegisterMeter(name string, m Meter) {
 
 func (r *registry) RegisterTimer(name string, t Timer) {
 	r.timers[name] = t
+}
+
+func (r *registry) UnregisterCounter(name string) {
+	r.counters[name] = nil, false
+}
+
+func (r *registry) UnregisterGauge(name string) {
+	r.gauges[name] = nil, false
+}
+
+func (r *registry) UnregisterHealthcheck(name string) {
+	r.healthchecks[name] = nil, false
+}
+
+func (r *registry) UnregisterHistogram(name string) {
+	r.histograms[name] = nil, false
+}
+
+func (r *registry) UnregisterMeter(name string) {
+	r.meters[name] = nil, false
+}
+
+func (r *registry) UnregisterTimer(name string) {
+	r.timers[name] = nil, false
 }
