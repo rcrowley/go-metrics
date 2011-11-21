@@ -1,7 +1,7 @@
 include $(GOROOT)/src/Make.inc
 
-TARG=metrics
-GOFILES=metrics.go
+TARG=metrics-example
+GOFILES=metrics-example.go
 
 include $(GOROOT)/src/Make.cmd
 

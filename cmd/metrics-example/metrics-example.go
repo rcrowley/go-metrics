@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"metrics"
+	"github.com/rcrowley/go-metrics"
 	"os"
 	"rand"
 //	"syslog"
