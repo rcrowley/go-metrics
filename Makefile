@@ -1,6 +1,6 @@
 include $(GOROOT)/src/Make.inc
 
-TARG=metrics
+TARG=github.com/rcrowley/go-metrics
 GOFILES=\
 	counter.go\
 	ewma.go\
@@ -23,8 +23,8 @@ all: uninstall clean install
 
 uninstall:
 	rm -f $(GOROOT)/pkg/$(GOOS)_$(GOARCH)/$(TARG).a
-	rm -f $(GOROOT)/pkg/$(GOOS)_$(GOARCH)/github.com/rcrowley/go-$(TARG).a
-	rm -rf $(GOROOT)/src/pkg/github.com/rcrowley/go-$(TARG)
+	rm -f $(GOROOT)/pkg/$(GOOS)_$(GOARCH)/$(TARG).a
+	rm -rf $(GOROOT)/src/pkg/$(TARG)
 	make -C cmd/metrics uninstall
 	make -C cmd/metrics-bench uninstall
 
