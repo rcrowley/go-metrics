@@ -1,7 +1,7 @@
 go-metrics
 ==========
 
-TODO
+TODO This code is not safe on 32-bit architectures.
 
 Memory usage
 ------------

@@ -1,5 +1,7 @@
 package metrics
 
+import "sync/atomic"
+
 type Counter interface {
 	Clear()
 	Count() int64
@@ -8,39 +10,25 @@ type Counter interface {
 }
 
 type counter struct {
-	in, out chan int64
-	reset chan bool
+	count int64
 }
 
 func NewCounter() Counter {
-	c := &counter{make(chan int64), make(chan int64), make(chan bool)}
-	go c.arbiter()
-	return c
+	return &counter{0}
 }
 
 func (c *counter) Clear() {
-	c.reset <- true
+	c.count = 0
 }
 
 func (c *counter) Count() int64 {
-	return <-c.out
+	return c.count
 }
 
 func (c *counter) Dec(i int64) {
-	c.in <- -i
+	atomic.AddInt64(&c.count, -i)
 }
 
 func (c *counter) Inc(i int64) {
-	c.in <- i
-}
-
-func (c *counter) arbiter() {
-	var count int64
-	for {
-		select {
-		case i := <-c.in: count += i
-		case c.out <- count:
-		case <-c.reset: count = 0
-		}
-	}
+	atomic.AddInt64(&c.count, i)
 }
