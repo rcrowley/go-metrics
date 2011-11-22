@@ -11,6 +11,7 @@ GOFILES=\
 	meter.go\
 	metrics.go\
 	registry.go\
+	runtime.go\
 	sample.go\
 	syslog.go\
 	timer.go\

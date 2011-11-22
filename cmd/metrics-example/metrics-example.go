@@ -109,6 +109,12 @@ func main() {
 		}()
 	}
 
+	metrics.RegisterRuntimeMemStats(r)
+	go func() {
+		t := time.NewTicker(5e9)
+		for 0 < <-t.C { metrics.CaptureRuntimeMemStats(r, true) }
+	}()
+
 	metrics.Log(r, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 
 /*
