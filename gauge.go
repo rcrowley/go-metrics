@@ -15,21 +15,21 @@ type Gauge interface {
 // to manage a single int64 value.  When the latest weeklies land in a
 // release, atomic.LoadInt64 will be available and this code will become
 // safe on 32-bit architectures.
-type gauge struct {
+type StandardGauge struct {
 	value int64
 }
 
 // Create a new gauge.
 func NewGauge() Gauge {
-	return &gauge{0}
+	return &StandardGauge{0}
 }
 
 // Update the gauge's value.
-func (g *gauge) Update(v int64) {
+func (g *StandardGauge) Update(v int64) {
 	atomic.AddInt64(&g.value, v)
 }
 
 // Return the gauge's current value.
-func (g *gauge) Value() int64 {
+func (g *StandardGauge) Value() int64 {
 	return g.value
 }

@@ -25,7 +25,7 @@ type Sample interface {
 // Model for Streaming Systems".
 //
 // <http://www.research.att.com/people/Cormode_Graham/library/publications/CormodeShkapenyukSrivastavaXu09.pdf>
-type expDecaySample struct {
+type ExpDecaySample struct {
 	reservoirSize int
 	alpha float64
 	in chan int64
@@ -36,7 +36,7 @@ type expDecaySample struct {
 // Create a new exponentially-decaying sample with the given reservoir size
 // and alpha.
 func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
-	s := &expDecaySample{
+	s := &ExpDecaySample{
 		reservoirSize,
 		alpha,
 		make(chan int64),
@@ -48,29 +48,29 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 }
 
 // Clear all samples.
-func (s *expDecaySample) Clear() {
+func (s *ExpDecaySample) Clear() {
 	s.reset <- true
 }
 
 // Return the size of the sample, which is at most the reservoir size.
-func (s *expDecaySample) Size() int {
+func (s *ExpDecaySample) Size() int {
 	return len(<-s.out)
 }
 
 // Update the sample with a new value.
-func (s *expDecaySample) Update(v int64) {
+func (s *ExpDecaySample) Update(v int64) {
 	s.in <- v
 }
 
 // Return all the values in the sample.
-func (s *expDecaySample) Values() []int64 {
+func (s *ExpDecaySample) Values() []int64 {
 	return <-s.out
 }
 
 // Receive inputs and send outputs.  Count and save each input value,
 // rescaling the sample if enough time has elapsed since the last rescaling.
 // Send a copy of the values as output.
-func (s *expDecaySample) arbiter() {
+func (s *ExpDecaySample) arbiter() {
 	count := 0
 	values := make(map[float64]int64)
 	tsStart := time.Seconds()
@@ -124,7 +124,7 @@ func (s *expDecaySample) arbiter() {
 // A uniform sample using Vitter's Algorithm R.
 //
 // <http://www.cs.umd.edu/~samir/498/vitter.pdf>
-type uniformSample struct {
+type UniformSample struct {
 	reservoirSize int
 	in chan int64
 	out chan []int64
@@ -133,7 +133,7 @@ type uniformSample struct {
 
 // Create a new uniform sample with the given reservoir size.
 func NewUniformSample(reservoirSize int) Sample {
-	s := &uniformSample{
+	s := &UniformSample{
 		reservoirSize,
 		make(chan int64),
 		make(chan []int64),
@@ -144,28 +144,28 @@ func NewUniformSample(reservoirSize int) Sample {
 }
 
 // Clear all samples.
-func (s *uniformSample) Clear() {
+func (s *UniformSample) Clear() {
 	s.reset <- true
 }
 
 // Return the size of the sample, which is at most the reservoir size.
-func (s *uniformSample) Size() int {
+func (s *UniformSample) Size() int {
 	return len(<-s.out)
 }
 
 // Update the sample with a new value.
-func (s *uniformSample) Update(v int64) {
+func (s *UniformSample) Update(v int64) {
 	s.in <- v
 }
 
 // Return all the values in the sample.
-func (s *uniformSample) Values() []int64 {
+func (s *UniformSample) Values() []int64 {
 	return <-s.out
 }
 
 // Receive inputs and send outputs.  Count and save each input value at a
 // random index.  Send a copy of the values as output.
-func (s *uniformSample) arbiter() {
+func (s *UniformSample) arbiter() {
 	count := 0
 	values := make([]int64, s.reservoirSize)
 	var valuesCopy []int64

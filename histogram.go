@@ -24,7 +24,7 @@ type Histogram interface {
 
 // The standard implementation of a Histogram uses a Sample and a goroutine
 // to synchronize its calculations.
-type histogram struct {
+type StandardHistogram struct {
 	s Sample
 	in chan int64
 	out chan histogramV
@@ -41,7 +41,7 @@ type histogramV struct {
 // Create a new histogram with the given Sample.  Create the communication
 // channels and start the synchronizing goroutine.
 func NewHistogram(s Sample) Histogram {
-	h := &histogram{
+	h := &StandardHistogram{
 		s,
 		make(chan int64),
 		make(chan histogramV),
@@ -62,24 +62,24 @@ func newHistogramV() histogramV {
 }
 
 // Clear the histogram.
-func (h *histogram) Clear() {
+func (h *StandardHistogram) Clear() {
 	h.reset <- true
 }
 
 // Return the count of inputs since the histogram was last cleared.
-func (h *histogram) Count() int64 {
+func (h *StandardHistogram) Count() int64 {
 	return (<-h.out).count
 }
 
 // Return the maximal value seen since the histogram was last cleared.
-func (h *histogram) Max() int64 {
+func (h *StandardHistogram) Max() int64 {
 	hv := <-h.out
 	if 0 < hv.count { return hv.max }
 	return 0
 }
 
 // Return the mean of all values seen since the histogram was last cleared.
-func (h *histogram) Mean() float64 {
+func (h *StandardHistogram) Mean() float64 {
 	hv := <-h.out
 	if 0 < hv.count {
 		return float64(hv.sum) / float64(hv.count)
@@ -88,7 +88,7 @@ func (h *histogram) Mean() float64 {
 }
 
 // Return the minimal value seen since the histogram was last cleared.
-func (h *histogram) Min() int64 {
+func (h *StandardHistogram) Min() int64 {
 	hv := <-h.out
 	if 0 < hv.count { return hv.min }
 	return 0
@@ -96,13 +96,13 @@ func (h *histogram) Min() int64 {
 
 // Return an arbitrary percentile of all values seen since the histogram was
 // last cleared.
-func (h *histogram) Percentile(p float64) float64 {
+func (h *StandardHistogram) Percentile(p float64) float64 {
 	return h.Percentiles([]float64{p})[0]
 }
 
 // Return a slice of arbitrary percentiles of all values seen since the
 // histogram was last cleared.
-func (h *histogram) Percentiles(ps []float64) []float64 {
+func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
 	scores := make([]float64, len(ps))
 	values := int64Slice(h.s.Values())
 	size := len(values)
@@ -126,17 +126,17 @@ func (h *histogram) Percentiles(ps []float64) []float64 {
 
 // Return the standard deviation of all values seen since the histogram was
 // last cleared.
-func (h *histogram) StdDev() float64 {
+func (h *StandardHistogram) StdDev() float64 {
 	return math.Sqrt(h.Variance())
 }
 
 // Update the histogram with a new value.
-func (h *histogram) Update(v int64) {
+func (h *StandardHistogram) Update(v int64) {
 	h.in <- v
 }
 
 // Return the variance of all values seen since the histogram was last cleared.
-func (h *histogram) Variance() float64 {
+func (h *StandardHistogram) Variance() float64 {
 	hv := <-h.out
 	if 1 >= hv.count { return 0.0 }
 	return hv.variance[1] / float64(hv.count - 1)
@@ -144,7 +144,7 @@ func (h *histogram) Variance() float64 {
 
 // Receive inputs and send outputs.  Sample each input and update values in
 // the histogramV.  Send a copy of the histogramV as output.
-func (h *histogram) arbiter() {
+func (h *StandardHistogram) arbiter() {
 	hv := newHistogramV()
 	for {
 		select {

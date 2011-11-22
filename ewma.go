@@ -21,7 +21,7 @@ type EWMA interface {
 // to manage uncounted events.  When the latest weeklies land in a release,
 // atomic.LoadInt64 will be available and this code will become safe on
 // 32-bit architectures.
-type ewma struct {
+type StandardEWMA struct {
 	alpha float64
 	uncounted int64
 	rate float64
@@ -32,7 +32,7 @@ type ewma struct {
 // Create a new EWMA with the given alpha.  Create the clock channel and
 // start the ticker goroutine.
 func NewEWMA(alpha float64) EWMA {
-	a := &ewma{alpha, 0, 0.0, false, make(chan bool)}
+	a := &StandardEWMA{alpha, 0, 0.0, false, make(chan bool)}
 	go a.ticker()
 	return a
 }
@@ -53,23 +53,23 @@ func NewEWMA15() EWMA {
 }
 
 // Return the moving average rate of events per second.
-func (a *ewma) Rate() float64 {
+func (a *StandardEWMA) Rate() float64 {
 	return a.rate * float64(1e9)
 }
 
 // Tick the clock to update the moving average.
-func (a *ewma) Tick() {
+func (a *StandardEWMA) Tick() {
 	a.tick <- true
 }
 
 // Add n uncounted events.
-func (a *ewma) Update(n int64) {
+func (a *StandardEWMA) Update(n int64) {
 	atomic.AddInt64(&a.uncounted, n)
 }
 
 // On each clock tick, update the moving average to reflect the number of
 // events seen since the last tick.
-func (a *ewma) ticker() {
+func (a *StandardEWMA) ticker() {
 	for <-a.tick {
 		count := a.uncounted
 		atomic.AddInt64(&a.uncounted, -count)

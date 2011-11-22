@@ -19,7 +19,7 @@ type Meter interface {
 // The standard implementation of a Meter uses a goroutine to synchronize
 // its calculations and another goroutine (via time.Ticker) to produce
 // clock ticks.
-type meter struct {
+type StandardMeter struct {
 	in chan int64
 	out chan meterV
 	ticker *time.Ticker
@@ -35,7 +35,7 @@ type meterV struct {
 // Create a new meter.  Create the communication channels and start the
 // synchronizing goroutine.
 func NewMeter() Meter {
-	m := &meter{
+	m := &StandardMeter{
 		make(chan int64),
 		make(chan meterV),
 		time.NewTicker(5e9),
@@ -45,39 +45,39 @@ func NewMeter() Meter {
 }
 
 // Return the count of events seen.
-func (m *meter) Count() int64 {
+func (m *StandardMeter) Count() int64 {
 	return (<-m.out).count
 }
 
 // Mark the occurance of n events.
-func (m *meter) Mark(n int64) {
+func (m *StandardMeter) Mark(n int64) {
 	m.in <- n
 }
 
 // Return the meter's one-minute moving average rate of events.
-func (m *meter) Rate1() float64 {
+func (m *StandardMeter) Rate1() float64 {
 	return (<-m.out).rate1
 }
 
 // Return the meter's five-minute moving average rate of events.
-func (m *meter) Rate5() float64 {
+func (m *StandardMeter) Rate5() float64 {
 	return (<-m.out).rate5
 }
 
 // Return the meter's fifteen-minute moving average rate of events.
-func (m *meter) Rate15() float64 {
+func (m *StandardMeter) Rate15() float64 {
 	return (<-m.out).rate15
 }
 
 // Return the meter's mean rate of events.
-func (m *meter) RateMean() float64 {
+func (m *StandardMeter) RateMean() float64 {
 	return (<-m.out).rateMean
 }
 
 // Receive inputs and send outputs.  Count each input and update the various
 // moving averages and the mean rate of events.  Send a copy of the meterV
 // as output.
-func (m *meter) arbiter() {
+func (m *StandardMeter) arbiter() {
 	var mv meterV
 	a1 := NewEWMA1()
 	a5 := NewEWMA5()

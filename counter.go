@@ -17,32 +17,32 @@ type Counter interface {
 // to manage a single int64 value.  When the latest weeklies land in a
 // release, atomic.LoadInt64 will be available and this code will become
 // safe on 32-bit architectures.
-type counter struct {
+type StandardCounter struct {
 	count int64
 }
 
 // Create a new counter.
 func NewCounter() Counter {
-	return &counter{0}
+	return &StandardCounter{0}
 }
 
 // Clear the counter: set it to zero.
-func (c *counter) Clear() {
+func (c *StandardCounter) Clear() {
 	c.count = 0
 }
 
 // Return the current count.  This is the method that's currently unsafe
 // on 32-bit architectures.
-func (c *counter) Count() int64 {
+func (c *StandardCounter) Count() int64 {
 	return c.count
 }
 
 // Decrement the counter by the given amount.
-func (c *counter) Dec(i int64) {
+func (c *StandardCounter) Dec(i int64) {
 	atomic.AddInt64(&c.count, -i)
 }
 
 // Increment the counter by the given amount.
-func (c *counter) Inc(i int64) {
+func (c *StandardCounter) Inc(i int64) {
 	atomic.AddInt64(&c.count, i)
 }

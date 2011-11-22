@@ -15,7 +15,7 @@ type Healthcheck interface {
 
 // The standard implementation of a Healthcheck stores the status and a
 // function to call to update the status.
-type healthcheck struct {
+type StandardHealthcheck struct {
 	err os.Error
 	f func(Healthcheck)
 }
@@ -23,25 +23,25 @@ type healthcheck struct {
 // Create a new healthcheck, which will use the given function to update
 // its status.
 func NewHealthcheck(f func(Healthcheck)) Healthcheck {
-	return &healthcheck{nil, f}
+	return &StandardHealthcheck{nil, f}
 }
 
 // Update the healthcheck's status.
-func (h *healthcheck) Check() {
+func (h *StandardHealthcheck) Check() {
 	h.f(h)
 }
 
 // Return the healthcheck's status, which will be nil if it is healthy.
-func (h *healthcheck) Error() os.Error {
+func (h *StandardHealthcheck) Error() os.Error {
 	return h.err
 }
 
 // Mark the healthcheck as healthy.
-func (h *healthcheck) Healthy() {
+func (h *StandardHealthcheck) Healthy() {
 	h.err = nil
 }
 
 // Mark the healthcheck as unhealthy.  The error should provide details.
-func (h *healthcheck) Unhealthy(err os.Error) {
+func (h *StandardHealthcheck) Unhealthy(err os.Error) {
 	h.err = err
 }
