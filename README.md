@@ -28,8 +28,13 @@ r.RegisterHistogram("baz", h)
 h.Update(47)
 
 m := metrics.NewMeter()
-r.RegisterMeter("bang", m)
+r.RegisterMeter("quux", m)
 m.Mark(47)
+
+t := metrics.NewTimer()
+r.RegisterTimer("bang", t)
+t.Update(47)
+t.Time(func() {})
 ```
 
 Periodically log every metric in human-readable form to standard error:
