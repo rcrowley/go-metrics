@@ -3,7 +3,7 @@ go-metrics
 
 Go port of Coda Hale's Metrics library: <https://github.com/codahale/metrics>.
 
-**This code is not safe on 32-bit architectures.**
+**This code is not safe on 32-bit architectures.  It will be as soon as `atomic.LoadInt64` lands in a release tag.**
 
 Usage
 -----
