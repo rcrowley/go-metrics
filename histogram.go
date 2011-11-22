@@ -82,7 +82,7 @@ func (h *histogram) Percentile(p float64) float64 {
 
 func (h *histogram) Percentiles(ps []float64) []float64 {
 	scores := make([]float64, len(ps))
-	values := Int64Slice(h.s.Values())
+	values := int64Slice(h.s.Values())
 	size := len(values)
 	if size > 0 {
 		sort.Sort(values)
@@ -145,7 +145,7 @@ func (h *histogram) arbiter() {
 }
 
 // Cribbed from the standard library's `sort` package.
-type Int64Slice []int64
-func (p Int64Slice) Len() int           { return len(p) }
-func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
-func (p Int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+type int64Slice []int64
+func (p int64Slice) Len() int           { return len(p) }
+func (p int64Slice) Less(i, j int) bool { return p[i] < p[j] }
+func (p int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
