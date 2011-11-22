@@ -1,6 +1,6 @@
 package metrics
 
-import "sync/atomic"
+import _ "sync/atomic"
 
 // Gauges hold an int64 value that can be set arbitrarily.
 //
