@@ -34,7 +34,7 @@ type meterV struct {
 
 // Create a new meter.  Create the communication channels and start the
 // synchronizing goroutine.
-func NewMeter() Meter {
+func NewMeter() *StandardMeter {
 	m := &StandardMeter{
 		make(chan int64),
 		make(chan meterV),

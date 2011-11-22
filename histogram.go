@@ -40,7 +40,7 @@ type histogramV struct {
 
 // Create a new histogram with the given Sample.  Create the communication
 // channels and start the synchronizing goroutine.
-func NewHistogram(s Sample) Histogram {
+func NewHistogram(s Sample) *StandardHistogram {
 	h := &StandardHistogram{
 		s,
 		make(chan int64),

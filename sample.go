@@ -35,7 +35,7 @@ type ExpDecaySample struct {
 
 // Create a new exponentially-decaying sample with the given reservoir size
 // and alpha.
-func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
+func NewExpDecaySample(reservoirSize int, alpha float64) *ExpDecaySample {
 	s := &ExpDecaySample{
 		reservoirSize,
 		alpha,
@@ -132,7 +132,7 @@ type UniformSample struct {
 }
 
 // Create a new uniform sample with the given reservoir size.
-func NewUniformSample(reservoirSize int) Sample {
+func NewUniformSample(reservoirSize int) *UniformSample {
 	s := &UniformSample{
 		reservoirSize,
 		make(chan int64),

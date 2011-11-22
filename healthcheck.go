@@ -22,7 +22,7 @@ type StandardHealthcheck struct {
 
 // Create a new healthcheck, which will use the given function to update
 // its status.
-func NewHealthcheck(f func(Healthcheck)) Healthcheck {
+func NewHealthcheck(f func(Healthcheck)) *StandardHealthcheck {
 	return &StandardHealthcheck{nil, f}
 }
 

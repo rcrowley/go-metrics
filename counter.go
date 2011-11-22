@@ -22,7 +22,7 @@ type StandardCounter struct {
 }
 
 // Create a new counter.
-func NewCounter() Counter {
+func NewCounter() *StandardCounter {
 	return &StandardCounter{0}
 }
 

@@ -29,14 +29,14 @@ type StandardTimer struct {
 }
 
 // Create a new timer with the given Histogram and Meter.
-func NewCustomTimer(h Histogram, m Meter) Timer {
+func NewCustomTimer(h Histogram, m Meter) *StandardTimer {
 	return &StandardTimer{h, m}
 }
 
 // Create a new timer with a standard histogram and meter.  The histogram
 // will use an exponentially-decaying sample with the same reservoir size
 // and alpha as UNIX load averages.
-func NewTimer() Timer {
+func NewTimer() *StandardTimer {
 	return &StandardTimer{
 		NewHistogram(NewExpDecaySample(1028, 0.015)),
 		NewMeter(),

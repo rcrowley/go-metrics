@@ -31,24 +31,24 @@ type StandardEWMA struct {
 
 // Create a new EWMA with the given alpha.  Create the clock channel and
 // start the ticker goroutine.
-func NewEWMA(alpha float64) EWMA {
+func NewEWMA(alpha float64) *StandardEWMA {
 	a := &StandardEWMA{alpha, 0, 0.0, false, make(chan bool)}
 	go a.ticker()
 	return a
 }
 
 // Create a new EWMA with alpha set for a one-minute moving average.
-func NewEWMA1() EWMA {
+func NewEWMA1() *StandardEWMA {
 	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 1))
 }
 
 // Create a new EWMA with alpha set for a five-minute moving average.
-func NewEWMA5() EWMA {
+func NewEWMA5() *StandardEWMA {
 	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 5))
 }
 
 // Create a new EWMA with alpha set for a fifteen-minute moving average.
-func NewEWMA15() EWMA {
+func NewEWMA15() *StandardEWMA {
 	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 15))
 }
 

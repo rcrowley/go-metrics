@@ -54,7 +54,7 @@ type StandardRegistry struct {
 }
 
 // Create a new registry.
-func NewRegistry() Registry {
+func NewRegistry() *StandardRegistry {
 	return &StandardRegistry {
 		&sync.Mutex{},
 		make(map[string]Counter),

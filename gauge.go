@@ -20,7 +20,7 @@ type StandardGauge struct {
 }
 
 // Create a new gauge.
-func NewGauge() Gauge {
+func NewGauge() *StandardGauge {
 	return &StandardGauge{0}
 }
 
