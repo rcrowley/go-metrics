@@ -2,6 +2,11 @@ package metrics
 
 import "time"
 
+// Meters count events to produce exponentially-weighted moving average rates
+// at one-, five-, and fifteen-minutes and a mean rate.
+//
+// This is an interface so as to encourage other structs to implement
+// the Meter API as appropriate.
 type Meter interface {
 	Count() int64
 	Mark(int64)
@@ -11,17 +16,24 @@ type Meter interface {
 	RateMean() float64
 }
 
+// The standard implementation of a Meter uses a goroutine to synchronize
+// its calculations and another goroutine (via time.Ticker) to produce
+// clock ticks.
 type meter struct {
 	in chan int64
 	out chan meterV
 	ticker *time.Ticker
 }
 
+// A meterV contains all the values that would need to be passed back
+// from the synchronizing goroutine.
 type meterV struct {
 	count int64
 	rate1, rate5, rate15, rateMean float64
 }
 
+// Create a new meter.  Create the communication channels and start the
+// synchronizing goroutine.
 func NewMeter() Meter {
 	m := &meter{
 		make(chan int64),
@@ -32,30 +44,39 @@ func NewMeter() Meter {
 	return m
 }
 
+// Return the count of events seen.
 func (m *meter) Count() int64 {
 	return (<-m.out).count
 }
 
+// Mark the occurance of n events.
 func (m *meter) Mark(n int64) {
 	m.in <- n
 }
 
+// Return the meter's one-minute moving average rate of events.
 func (m *meter) Rate1() float64 {
 	return (<-m.out).rate1
 }
 
+// Return the meter's five-minute moving average rate of events.
 func (m *meter) Rate5() float64 {
 	return (<-m.out).rate5
 }
 
+// Return the meter's fifteen-minute moving average rate of events.
 func (m *meter) Rate15() float64 {
 	return (<-m.out).rate15
 }
 
+// Return the meter's mean rate of events.
 func (m *meter) RateMean() float64 {
 	return (<-m.out).rateMean
 }
 
+// Receive inputs and send outputs.  Count each input and update the various
+// moving averages and the mean rate of events.  Send a copy of the meterV
+// as output.
 func (m *meter) arbiter() {
 	var mv meterV
 	a1 := NewEWMA1()

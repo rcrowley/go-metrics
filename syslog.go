@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// Output each metric in the given registry to syslog periodically using
+// the given syslogger.  The interval is to be given in seconds.
 func Syslog(r Registry, interval int, w *syslog.Writer) {
 	for {
 		r.EachCounter(func(name string, c Counter) {

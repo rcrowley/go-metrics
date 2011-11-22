@@ -2,6 +2,10 @@ package metrics
 
 import "sync/atomic"
 
+// Counters hold an int64 value that can be incremented and decremented.
+//
+// This is an interface so as to encourage other structs to implement
+// the Counter API as appropriate.
 type Counter interface {
 	Clear()
 	Count() int64
@@ -9,26 +13,36 @@ type Counter interface {
 	Inc(int64)
 }
 
+// The standard implementation of a Counter uses the sync/atomic package
+// to manage a single int64 value.  When the latest weeklies land in a
+// release, atomic.LoadInt64 will be available and this code will become
+// safe on 32-bit architectures.
 type counter struct {
 	count int64
 }
 
+// Create a new counter.
 func NewCounter() Counter {
 	return &counter{0}
 }
 
+// Clear the counter: set it to zero.
 func (c *counter) Clear() {
 	c.count = 0
 }
 
+// Return the current count.  This is the method that's currently unsafe
+// on 32-bit architectures.
 func (c *counter) Count() int64 {
 	return c.count
 }
 
+// Decrement the counter by the given amount.
 func (c *counter) Dec(i int64) {
 	atomic.AddInt64(&c.count, -i)
 }
 
+// Increment the counter by the given amount.
 func (c *counter) Inc(i int64) {
 	atomic.AddInt64(&c.count, i)
 }

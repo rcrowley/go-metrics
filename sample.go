@@ -8,6 +8,11 @@ import (
 
 const rescaleThreshold = 1e9 * 60 * 60
 
+// Samples maintain a statistically-significant selection of values from
+// a stream.
+//
+// This is an interface so as to encourage other structs to implement
+// the Sample API as appropriate.
 type Sample interface {
 	Clear()
 	Size() int
@@ -15,6 +20,11 @@ type Sample interface {
 	Values() []int64
 }
 
+// An exponentially-decaying sample using a forward-decaying priority
+// reservoir.  See Cormode et al's "Forward Decay: A Practical Time Decay
+// Model for Streaming Systems".
+//
+// <http://www.research.att.com/people/Cormode_Graham/library/publications/CormodeShkapenyukSrivastavaXu09.pdf>
 type expDecaySample struct {
 	reservoirSize int
 	alpha float64
@@ -23,6 +33,8 @@ type expDecaySample struct {
 	reset chan bool
 }
 
+// Create a new exponentially-decaying sample with the given reservoir size
+// and alpha.
 func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 	s := &expDecaySample{
 		reservoirSize,
@@ -35,22 +47,29 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 	return s
 }
 
+// Clear all samples.
 func (s *expDecaySample) Clear() {
 	s.reset <- true
 }
 
+// Return the size of the sample, which is at most the reservoir size.
 func (s *expDecaySample) Size() int {
 	return len(<-s.out)
 }
 
+// Update the sample with a new value.
 func (s *expDecaySample) Update(v int64) {
 	s.in <- v
 }
 
+// Return all the values in the sample.
 func (s *expDecaySample) Values() []int64 {
 	return <-s.out
 }
 
+// Receive inputs and send outputs.  Count and save each input value,
+// rescaling the sample if enough time has elapsed since the last rescaling.
+// Send a copy of the values as output.
 func (s *expDecaySample) arbiter() {
 	count := 0
 	values := make(map[float64]int64)
@@ -102,6 +121,9 @@ func (s *expDecaySample) arbiter() {
 	}
 }
 
+// A uniform sample using Vitter's Algorithm R.
+//
+// <http://www.cs.umd.edu/~samir/498/vitter.pdf>
 type uniformSample struct {
 	reservoirSize int
 	in chan int64
@@ -109,6 +131,7 @@ type uniformSample struct {
 	reset chan bool
 }
 
+// Create a new uniform sample with the given reservoir size.
 func NewUniformSample(reservoirSize int) Sample {
 	s := &uniformSample{
 		reservoirSize,
@@ -120,22 +143,28 @@ func NewUniformSample(reservoirSize int) Sample {
 	return s
 }
 
+// Clear all samples.
 func (s *uniformSample) Clear() {
 	s.reset <- true
 }
 
+// Return the size of the sample, which is at most the reservoir size.
 func (s *uniformSample) Size() int {
 	return len(<-s.out)
 }
 
+// Update the sample with a new value.
 func (s *uniformSample) Update(v int64) {
 	s.in <- v
 }
 
+// Return all the values in the sample.
 func (s *uniformSample) Values() []int64 {
 	return <-s.out
 }
 
+// Receive inputs and send outputs.  Count and save each input value at a
+// random index.  Send a copy of the values as output.
 func (s *uniformSample) arbiter() {
 	count := 0
 	values := make([]int64, s.reservoirSize)

@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// Output each metric in the given registry periodically using the given
+// logger.  The interval is to be given in seconds.
 func Log(r Registry, interval int, l *log.Logger) {
 	for {
 		r.EachCounter(func(name string, c Counter) {
