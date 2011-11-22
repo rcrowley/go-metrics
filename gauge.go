@@ -26,7 +26,7 @@ func NewGauge() Gauge {
 
 // Update the gauge's value.
 func (g *StandardGauge) Update(v int64) {
-	atomic.AddInt64(&g.value, v)
+	g.value = v
 }
 
 // Return the gauge's current value.
