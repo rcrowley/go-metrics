@@ -3,6 +3,6 @@
 *.out
 *.swp
 _obj
+_testmain.go
 cmd/metrics-bench/metrics-bench
 cmd/metrics-example/metrics-example
-_testmain.go
