@@ -16,7 +16,7 @@ func main() {
 	r := metrics.NewRegistry()
 
 	c := metrics.NewCounter()
-	r.RegisterCounter("foo", c)
+	r.Register("foo", c)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	g := metrics.NewGauge()
-	r.RegisterGauge("bar", g)
+	r.Register("bar", g)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {
@@ -56,12 +56,12 @@ func main() {
 			h.Unhealthy(os.NewError("baz"))
 		}
 	})
-	r.RegisterHealthcheck("baz", hc)
+	r.Register("baz", hc)
 
 	s := metrics.NewExpDecaySample(1028, 0.015)
 //	s := metrics.NewUniformSample(1028)
 	h := metrics.NewHistogram(s)
-	r.RegisterHistogram("bang", h)
+	r.Register("bang", h)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {
@@ -78,7 +78,7 @@ func main() {
 	}
 
 	m := metrics.NewMeter()
-	r.RegisterMeter("quux", m)
+	r.Register("quux", m)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {
@@ -95,7 +95,7 @@ func main() {
 	}
 
 	t := metrics.NewTimer()
-	r.RegisterTimer("hooah", t)
+	r.Register("hooah", t)
 	for i := 0; i < fanout; i++ {
 		go func() {
 			for {

@@ -9,36 +9,36 @@ import "runtime"
 // as runtime.Goroutines.
 func RegisterRuntimeMemStats(r Registry) {
 
-	r.RegisterGauge("runtime.Goroutines", NewGauge())
+	r.Register("runtime.Goroutines", NewGauge())
 
-	r.RegisterGauge("runtime.MemStats.Alloc", NewGauge())
-	r.RegisterGauge("runtime.MemStats.TotalAlloc", NewGauge())
-	r.RegisterGauge("runtime.MemStats.Sys", NewGauge())
-	r.RegisterGauge("runtime.MemStats.Lookups", NewGauge())
-	r.RegisterGauge("runtime.MemStats.Mallocs", NewGauge())
-	r.RegisterGauge("runtime.MemStats.Frees", NewGauge())
+	r.Register("runtime.MemStats.Alloc", NewGauge())
+	r.Register("runtime.MemStats.TotalAlloc", NewGauge())
+	r.Register("runtime.MemStats.Sys", NewGauge())
+	r.Register("runtime.MemStats.Lookups", NewGauge())
+	r.Register("runtime.MemStats.Mallocs", NewGauge())
+	r.Register("runtime.MemStats.Frees", NewGauge())
 
-	r.RegisterGauge("runtime.MemStats.HeapAlloc", NewGauge())
-	r.RegisterGauge("runtime.MemStats.HeapSys", NewGauge())
-	r.RegisterGauge("runtime.MemStats.HeapIdle", NewGauge())
-	r.RegisterGauge("runtime.MemStats.HeapInuse", NewGauge())
-	r.RegisterGauge("runtime.MemStats.HeapObjects", NewGauge())
+	r.Register("runtime.MemStats.HeapAlloc", NewGauge())
+	r.Register("runtime.MemStats.HeapSys", NewGauge())
+	r.Register("runtime.MemStats.HeapIdle", NewGauge())
+	r.Register("runtime.MemStats.HeapInuse", NewGauge())
+	r.Register("runtime.MemStats.HeapObjects", NewGauge())
 
-	r.RegisterGauge("runtime.MemStats.StackInuse", NewGauge())
-	r.RegisterGauge("runtime.MemStats.StackSys", NewGauge())
-	r.RegisterGauge("runtime.MemStats.MSpanInuse", NewGauge())
-	r.RegisterGauge("runtime.MemStats.MSpanSys", NewGauge())
-	r.RegisterGauge("runtime.MemStats.MCacheInuse", NewGauge())
-	r.RegisterGauge("runtime.MemStats.MCacheSys", NewGauge())
-	r.RegisterGauge("runtime.MemStats.BuckHashSys", NewGauge())
+	r.Register("runtime.MemStats.StackInuse", NewGauge())
+	r.Register("runtime.MemStats.StackSys", NewGauge())
+	r.Register("runtime.MemStats.MSpanInuse", NewGauge())
+	r.Register("runtime.MemStats.MSpanSys", NewGauge())
+	r.Register("runtime.MemStats.MCacheInuse", NewGauge())
+	r.Register("runtime.MemStats.MCacheSys", NewGauge())
+	r.Register("runtime.MemStats.BuckHashSys", NewGauge())
 
-	r.RegisterGauge("runtime.MemStats.NextGC", NewGauge())
-	r.RegisterGauge("runtime.MemStats.PauseTotalNs", NewGauge())
-	r.RegisterHistogram("runtime.MemStats.PauseNs",
+	r.Register("runtime.MemStats.NextGC", NewGauge())
+	r.Register("runtime.MemStats.PauseTotalNs", NewGauge())
+	r.Register("runtime.MemStats.PauseNs",
 		NewHistogram(NewExpDecaySample(1028, 0.015)))
-	r.RegisterGauge("runtime.MemStats.NumGC", NewGauge())
-	r.RegisterGauge("runtime.MemStats.EnableGC", NewGauge())
-	r.RegisterGauge("runtime.MemStats.DebugGC", NewGauge())
+	r.Register("runtime.MemStats.NumGC", NewGauge())
+	r.Register("runtime.MemStats.EnableGC", NewGauge())
+	r.Register("runtime.MemStats.DebugGC", NewGauge())
 
 }
 
@@ -53,64 +53,64 @@ func CaptureRuntimeMemStats(r Registry, updateMemStats bool) {
 		runtime.UpdateMemStats()
 	}
 
-	r.GetGauge("runtime.Goroutines").Update(int64(runtime.Goroutines()))
+	r.Get("runtime.Goroutines").(Gauge).Update(int64(runtime.Goroutines()))
 
-	r.GetGauge("runtime.MemStats.Alloc").Update(
+	r.Get("runtime.MemStats.Alloc").(Gauge).Update(
 		int64(runtime.MemStats.Alloc))
-	r.GetGauge("runtime.MemStats.TotalAlloc").Update(
+	r.Get("runtime.MemStats.TotalAlloc").(Gauge).Update(
 		int64(runtime.MemStats.TotalAlloc))
-	r.GetGauge("runtime.MemStats.Sys").Update(
+	r.Get("runtime.MemStats.Sys").(Gauge).Update(
 		int64(runtime.MemStats.Sys))
-	r.GetGauge("runtime.MemStats.Lookups").Update(
+	r.Get("runtime.MemStats.Lookups").(Gauge).Update(
 		int64(runtime.MemStats.Lookups))
-	r.GetGauge("runtime.MemStats.Mallocs").Update(
+	r.Get("runtime.MemStats.Mallocs").(Gauge).Update(
 		int64(runtime.MemStats.Mallocs))
-	r.GetGauge("runtime.MemStats.Frees").Update(
+	r.Get("runtime.MemStats.Frees").(Gauge).Update(
 		int64(runtime.MemStats.Frees))
 
-	r.GetGauge("runtime.MemStats.HeapAlloc").Update(
+	r.Get("runtime.MemStats.HeapAlloc").(Gauge).Update(
 		int64(runtime.MemStats.HeapAlloc))
-	r.GetGauge("runtime.MemStats.HeapSys").Update(
+	r.Get("runtime.MemStats.HeapSys").(Gauge).Update(
 		int64(runtime.MemStats.HeapSys))
-	r.GetGauge("runtime.MemStats.HeapIdle").Update(
+	r.Get("runtime.MemStats.HeapIdle").(Gauge).Update(
 		int64(runtime.MemStats.HeapIdle))
-	r.GetGauge("runtime.MemStats.HeapInuse").Update(
+	r.Get("runtime.MemStats.HeapInuse").(Gauge).Update(
 		int64(runtime.MemStats.HeapInuse))
-	r.GetGauge("runtime.MemStats.HeapObjects").Update(
+	r.Get("runtime.MemStats.HeapObjects").(Gauge).Update(
 		int64(runtime.MemStats.HeapObjects))
 
-	r.GetGauge("runtime.MemStats.StackInuse").Update(
+	r.Get("runtime.MemStats.StackInuse").(Gauge).Update(
 		int64(runtime.MemStats.StackInuse))
-	r.GetGauge("runtime.MemStats.StackSys").Update(
+	r.Get("runtime.MemStats.StackSys").(Gauge).Update(
 		int64(runtime.MemStats.StackSys))
-	r.GetGauge("runtime.MemStats.MSpanInuse").Update(
+	r.Get("runtime.MemStats.MSpanInuse").(Gauge).Update(
 		int64(runtime.MemStats.MSpanInuse))
-	r.GetGauge("runtime.MemStats.MSpanSys").Update(
+	r.Get("runtime.MemStats.MSpanSys").(Gauge).Update(
 		int64(runtime.MemStats.MSpanSys))
-	r.GetGauge("runtime.MemStats.MCacheInuse").Update(
+	r.Get("runtime.MemStats.MCacheInuse").(Gauge).Update(
 		int64(runtime.MemStats.MCacheInuse))
-	r.GetGauge("runtime.MemStats.MCacheSys").Update(
+	r.Get("runtime.MemStats.MCacheSys").(Gauge).Update(
 		int64(runtime.MemStats.MCacheSys))
-	r.GetGauge("runtime.MemStats.BuckHashSys").Update(
+	r.Get("runtime.MemStats.BuckHashSys").(Gauge).Update(
 		int64(runtime.MemStats.BuckHashSys))
 
-	r.GetGauge("runtime.MemStats.NextGC").Update(
+	r.Get("runtime.MemStats.NextGC").(Gauge).Update(
 		int64(runtime.MemStats.NextGC))
-	r.GetGauge("runtime.MemStats.PauseTotalNs").Update(
+	r.Get("runtime.MemStats.PauseTotalNs").(Gauge).Update(
 		int64(runtime.MemStats.PauseTotalNs))
-	r.GetHistogram("runtime.MemStats.PauseNs").Update(
+	r.Get("runtime.MemStats.PauseNs").(Histogram).Update(
 		int64(runtime.MemStats.PauseNs[0]))
-	r.GetGauge("runtime.MemStats.NumGC").Update(
+	r.Get("runtime.MemStats.NumGC").(Gauge).Update(
 		int64(runtime.MemStats.NumGC))
 	if runtime.MemStats.EnableGC {
-		r.GetGauge("runtime.MemStats.EnableGC").Update(1)
+		r.Get("runtime.MemStats.EnableGC").(Gauge).Update(1)
 	} else {
-		r.GetGauge("runtime.MemStats.EnableGC").Update(0)
+		r.Get("runtime.MemStats.EnableGC").(Gauge).Update(0)
 	}
 	if runtime.MemStats.EnableGC {
-		r.GetGauge("runtime.MemStats.DebugGC").Update(1)
+		r.Get("runtime.MemStats.DebugGC").(Gauge).Update(1)
 	} else {
-		r.GetGauge("runtime.MemStats.DebugGC").Update(0)
+		r.Get("runtime.MemStats.DebugGC").(Gauge).Update(0)
 	}
 
 }
