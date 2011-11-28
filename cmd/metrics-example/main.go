@@ -1,11 +1,12 @@
 package main
 
 import (
-	"log"
+	"errors"
 	"github.com/rcrowley/go-metrics"
+	"log"
+	"math/rand"
 	"os"
-	"rand"
-//	"syslog"
+	// "syslog"
 	"time"
 )
 
@@ -53,13 +54,13 @@ func main() {
 		if 0 < rand.Intn(2) {
 			h.Healthy()
 		} else {
-			h.Unhealthy(os.NewError("baz"))
+			h.Unhealthy(errors.New("baz"))
 		}
 	})
 	r.Register("baz", hc)
 
 	s := metrics.NewExpDecaySample(1028, 0.015)
-//	s := metrics.NewUniformSample(1028)
+	//s := metrics.NewUniformSample(1028)
 	h := metrics.NewHistogram(s)
 	r.Register("bang", h)
 	for i := 0; i < fanout; i++ {
@@ -112,15 +113,18 @@ func main() {
 	metrics.RegisterRuntimeMemStats(r)
 	go func() {
 		t := time.NewTicker(5e9)
-		for 0 < <-t.C { metrics.CaptureRuntimeMemStats(r, true) }
+		for {
+			<-t.C
+			metrics.CaptureRuntimeMemStats(r, true)
+		}
 	}()
 
 	metrics.Log(r, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 
-/*
+	/*
 	w, err := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")
 	if nil != err { log.Fatalln(err) }
 	metrics.Syslog(r, 60, w)
-*/
+	*/
 
 }

@@ -2,7 +2,7 @@ package metrics
 
 import (
 	"fmt"
-	"syslog"
+	"log/syslog"
 	"time"
 )
 
@@ -67,6 +67,6 @@ func Syslog(r Registry, interval int, w *syslog.Writer) {
 				))
 			}
 		})
-		time.Sleep(int64(1e9) * int64(interval))
+		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
 	}
 }

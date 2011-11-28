@@ -100,9 +100,9 @@ func (t *StandardTimer) StdDev() float64 {
 
 // Record the duration of the execution of the given function.
 func (t *StandardTimer) Time(f func()) {
-	ts := time.Nanoseconds()
+	ts := time.Now()
 	f()
-	t.Update(uint64(time.Nanoseconds() - ts))
+	t.Update(uint64(time.Now().Sub(ts)))
 }
 
 // Record the duration of an event.

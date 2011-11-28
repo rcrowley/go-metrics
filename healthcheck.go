@@ -1,23 +1,21 @@
 package metrics
 
-import "os"
-
 // Healthchecks hold an os.Error value describing an arbitrary up/down status.
 //
 // This is an interface so as to encourage other structs to implement
 // the Healthcheck API as appropriate.
 type Healthcheck interface {
 	Check()
-	Error() os.Error
+	Error() error
 	Healthy()
-	Unhealthy(os.Error)
+	Unhealthy(error)
 }
 
 // The standard implementation of a Healthcheck stores the status and a
 // function to call to update the status.
 type StandardHealthcheck struct {
-	err os.Error
-	f func(Healthcheck)
+	err error
+	f   func(Healthcheck)
 }
 
 // Create a new healthcheck, which will use the given function to update
@@ -32,7 +30,7 @@ func (h *StandardHealthcheck) Check() {
 }
 
 // Return the healthcheck's status, which will be nil if it is healthy.
-func (h *StandardHealthcheck) Error() os.Error {
+func (h *StandardHealthcheck) Error() error {
 	return h.err
 }
 
@@ -42,6 +40,6 @@ func (h *StandardHealthcheck) Healthy() {
 }
 
 // Mark the healthcheck as unhealthy.  The error should provide details.
-func (h *StandardHealthcheck) Unhealthy(err os.Error) {
+func (h *StandardHealthcheck) Unhealthy(err error) {
 	h.err = err
 }

@@ -20,15 +20,15 @@ type Meter interface {
 // its calculations and another goroutine (via time.Ticker) to produce
 // clock ticks.
 type StandardMeter struct {
-	in chan int64
-	out chan meterV
+	in     chan int64
+	out    chan meterV
 	ticker *time.Ticker
 }
 
 // A meterV contains all the values that would need to be passed back
 // from the synchronizing goroutine.
 type meterV struct {
-	count int64
+	count                          int64
 	rate1, rate5, rate15, rateMean float64
 }
 
@@ -82,16 +82,19 @@ func (m *StandardMeter) arbiter() {
 	a1 := NewEWMA1()
 	a5 := NewEWMA5()
 	a15 := NewEWMA15()
-	tsStart := time.Nanoseconds()
+	tsStart := time.Now()
 	for {
 		select {
 		case n := <-m.in:
 			mv.count += n
-			a1.Update(n); mv.rate1 = a1.Rate()
-			a5.Update(n); mv.rate5 = a5.Rate()
-			a15.Update(n); mv.rate15 = a15.Rate()
-			mv.rateMean = float64(1e9 * mv.count) / float64(
-				time.Nanoseconds() - tsStart)
+			a1.Update(n)
+			mv.rate1 = a1.Rate()
+			a5.Update(n)
+			mv.rate5 = a5.Rate()
+			a15.Update(n)
+			mv.rate15 = a15.Rate()
+			mv.rateMean = float64(1e9*mv.count) / float64(
+				time.Now().Sub(tsStart))
 		case m.out <- mv:
 		case <-m.ticker.C:
 			a1.Tick()

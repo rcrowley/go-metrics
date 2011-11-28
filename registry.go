@@ -18,13 +18,13 @@ type Registry interface {
 // The standard implementation of a Registry is a set of mutex-protected
 // maps of names to metrics.
 type StandardRegistry struct {
-	mutex *sync.Mutex
+	mutex   *sync.Mutex
 	metrics map[string]interface{}
 }
 
 // Create a new registry.
 func NewRegistry() *StandardRegistry {
-	return &StandardRegistry {
+	return &StandardRegistry{
 		&sync.Mutex{},
 		make(map[string]interface{}),
 	}
@@ -33,7 +33,9 @@ func NewRegistry() *StandardRegistry {
 // Call the given function for each registered metric.
 func (r *StandardRegistry) Each(f func(string, interface{})) {
 	r.mutex.Lock()
-	for name, i := range r.metrics { f(name, i) }
+	for name, i := range r.metrics {
+		f(name, i)
+	}
 	r.mutex.Unlock()
 }
 
@@ -59,7 +61,9 @@ func (r *StandardRegistry) Register(name string, i interface{}) {
 func (r *StandardRegistry) RunHealthchecks() {
 	r.mutex.Lock()
 	for _, i := range r.metrics {
-		if h, ok := i.(Healthcheck); ok { h.Check() }
+		if h, ok := i.(Healthcheck); ok {
+			h.Check()
+		}
 	}
 	r.mutex.Unlock()
 }
@@ -67,6 +71,6 @@ func (r *StandardRegistry) RunHealthchecks() {
 // Unregister the metric with the given name.
 func (r *StandardRegistry) Unregister(name string) {
 	r.mutex.Lock()
-	r.metrics[name] = nil, false
+	delete(r.metrics, name)
 	r.mutex.Unlock()
 }

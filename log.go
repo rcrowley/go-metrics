@@ -60,6 +60,6 @@ func Log(r Registry, interval int, l *log.Logger) {
 				l.Printf("  mean rate:   %12.2f\n", m.RateMean())
 			}
 		})
-		time.Sleep(int64(1e9) * int64(interval))
+		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
 	}
 }
