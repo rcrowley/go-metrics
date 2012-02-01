@@ -53,7 +53,7 @@ func NewEWMA15() *StandardEWMA {
 
 // Return the moving average rate of events per second.
 func (a *StandardEWMA) Rate() float64 {
-	return a.rate * float64(1e9)
+	return <-a.out * float64(1e9)
 }
 
 // Tick the clock to update the moving average.
