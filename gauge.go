@@ -1,6 +1,6 @@
 package metrics
 
-import _ "sync/atomic"
+import "sync/atomic"
 
 // Gauges hold an int64 value that can be set arbitrarily.
 //
@@ -12,9 +12,7 @@ type Gauge interface {
 }
 
 // The standard implementation of a Gauge uses the sync/atomic package
-// to manage a single int64 value.  When the latest weeklies land in a
-// release, atomic.LoadInt64 will be available and this code will become
-// safe on 32-bit architectures.
+// to manage a single int64 value.
 type StandardGauge struct {
 	value int64
 }
@@ -26,10 +24,10 @@ func NewGauge() *StandardGauge {
 
 // Update the gauge's value.
 func (g *StandardGauge) Update(v int64) {
-	g.value = v
+	atomic.StoreInt64(&g.value, v)
 }
 
 // Return the gauge's current value.
 func (g *StandardGauge) Value() int64 {
-	return g.value
+	return atomic.LoadInt64(&g.value)
 }

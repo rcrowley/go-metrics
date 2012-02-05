@@ -14,9 +14,7 @@ type Counter interface {
 }
 
 // The standard implementation of a Counter uses the sync/atomic package
-// to manage a single int64 value.  When the latest weeklies land in a
-// release, atomic.LoadInt64 will be available and this code will become
-// safe on 32-bit architectures.
+// to manage a single int64 value.
 type StandardCounter struct {
 	count int64
 }
@@ -28,13 +26,12 @@ func NewCounter() *StandardCounter {
 
 // Clear the counter: set it to zero.
 func (c *StandardCounter) Clear() {
-	c.count = 0
+	atomic.StoreInt64(&c.count, 0)
 }
 
-// Return the current count.  This is the method that's currently unsafe
-// on 32-bit architectures.
+// Return the current count.
 func (c *StandardCounter) Count() int64 {
-	return c.count
+	return atomic.LoadInt64(&c.count)
 }
 
 // Decrement the counter by the given amount.
