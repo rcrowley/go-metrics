@@ -53,5 +53,5 @@ Installation
 ------------
 
 ```sh
-goinstall github.com/rcrowley/go-metrics
+go install github.com/rcrowley/go-metrics
 ```
