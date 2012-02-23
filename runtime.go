@@ -9,8 +9,6 @@ import "runtime"
 // as runtime.Goroutines.
 func RegisterRuntimeMemStats(r Registry) {
 
-	r.Register("runtime.Goroutines", NewGauge())
-
 	r.Register("runtime.MemStats.Alloc", NewGauge())
 	r.Register("runtime.MemStats.TotalAlloc", NewGauge())
 	r.Register("runtime.MemStats.Sys", NewGauge())
@@ -40,6 +38,9 @@ func RegisterRuntimeMemStats(r Registry) {
 	r.Register("runtime.MemStats.EnableGC", NewGauge())
 	r.Register("runtime.MemStats.DebugGC", NewGauge())
 
+	r.Register("runtime.NumCgoCall", NewGauge())
+	r.Register("runtime.NumGoroutine", NewGauge())
+
 }
 
 // Capture new values for the Go runtime statistics exported in
@@ -48,69 +49,49 @@ func RegisterRuntimeMemStats(r Registry) {
 // RegisterRuntimeMemStats will panic.  If the second parameter is
 // false, the counters will be left to the lazy updates provided by
 // the runtime.
-func CaptureRuntimeMemStats(r Registry, updateMemStats bool) {
-	if updateMemStats {
-		runtime.UpdateMemStats()
+func CaptureRuntimeMemStats(r Registry, readMemStats bool) {
+	var m runtime.MemStats
+	if readMemStats {
+		runtime.ReadMemStats(&m)
 	}
 
-	r.Get("runtime.Goroutines").(Gauge).Update(int64(runtime.Goroutines()))
+	r.Get("runtime.MemStats.Alloc").(Gauge).Update(int64(m.Alloc))
+	r.Get("runtime.MemStats.TotalAlloc").(Gauge).Update(int64(m.TotalAlloc))
+	r.Get("runtime.MemStats.Sys").(Gauge).Update(int64(m.Sys))
+	r.Get("runtime.MemStats.Lookups").(Gauge).Update(int64(m.Lookups))
+	r.Get("runtime.MemStats.Mallocs").(Gauge).Update(int64(m.Mallocs))
+	r.Get("runtime.MemStats.Frees").(Gauge).Update(int64(m.Frees))
 
-	r.Get("runtime.MemStats.Alloc").(Gauge).Update(
-		int64(runtime.MemStats.Alloc))
-	r.Get("runtime.MemStats.TotalAlloc").(Gauge).Update(
-		int64(runtime.MemStats.TotalAlloc))
-	r.Get("runtime.MemStats.Sys").(Gauge).Update(
-		int64(runtime.MemStats.Sys))
-	r.Get("runtime.MemStats.Lookups").(Gauge).Update(
-		int64(runtime.MemStats.Lookups))
-	r.Get("runtime.MemStats.Mallocs").(Gauge).Update(
-		int64(runtime.MemStats.Mallocs))
-	r.Get("runtime.MemStats.Frees").(Gauge).Update(
-		int64(runtime.MemStats.Frees))
+	r.Get("runtime.MemStats.HeapAlloc").(Gauge).Update(int64(m.HeapAlloc))
+	r.Get("runtime.MemStats.HeapSys").(Gauge).Update(int64(m.HeapSys))
+	r.Get("runtime.MemStats.HeapIdle").(Gauge).Update(int64(m.HeapIdle))
+	r.Get("runtime.MemStats.HeapInuse").(Gauge).Update(int64(m.HeapInuse))
+	r.Get("runtime.MemStats.HeapObjects").(Gauge).Update(int64(m.HeapObjects))
 
-	r.Get("runtime.MemStats.HeapAlloc").(Gauge).Update(
-		int64(runtime.MemStats.HeapAlloc))
-	r.Get("runtime.MemStats.HeapSys").(Gauge).Update(
-		int64(runtime.MemStats.HeapSys))
-	r.Get("runtime.MemStats.HeapIdle").(Gauge).Update(
-		int64(runtime.MemStats.HeapIdle))
-	r.Get("runtime.MemStats.HeapInuse").(Gauge).Update(
-		int64(runtime.MemStats.HeapInuse))
-	r.Get("runtime.MemStats.HeapObjects").(Gauge).Update(
-		int64(runtime.MemStats.HeapObjects))
+	r.Get("runtime.MemStats.StackInuse").(Gauge).Update(int64(m.StackInuse))
+	r.Get("runtime.MemStats.StackSys").(Gauge).Update(int64(m.StackSys))
+	r.Get("runtime.MemStats.MSpanInuse").(Gauge).Update(int64(m.MSpanInuse))
+	r.Get("runtime.MemStats.MSpanSys").(Gauge).Update(int64(m.MSpanSys))
+	r.Get("runtime.MemStats.MCacheInuse").(Gauge).Update(int64(m.MCacheInuse))
+	r.Get("runtime.MemStats.MCacheSys").(Gauge).Update(int64(m.MCacheSys))
+	r.Get("runtime.MemStats.BuckHashSys").(Gauge).Update(int64(m.BuckHashSys))
 
-	r.Get("runtime.MemStats.StackInuse").(Gauge).Update(
-		int64(runtime.MemStats.StackInuse))
-	r.Get("runtime.MemStats.StackSys").(Gauge).Update(
-		int64(runtime.MemStats.StackSys))
-	r.Get("runtime.MemStats.MSpanInuse").(Gauge).Update(
-		int64(runtime.MemStats.MSpanInuse))
-	r.Get("runtime.MemStats.MSpanSys").(Gauge).Update(
-		int64(runtime.MemStats.MSpanSys))
-	r.Get("runtime.MemStats.MCacheInuse").(Gauge).Update(
-		int64(runtime.MemStats.MCacheInuse))
-	r.Get("runtime.MemStats.MCacheSys").(Gauge).Update(
-		int64(runtime.MemStats.MCacheSys))
-	r.Get("runtime.MemStats.BuckHashSys").(Gauge).Update(
-		int64(runtime.MemStats.BuckHashSys))
-
-	r.Get("runtime.MemStats.NextGC").(Gauge).Update(
-		int64(runtime.MemStats.NextGC))
-	r.Get("runtime.MemStats.PauseTotalNs").(Gauge).Update(
-		int64(runtime.MemStats.PauseTotalNs))
-	r.Get("runtime.MemStats.PauseNs").(Histogram).Update(
-		int64(runtime.MemStats.PauseNs[0]))
-	r.Get("runtime.MemStats.NumGC").(Gauge).Update(
-		int64(runtime.MemStats.NumGC))
-	if runtime.MemStats.EnableGC {
+	r.Get("runtime.MemStats.NextGC").(Gauge).Update(int64(m.NextGC))
+	r.Get("runtime.MemStats.PauseTotalNs").(Gauge).Update(int64(m.PauseTotalNs))
+	r.Get("runtime.MemStats.PauseNs").(Histogram).Update(int64(m.PauseNs[0]))
+	r.Get("runtime.MemStats.NumGC").(Gauge).Update(int64(m.NumGC))
+	if m.EnableGC {
 		r.Get("runtime.MemStats.EnableGC").(Gauge).Update(1)
 	} else {
 		r.Get("runtime.MemStats.EnableGC").(Gauge).Update(0)
 	}
-	if runtime.MemStats.EnableGC {
+	if m.EnableGC {
 		r.Get("runtime.MemStats.DebugGC").(Gauge).Update(1)
 	} else {
 		r.Get("runtime.MemStats.DebugGC").(Gauge).Update(0)
 	}
+
+	r.Get("runtime.NumCgoCall").(Gauge).Update(int64(runtime.NumCgoCall()))
+	r.Get("runtime.NumGoroutine").(Gauge).Update(int64(runtime.NumGoroutine()))
 
 }
