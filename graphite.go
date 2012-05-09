@@ -9,11 +9,14 @@ import (
 
 func Graphite(r Registry, interval int, addr string) {
 	for {
+		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
+
 		now := time.Now().Unix()
 		conn, err := net.Dial("tcp", addr)
 		if err != nil {
 			continue
 		}
+
 		w := bufio.NewWriter(conn)
 		r.Each(func(name string, i interface{}) {
 			switch m := i.(type) {
@@ -58,6 +61,5 @@ func Graphite(r Registry, interval int, addr string) {
 			}
 			w.Flush()
 		})
-		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
 	}
 }
