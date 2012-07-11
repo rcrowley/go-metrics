@@ -4,7 +4,9 @@ import "testing"
 
 func TestExpDecaySample10(t *testing.T) {
 	s := NewExpDecaySample(100, 0.99)
-	for i := 0; i < 10; i++ { s.Update(int64(i)) }
+	for i := 0; i < 10; i++ {
+		s.Update(int64(i))
+	}
 	if size := s.Size(); 10 != size {
 		t.Errorf("s.Size(): 10 != %v\n", size)
 	}
@@ -20,7 +22,9 @@ func TestExpDecaySample10(t *testing.T) {
 
 func TestExpDecaySample100(t *testing.T) {
 	s := NewExpDecaySample(1000, 0.01)
-	for i := 0; i < 100; i++ { s.Update(int64(i)) }
+	for i := 0; i < 100; i++ {
+		s.Update(int64(i))
+	}
 	if size := s.Size(); 100 != size {
 		t.Errorf("s.Size(): 100 != %v\n", size)
 	}
@@ -36,7 +40,9 @@ func TestExpDecaySample100(t *testing.T) {
 
 func TestExpDecaySample1000(t *testing.T) {
 	s := NewExpDecaySample(100, 0.99)
-	for i := 0; i < 1000; i++ { s.Update(int64(i)) }
+	for i := 0; i < 1000; i++ {
+		s.Update(int64(i))
+	}
 	if size := s.Size(); 100 != size {
 		t.Errorf("s.Size(): 100 != %v\n", size)
 	}
@@ -52,7 +58,9 @@ func TestExpDecaySample1000(t *testing.T) {
 
 func TestUniformSample(t *testing.T) {
 	s := NewUniformSample(100)
-	for i := 0; i < 1000; i++ { s.Update(int64(i)) }
+	for i := 0; i < 1000; i++ {
+		s.Update(int64(i))
+	}
 	if size := s.Size(); 100 != size {
 		t.Errorf("s.Size(): 100 != %v\n", size)
 	}

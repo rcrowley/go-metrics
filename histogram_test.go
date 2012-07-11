@@ -33,7 +33,9 @@ func TestEmptyHistogram(t *testing.T) {
 
 func TestHistogram10000(t *testing.T) {
 	h := NewHistogram(NewUniformSample(100000))
-	for i := 1; i <= 10000; i++ { h.Update(int64(i)) }
+	for i := 1; i <= 10000; i++ {
+		h.Update(int64(i))
+	}
 	if count := h.Count(); 10000 != count {
 		t.Errorf("h.Count(): 10000 != %v\n", count)
 	}
