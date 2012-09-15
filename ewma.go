@@ -20,10 +20,10 @@ type EWMA interface {
 // events and processes them on each tick.  It uses the sync/atomic package
 // to manage uncounted events.
 type StandardEWMA struct {
-	alpha float64
+	alpha     float64
 	uncounted int64
-	in chan bool
-	out chan float64
+	in        chan bool
+	out       chan float64
 }
 
 // Create a new EWMA with the given alpha.  Create the clock channel and
@@ -36,17 +36,17 @@ func NewEWMA(alpha float64) *StandardEWMA {
 
 // Create a new EWMA with alpha set for a one-minute moving average.
 func NewEWMA1() *StandardEWMA {
-	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 1))
+	return NewEWMA(1 - math.Exp(-5.0/60.0/1))
 }
 
 // Create a new EWMA with alpha set for a five-minute moving average.
 func NewEWMA5() *StandardEWMA {
-	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 5))
+	return NewEWMA(1 - math.Exp(-5.0/60.0/5))
 }
 
 // Create a new EWMA with alpha set for a fifteen-minute moving average.
 func NewEWMA15() *StandardEWMA {
-	return NewEWMA(1 - math.Exp(-5.0 / 60.0 / 15))
+	return NewEWMA(1 - math.Exp(-5.0/60.0/15))
 }
 
 // Return the moving average rate of events per second.

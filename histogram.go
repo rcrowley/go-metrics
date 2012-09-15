@@ -25,9 +25,9 @@ type Histogram interface {
 // The standard implementation of a Histogram uses a Sample and a goroutine
 // to synchronize its calculations.
 type StandardHistogram struct {
-	s Sample
-	in chan int64
-	out chan histogramV
+	s     Sample
+	in    chan int64
+	out   chan histogramV
 	reset chan bool
 }
 
@@ -35,7 +35,7 @@ type StandardHistogram struct {
 // from the synchronizing goroutine.
 type histogramV struct {
 	count, sum, min, max int64
-	variance [2]float64
+	variance             [2]float64
 }
 
 // Create a new histogram with the given Sample.  Create the communication
@@ -74,7 +74,9 @@ func (h *StandardHistogram) Count() int64 {
 // Return the maximal value seen since the histogram was last cleared.
 func (h *StandardHistogram) Max() int64 {
 	hv := <-h.out
-	if 0 < hv.count { return hv.max }
+	if 0 < hv.count {
+		return hv.max
+	}
 	return 0
 }
 
@@ -90,7 +92,9 @@ func (h *StandardHistogram) Mean() float64 {
 // Return the minimal value seen since the histogram was last cleared.
 func (h *StandardHistogram) Min() int64 {
 	hv := <-h.out
-	if 0 < hv.count { return hv.min }
+	if 0 < hv.count {
+		return hv.min
+	}
 	return 0
 }
 
@@ -109,15 +113,15 @@ func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
 	if size > 0 {
 		sort.Sort(values)
 		for i, p := range ps {
-			pos := p * float64(size + 1)
+			pos := p * float64(size+1)
 			if pos < 1.0 {
 				scores[i] = float64(values[0])
 			} else if pos >= float64(size) {
-				scores[i] = float64(values[size - 1])
+				scores[i] = float64(values[size-1])
 			} else {
-				lower := float64(values[int(pos) - 1])
+				lower := float64(values[int(pos)-1])
 				upper := float64(values[int(pos)])
-				scores[i] = lower + (pos - math.Floor(pos)) * (upper - lower)
+				scores[i] = lower + (pos-math.Floor(pos))*(upper-lower)
 			}
 		}
 	}
@@ -138,8 +142,10 @@ func (h *StandardHistogram) Update(v int64) {
 // Return the variance of all values seen since the histogram was last cleared.
 func (h *StandardHistogram) Variance() float64 {
 	hv := <-h.out
-	if 1 >= hv.count { return 0.0 }
-	return hv.variance[1] / float64(hv.count - 1)
+	if 1 >= hv.count {
+		return 0.0
+	}
+	return hv.variance[1] / float64(hv.count-1)
 }
 
 // Receive inputs and send outputs.  Sample each input and update values in
@@ -151,8 +157,12 @@ func (h *StandardHistogram) arbiter() {
 		case v := <-h.in:
 			h.s.Update(v)
 			hv.count++
-			if v < hv.min { hv.min = v }
-			if v > hv.max { hv.max = v }
+			if v < hv.min {
+				hv.min = v
+			}
+			if v > hv.max {
+				hv.max = v
+			}
 			hv.sum += v
 			fv := float64(v)
 			if -1.0 == hv.variance[0] {
@@ -161,11 +171,11 @@ func (h *StandardHistogram) arbiter() {
 			} else {
 				m := hv.variance[0]
 				s := hv.variance[1]
-				hv.variance[0] = m + (fv - m) / float64(hv.count)
-				hv.variance[1] = s + (fv - m) * (fv - hv.variance[0])
+				hv.variance[0] = m + (fv-m)/float64(hv.count)
+				hv.variance[1] = s + (fv-m)*(fv-hv.variance[0])
 			}
 		case h.out <- hv:
-		case <- h.reset:
+		case <-h.reset:
 			h.s.Clear()
 			hv = newHistogramV()
 		}
@@ -174,6 +184,7 @@ func (h *StandardHistogram) arbiter() {
 
 // Cribbed from the standard library's `sort` package.
 type int64Slice []int64
+
 func (p int64Slice) Len() int           { return len(p) }
 func (p int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
