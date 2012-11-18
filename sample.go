@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"container/heap"
 	"math"
 	"math/rand"
 	"time"
@@ -29,7 +30,7 @@ type ExpDecaySample struct {
 	reservoirSize int
 	alpha         float64
 	in            chan int64
-	out           chan []int64
+	out           chan chan []int64
 	reset         chan bool
 }
 
@@ -40,7 +41,7 @@ func NewExpDecaySample(reservoirSize int, alpha float64) *ExpDecaySample {
 		reservoirSize,
 		alpha,
 		make(chan int64),
-		make(chan []int64),
+		make(chan chan []int64),
 		make(chan bool),
 	}
 	go s.arbiter()
@@ -54,7 +55,7 @@ func (s *ExpDecaySample) Clear() {
 
 // Return the size of the sample, which is at most the reservoir size.
 func (s *ExpDecaySample) Size() int {
-	return len(<-s.out)
+	return len(s.Values())
 }
 
 // Update the sample with a new value.
@@ -64,58 +65,84 @@ func (s *ExpDecaySample) Update(v int64) {
 
 // Return all the values in the sample.
 func (s *ExpDecaySample) Values() []int64 {
-	return <-s.out
+	c := make(chan []int64)
+	s.out <- c
+	return <-c
+}
+
+// An individual sample.
+type expDecaySample struct {
+	k float64
+	v int64
+}
+
+// A min-heap of samples.
+type expDecaySampleHeap []expDecaySample
+
+func (q expDecaySampleHeap) Len() int {
+	return len(q)
+}
+
+func (q expDecaySampleHeap) Less(i, j int) bool {
+	return q[i].k < q[j].k
+}
+
+func (q expDecaySampleHeap) Swap(i, j int) {
+	q[i], q[j] = q[j], q[i]
+}
+
+func (q *expDecaySampleHeap) Push(x interface{}) {
+	q_ := *q
+	n := len(q_)
+	q_ = q_[0 : n+1]
+	q_[n] = x.(expDecaySample)
+	*q = q_
+}
+
+func (q *expDecaySampleHeap) Pop() interface{} {
+	q_ := *q
+	n := len(q_)
+	i := q_[n-1]
+	q_ = q_[0 : n-1]
+	*q = q_
+	return i
 }
 
 // Receive inputs and send outputs.  Count and save each input value,
 // rescaling the sample if enough time has elapsed since the last rescaling.
 // Send a copy of the values as output.
 func (s *ExpDecaySample) arbiter() {
-	count := 0
-	values := make(map[float64]int64)
+	values := make(expDecaySampleHeap, 0, s.reservoirSize)
 	start := time.Now()
 	next := time.Now().Add(rescaleThreshold)
-	var valuesCopy []int64
 	for {
 		select {
 		case v := <-s.in:
+			if len(values) == s.reservoirSize {
+				heap.Pop(&values)
+			}
 			now := time.Now()
-			k := math.Exp(float64(now.Sub(start))*s.alpha) / rand.Float64()
-			count++
-			values[k] = v
-			if count > s.reservoirSize {
-				min := math.MaxFloat64
-				for k, _ := range values {
-					if k < min {
-						min = k
-					}
-				}
-				delete(values, min)
-				valuesCopy = make([]int64, s.reservoirSize)
-			} else {
-				valuesCopy = make([]int64, count)
-			}
+			k := math.Exp(now.Sub(start).Seconds()*s.alpha) / rand.Float64()
+			heap.Push(&values, expDecaySample{k: k, v: v})
 			if now.After(next) {
-				oldStart := start
-				start = time.Now()
-				next = now.Add(rescaleThreshold)
 				oldValues := values
-				values = make(map[float64]int64, len(oldValues))
-				for k, v := range oldValues {
-					values[k*math.Exp(-s.alpha*float64(
-						start.Sub(oldStart)))] = v
+				oldStart := start
+				values = make(expDecaySampleHeap, 0, s.reservoirSize)
+				start = time.Now()
+				next = start.Add(rescaleThreshold)
+				for _, e := range oldValues {
+					e.k = e.k * math.Exp(-s.alpha*float64(start.Sub(oldStart)))
+					heap.Push(&values, e)
 				}
 			}
-			i := 0
-			for _, v := range values {
-				valuesCopy[i] = v
-				i++
+		case c := <-s.out:
+			valuesCopy := make([]int64, len(values))
+			for i, e := range values {
+				valuesCopy[i] = e.v
 			}
-		case s.out <- valuesCopy: // TODO Might need to make another copy here.
+			c <- valuesCopy
 		case <-s.reset:
-			count = 0
-			values = make(map[float64]int64)
-			valuesCopy = make([]int64, 0)
+			values = make(expDecaySampleHeap, 0, s.reservoirSize)
 			start = time.Now()
 			next = start.Add(rescaleThreshold)
 		}
@@ -128,7 +155,7 @@ func (s *ExpDecaySample) arbiter() {
 type UniformSample struct {
 	reservoirSize int
 	in            chan int64
-	out           chan []int64
+	out           chan chan []int64
 	reset         chan bool
 }
 
@@ -137,7 +164,7 @@ func NewUniformSample(reservoirSize int) *UniformSample {
 	s := &UniformSample{
 		reservoirSize,
 		make(chan int64),
-		make(chan []int64),
+		make(chan chan []int64),
 		make(chan bool),
 	}
 	go s.arbiter()
@@ -151,7 +178,7 @@ func (s *UniformSample) Clear() {
 
 // Return the size of the sample, which is at most the reservoir size.
 func (s *UniformSample) Size() int {
-	return len(<-s.out)
+	return len(s.Values())
 }
 
 // Update the sample with a new value.
@@ -161,34 +188,33 @@ func (s *UniformSample) Update(v int64) {
 
 // Return all the values in the sample.
 func (s *UniformSample) Values() []int64 {
-	return <-s.out
+	c := make(chan []int64)
+	s.out <- c
+	return <-c
 }
 
 // Receive inputs and send outputs.  Count and save each input value at a
 // random index.  Send a copy of the values as output.
 func (s *UniformSample) arbiter() {
-	count := 0
-	values := make([]int64, s.reservoirSize)
-	var valuesCopy []int64
+	values := make([]int64, 0, s.reservoirSize)
 	for {
+		n := len(values)
 		select {
 		case v := <-s.in:
-			count++
-			if count < s.reservoirSize {
-				values[count-1] = v
-				valuesCopy = make([]int64, count)
+			if n < s.reservoirSize {
+				values = values[0 : n+1]
+				values[n] = v
 			} else {
 				values[rand.Intn(s.reservoirSize)] = v
-				valuesCopy = make([]int64, len(values))
 			}
-			for i := 0; i < len(valuesCopy); i++ {
+		case c := <-s.out:
+			valuesCopy := make([]int64, n)
+			for i := 0; i < n; i++ {
 				valuesCopy[i] = values[i]
 			}
-		case s.out <- valuesCopy: // TODO Might need to make another copy here.
+			c <- valuesCopy
 		case <-s.reset:
-			count = 0
-			values = make([]int64, s.reservoirSize)
-			valuesCopy = make([]int64, 0)
+			values = make([]int64, 0, s.reservoirSize)
 		}
 	}
 }
