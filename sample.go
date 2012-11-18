@@ -173,9 +173,9 @@ func (s *UniformSample) arbiter() {
 	for {
 		select {
 		case v := <-s.in:
-			count++
 			if count < s.reservoirSize {
-				values[count-1] = v
+				values[count] = v
+				count++
 				valuesCopy = make([]int64, count)
 			} else {
 				values[rand.Intn(s.reservoirSize)] = v

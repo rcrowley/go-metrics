@@ -109,6 +109,27 @@ func TestUniformSample(t *testing.T) {
 	}
 }
 
+func TestUniformSampleIncludesTail(t *testing.T) {
+	s := NewUniformSample(100)
+	max := 100
+
+	for i := 0; i < max; i++ {
+		s.Update(int64(i))
+	}
+
+	v := s.Values()
+	sum := 0
+	exp := (max - 1) * max / 2
+
+	for i := 0; i < len(v); i++ {
+		sum += int(v[i])
+	}
+
+	if exp != sum {
+		t.Errorf("sum: %v != %v\n", exp, sum)
+	}
+}
+
 func benchmarkSample(b *testing.B, s Sample) {
 	var m runtime.MemStats
 	var p [2]uint64
