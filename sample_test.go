@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"runtime"
 	"testing"
+	"time"
 )
 
 func TestExpDecaySample10(t *testing.T) {
@@ -57,6 +58,36 @@ func TestExpDecaySample1000(t *testing.T) {
 		if v > 1000 || v < 0 {
 			t.Errorf("out of range [0, 100): %v\n", v)
 		}
+	}
+}
+
+// This test makes sure that the sample's priority is not amplified by using
+// nanosecond duration since start rather than second duration since start.
+// The priority becomes +Inf quickly after starting if this is done,
+// effectively freezing the set of samples until a rescale step happens.
+func TestExpDecaySampleNanosecondRegression(t *testing.T) {
+	s := NewExpDecaySample(100, 0.99)
+
+	for i := 0; i < 100; i++ {
+		s.Update(10)
+	}
+
+	time.Sleep(1 * time.Millisecond)
+
+	for i := 0; i < 100; i++ {
+		s.Update(20)
+	}
+
+	v := s.Values()
+	avg := float64(0)
+
+	for i := 0; i < len(v); i++ {
+		avg += float64(v[i])
+	}
+
+	avg /= float64(len(v))
+	if avg > 16 || avg < 14 {
+		t.Errorf("out of range [14, 16]: %v\n", avg)
 	}
 }
 

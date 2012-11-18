@@ -80,7 +80,7 @@ func (s *ExpDecaySample) arbiter() {
 		select {
 		case v := <-s.in:
 			now := time.Now()
-			k := math.Exp(float64(now.Sub(start))*s.alpha) / rand.Float64()
+			k := math.Exp(now.Sub(start).Seconds()*s.alpha) / rand.Float64()
 			count++
 			values[k] = v
 			if count > s.reservoirSize {
