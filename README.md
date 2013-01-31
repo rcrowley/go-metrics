@@ -19,8 +19,7 @@ g := metrics.NewGauge()
 r.RegisterGauge("bar", g)
 g.Update(47)
 
-s := metrics.NewExpDecaySample(1028, 0.015)
-//s := metrics.NewUniformSample(1028)
+s := metrics.NewExpDecaySample(1028, 0.015) // or metrics.NewUniformSample(1028)
 h := metrics.NewHistogram(s)
 r.RegisterHistogram("baz", h)
 h.Update(47)
@@ -53,5 +52,5 @@ Installation
 ------------
 
 ```sh
-go install github.com/rcrowley/go-metrics
+go get github.com/rcrowley/go-metrics
 ```
