@@ -49,7 +49,7 @@ Periodically emit every metric to Graphite:
 
 ```go
 addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
-metrics.Graphite(metrics.DefaultRegistry, 10, addr)
+metrics.Graphite(metrics.DefaultRegistry, 10, "metrics", addr)
 ```
 
 Installation
