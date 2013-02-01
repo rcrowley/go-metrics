@@ -15,7 +15,8 @@ type Registry interface {
 	Unregister(string)
 }
 
-// The standard implementation of a Registry is a mutex-protected mapping of names to metrics.
+// The standard implementation of a Registry is a mutex-protected map
+// of names to metrics.
 type StandardRegistry struct {
 	mutex   *sync.Mutex
 	metrics map[string]interface{}
@@ -71,4 +72,35 @@ func (r *StandardRegistry) Unregister(name string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	delete(r.metrics, name)
+}
+
+var DefaultRegistry *StandardRegistry
+
+// Call the given function for each registered metric.
+func Each(f func(string, interface{})) {
+	DefaultRegistry.Each(f)
+}
+
+// Get the metric by the given name or nil if none is registered.
+func Get(name string) interface{} {
+	return DefaultRegistry.Get(name)
+}
+
+// Register the given metric under the given name.
+func Register(name string, i interface{}) {
+	DefaultRegistry.Register(name, i)
+}
+
+// Run all registered healthchecks.
+func RunHealthchecks() {
+	DefaultRegistry.RunHealthchecks()
+}
+
+// Unregister the metric with the given name.
+func Unregister(name string) {
+	DefaultRegistry.Unregister(name)
+}
+
+func init() {
+	DefaultRegistry = NewRegistry()
 }

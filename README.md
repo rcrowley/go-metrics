@@ -9,43 +9,46 @@ Usage
 Create and update metrics:
 
 ```go
-r := metrics.NewRegistry()
-
 c := metrics.NewCounter()
-r.RegisterCounter("foo", c)
+metrics.Register("foo", c)
 c.Inc(47)
 
 g := metrics.NewGauge()
-r.RegisterGauge("bar", g)
+metrics.Register("bar", g)
 g.Update(47)
 
 s := metrics.NewExpDecaySample(1028, 0.015) // or metrics.NewUniformSample(1028)
 h := metrics.NewHistogram(s)
-r.RegisterHistogram("baz", h)
+metrics.Register("baz", h)
 h.Update(47)
 
 m := metrics.NewMeter()
-r.RegisterMeter("quux", m)
+metrics.RegisterMeter("quux", m)
 m.Mark(47)
 
 t := metrics.NewTimer()
-r.RegisterTimer("bang", t)
-t.Update(47)
+metrics.RegisterTimer("bang", t)
 t.Time(func() {})
+t.Update(47)
 ```
 
 Periodically log every metric in human-readable form to standard error:
 
 ```go
-metrics.Log(r, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+metrics.Log(metrics.DefaultRegistry, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 ```
 
 Periodically log every metric in slightly-more-parseable form to syslog:
 
 ```go
-w, err := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")
-if nil != err { log.Fatalln(err) }
-metrics.Syslog(r, 60, w)
+w, _ := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")
+metrics.Syslog(metrics.DefaultRegistry, 60, w)
+```
+
+Periodically emit every metric to Graphite:
+
+```go
+metrics.Graphite(metrics.DefaultRegistry, 60, "127.0.0.1:2003")
 ```
 
 Installation
