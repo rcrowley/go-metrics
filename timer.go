@@ -19,7 +19,8 @@ type Timer interface {
 	RateMean() float64
 	StdDev() float64
 	Time(func())
-	Update(uint64)
+	Update(time.Duration)
+	UpdateSince(time.Time)
 }
 
 // The standard implementation of a Timer uses a Histogram and Meter directly.
