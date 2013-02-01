@@ -102,11 +102,17 @@ func (t *StandardTimer) StdDev() float64 {
 func (t *StandardTimer) Time(f func()) {
 	ts := time.Now()
 	f()
-	t.Update(uint64(time.Now().Sub(ts)))
+	t.Update(time.Since(ts))
 }
 
 // Record the duration of an event.
-func (t *StandardTimer) Update(duration uint64) {
-	t.h.Update(int64(duration))
+func (t *StandardTimer) Update(d time.Duration) {
+	t.h.Update(int64(d))
+	t.m.Mark(1)
+}
+
+// Record the duration of an event that started at a time and ends now.
+func (t *StandardTimer) UpdateSince(ts time.Time) {
+	t.h.Update(int64(time.Since(ts)))
 	t.m.Mark(1)
 }
