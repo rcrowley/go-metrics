@@ -48,7 +48,8 @@ metrics.Syslog(metrics.DefaultRegistry, 60, w)
 Periodically emit every metric to Graphite:
 
 ```go
-metrics.Graphite(metrics.DefaultRegistry, 60, "127.0.0.1:2003")
+addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
+metrics.Graphite(metrics.DefaultRegistry, 10, addr)
 ```
 
 Installation

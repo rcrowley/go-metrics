@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-func Graphite(r Registry, interval int, addr string) {
+func Graphite(r Registry, interval int, addr *net.TCPAddr) {
 	for {
 		now := time.Now().Unix()
-		conn, err := net.Dial("tcp", addr)
-		if err != nil {
+		conn, err := net.DialTCP("tcp", nil, addr)
+		if nil != err {
 			continue
 		}
 		w := bufio.NewWriter(conn)
