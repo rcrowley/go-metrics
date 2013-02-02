@@ -97,8 +97,7 @@ func RegisterRuntimeMemStats(r Registry) {
 	r.Register("runtime.MemStats.NextGC", NewGauge())
 	r.Register("runtime.MemStats.LastGC", NewGauge())
 	r.Register("runtime.MemStats.PauseTotalNs", NewGauge())
-	r.Register("runtime.MemStats.PauseNs",
-		NewHistogram(NewExpDecaySample(1028, 0.015)))
+	r.Register("runtime.MemStats.PauseNs", NewHistogram(NewExpDecaySample(1028, 0.015)))
 	r.Register("runtime.MemStats.NumGC", NewGauge())
 	r.Register("runtime.MemStats.EnableGC", NewGauge())
 	r.Register("runtime.MemStats.DebugGC", NewGauge())
