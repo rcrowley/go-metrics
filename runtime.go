@@ -33,6 +33,7 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 	r.Get("runtime.MemStats.HeapSys").(Gauge).Update(int64(m.HeapSys))
 	r.Get("runtime.MemStats.HeapIdle").(Gauge).Update(int64(m.HeapIdle))
 	r.Get("runtime.MemStats.HeapInuse").(Gauge).Update(int64(m.HeapInuse))
+	r.Get("runtime.MemStats.HeapReleased").(Gauge).Update(int64(m.HeapReleased))
 	r.Get("runtime.MemStats.HeapObjects").(Gauge).Update(int64(m.HeapObjects))
 
 	r.Get("runtime.MemStats.StackInuse").(Gauge).Update(int64(m.StackInuse))
@@ -44,6 +45,7 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 	r.Get("runtime.MemStats.BuckHashSys").(Gauge).Update(int64(m.BuckHashSys))
 
 	r.Get("runtime.MemStats.NextGC").(Gauge).Update(int64(m.NextGC))
+	r.Get("runtime.MemStats.LastGC").(Gauge).Update(int64(m.LastGC))
 	r.Get("runtime.MemStats.PauseTotalNs").(Gauge).Update(int64(m.PauseTotalNs))
 	r.Get("runtime.MemStats.PauseNs").(Histogram).Update(int64(m.PauseNs[0]))
 	r.Get("runtime.MemStats.NumGC").(Gauge).Update(int64(m.NumGC))
@@ -81,6 +83,7 @@ func RegisterRuntimeMemStats(r Registry) {
 	r.Register("runtime.MemStats.HeapSys", NewGauge())
 	r.Register("runtime.MemStats.HeapIdle", NewGauge())
 	r.Register("runtime.MemStats.HeapInuse", NewGauge())
+	r.Register("runtime.MemStats.HeapReleased", NewGauge())
 	r.Register("runtime.MemStats.HeapObjects", NewGauge())
 
 	r.Register("runtime.MemStats.StackInuse", NewGauge())
@@ -92,6 +95,7 @@ func RegisterRuntimeMemStats(r Registry) {
 	r.Register("runtime.MemStats.BuckHashSys", NewGauge())
 
 	r.Register("runtime.MemStats.NextGC", NewGauge())
+	r.Register("runtime.MemStats.LastGC", NewGauge())
 	r.Register("runtime.MemStats.PauseTotalNs", NewGauge())
 	r.Register("runtime.MemStats.PauseNs",
 		NewHistogram(NewExpDecaySample(1028, 0.015)))
