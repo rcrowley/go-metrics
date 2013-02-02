@@ -7,9 +7,9 @@ import (
 
 // Capture new values for the Go runtime statistics exported in
 // runtime.MemStats.  This is designed to be called as a goroutine.
-func CaptureRuntimeMemStats(r Registry, interval int64, readMemStats bool) {
+func CaptureRuntimeMemStats(r Registry, interval int64) {
 	for {
-		CaptureRuntimeMemStatsOnce(r, readMemStats)
+		CaptureRuntimeMemStatsOnce(r)
 		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
 	}
 }
@@ -17,14 +17,10 @@ func CaptureRuntimeMemStats(r Registry, interval int64, readMemStats bool) {
 // Capture new values for the Go runtime statistics exported in
 // runtime.MemStats.  This is designed to be called in a background
 // goroutine.  Giving a registry which has not been given to
-// RegisterRuntimeMemStats will panic.  If the second parameter is
-// false, the counters will be left to the lazy updates provided by
-// the runtime.
-func CaptureRuntimeMemStatsOnce(r Registry, readMemStats bool) {
+// RegisterRuntimeMemStats will panic.
+func CaptureRuntimeMemStatsOnce(r Registry) {
 	var m runtime.MemStats
-	if readMemStats {
-		runtime.ReadMemStats(&m)
-	}
+	runtime.ReadMemStats(&m)
 
 	r.Get("runtime.MemStats.Alloc").(Gauge).Update(int64(m.Alloc))
 	r.Get("runtime.MemStats.TotalAlloc").(Gauge).Update(int64(m.TotalAlloc))
