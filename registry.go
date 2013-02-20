@@ -8,10 +8,19 @@ import "sync"
 // This is an interface so as to encourage other structs to implement
 // the Registry API as appropriate.
 type Registry interface {
+	// Call the given function for each registered metric.
 	Each(func(string, interface{}))
+
+	// Get the metric by the given name or nil if none is registered.
 	Get(string) interface{}
+
+	// Register the given metric under the given name.
 	Register(string, interface{})
+
+	// Run all registered healthchecks.
 	RunHealthchecks()
+
+	// Unregister the metric with the given name.
 	Unregister(string)
 }
 
@@ -21,6 +30,9 @@ type StandardRegistry struct {
 	mutex   *sync.Mutex
 	metrics map[string]interface{}
 }
+
+// Check interface.
+var _ Registry = &StandardRegistry{}
 
 // Create a new registry.
 func NewRegistry() *StandardRegistry {
