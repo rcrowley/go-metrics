@@ -2,6 +2,7 @@ go-metrics
 ==========
 
 Go port of Coda Hale's Metrics library: <https://github.com/codahale/metrics>.
+Documentation: http://godoc.org/github.com/rcrowley/go-metrics
 
 Usage
 -----
@@ -23,11 +24,11 @@ metrics.Register("baz", h)
 h.Update(47)
 
 m := metrics.NewMeter()
-metrics.RegisterMeter("quux", m)
+metrics.Register("quux", m)
 m.Mark(47)
 
 t := metrics.NewTimer()
-metrics.RegisterTimer("bang", t)
+metrics.Register("bang", t)
 t.Time(func() {})
 t.Update(47)
 ```
