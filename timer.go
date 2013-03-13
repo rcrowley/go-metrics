@@ -5,7 +5,7 @@ import "time"
 // Timers capture the duration and rate of events.
 //
 // This is an interface so as to encourage other structs to implement
-// the Histogram API as appropriate.
+// the Timer API as appropriate.
 type Timer interface {
 	Count() int64
 	Max() int64
