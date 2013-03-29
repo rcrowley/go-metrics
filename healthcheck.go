@@ -18,6 +18,9 @@ type StandardHealthcheck struct {
 	f   func(Healthcheck)
 }
 
+// Force the compiler to check that StandardHealthcheck implements Healthcheck.
+var _ Healthcheck = &StandardHealthcheck{}
+
 // Create a new healthcheck, which will use the given function to update
 // its status.
 func NewHealthcheck(f func(Healthcheck)) *StandardHealthcheck {

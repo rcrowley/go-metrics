@@ -29,6 +29,9 @@ type StandardTimer struct {
 	m Meter
 }
 
+// Force the compiler to check that StandardTimer implements Timer.
+var _ Timer = &StandardTimer{}
+
 // Create a new timer with the given Histogram and Meter.
 func NewCustomTimer(h Histogram, m Meter) *StandardTimer {
 	return &StandardTimer{h, m}

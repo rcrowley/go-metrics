@@ -17,6 +17,9 @@ type StandardGauge struct {
 	value int64
 }
 
+// Force the compiler to check that StandardGauge implements Gauge.
+var _ Gauge = &StandardGauge{}
+
 // Create a new gauge.
 func NewGauge() *StandardGauge {
 	return &StandardGauge{0}

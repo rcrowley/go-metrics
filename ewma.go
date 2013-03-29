@@ -26,6 +26,9 @@ type StandardEWMA struct {
 	out       chan float64
 }
 
+// Force the compiler to check that StandardEWMA implements EWMA.
+var _ EWMA = &StandardEWMA{}
+
 // Create a new EWMA with the given alpha.  Create the clock channel and
 // start the ticker goroutine.
 func NewEWMA(alpha float64) *StandardEWMA {

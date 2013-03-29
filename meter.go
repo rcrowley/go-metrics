@@ -25,6 +25,9 @@ type StandardMeter struct {
 	ticker *time.Ticker
 }
 
+// Force the compiler to check that StandardMeter implements Meter.
+var _ Meter = &StandardMeter{}
+
 // A meterV contains all the values that would need to be passed back
 // from the synchronizing goroutine.
 type meterV struct {

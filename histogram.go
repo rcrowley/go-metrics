@@ -31,6 +31,9 @@ type StandardHistogram struct {
 	reset chan bool
 }
 
+// Force the compiler to check that StandardHistogram implements Histogram.
+var _ Histogram = &StandardHistogram{}
+
 // A histogramV contains all the values that would need to be passed back
 // from the synchronizing goroutine.
 type histogramV struct {

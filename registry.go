@@ -8,6 +8,7 @@ import "sync"
 // This is an interface so as to encourage other structs to implement
 // the Registry API as appropriate.
 type Registry interface {
+
 	// Call the given function for each registered metric.
 	Each(func(string, interface{}))
 
@@ -22,6 +23,7 @@ type Registry interface {
 
 	// Unregister the metric with the given name.
 	Unregister(string)
+
 }
 
 // The standard implementation of a Registry is a mutex-protected map
@@ -31,7 +33,7 @@ type StandardRegistry struct {
 	metrics map[string]interface{}
 }
 
-// Check interface.
+// Force the compiler to check that StandardRegistry implements Registry.
 var _ Registry = &StandardRegistry{}
 
 // Create a new registry.
@@ -86,7 +88,7 @@ func (r *StandardRegistry) Unregister(name string) {
 	delete(r.metrics, name)
 }
 
-var DefaultRegistry *StandardRegistry
+var DefaultRegistry *StandardRegistry = NewRegistry()
 
 // Call the given function for each registered metric.
 func Each(f func(string, interface{})) {
@@ -111,8 +113,4 @@ func RunHealthchecks() {
 // Unregister the metric with the given name.
 func Unregister(name string) {
 	DefaultRegistry.Unregister(name)
-}
-
-func init() {
-	DefaultRegistry = NewRegistry()
 }

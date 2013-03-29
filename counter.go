@@ -19,6 +19,9 @@ type StandardCounter struct {
 	count int64
 }
 
+// Force the compiler to check that StandardCounter implements Counter.
+var _ Counter = &StandardCounter{}
+
 // Create a new counter.
 func NewCounter() *StandardCounter {
 	return &StandardCounter{0}
