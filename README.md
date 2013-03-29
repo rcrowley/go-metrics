@@ -2,7 +2,8 @@ go-metrics
 ==========
 
 Go port of Coda Hale's Metrics library: <https://github.com/codahale/metrics>.
-Documentation: http://godoc.org/github.com/rcrowley/go-metrics
+
+Documentation: <http://godoc.org/github.com/rcrowley/go-metrics>.
 
 Usage
 -----
