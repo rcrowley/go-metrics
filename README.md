@@ -37,21 +37,21 @@ t.Update(47)
 Periodically log every metric in human-readable form to standard error:
 
 ```go
-metrics.Log(metrics.DefaultRegistry, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+go metrics.Log(metrics.DefaultRegistry, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 ```
 
 Periodically log every metric in slightly-more-parseable form to syslog:
 
 ```go
 w, _ := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")
-metrics.Syslog(metrics.DefaultRegistry, 60, w)
+go metrics.Syslog(metrics.DefaultRegistry, 60, w)
 ```
 
 Periodically emit every metric to Graphite:
 
 ```go
 addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
-metrics.Graphite(metrics.DefaultRegistry, 10, "metrics", addr)
+go metrics.Graphite(metrics.DefaultRegistry, 10, "metrics", addr)
 ```
 
 Installation
