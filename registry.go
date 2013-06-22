@@ -23,7 +23,6 @@ type Registry interface {
 
 	// Unregister the metric with the given name.
 	Unregister(string)
-
 }
 
 // The standard implementation of a Registry is a mutex-protected map
