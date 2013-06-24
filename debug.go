@@ -21,11 +21,12 @@ func CaptureDebugGCStats(r Registry, interval int64) {
 // Giving a registry which has not been given to RegisterDebugGCStats will
 // panic.
 func CaptureDebugGCStatsOnce(r Registry) {
+	lastGC := gcStats.LastGC
 	debug.ReadGCStats(&gcStats)
 	r.Get("debug.GCStats.LastGC").(Gauge).Update(int64(gcStats.LastGC.UnixNano()))
 	r.Get("debug.GCStats.NumGC").(Gauge).Update(int64(gcStats.NumGC))
 	r.Get("debug.GCStats.PauseTotal").(Gauge).Update(int64(gcStats.PauseTotal))
-	if 0 < len(gcStats.Pause) {
+	if lastGC != gcStats.LastGC && 0 < len(gcStats.Pause) {
 		r.Get("debug.GCStats.Pause").(Histogram).Update(int64(gcStats.Pause[0]))
 	}
 	//r.Get("debug.GCStats.PauseQuantiles").(Histogram).Update(gcStats.PauseQuantiles)
