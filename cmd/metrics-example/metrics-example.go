@@ -110,8 +110,11 @@ func main() {
 		}()
 	}
 
+	metrics.RegisterDebugGCStats(r)
+	go metrics.CaptureDebugGCStats(r, 5)
+
 	metrics.RegisterRuntimeMemStats(r)
-	metrics.CaptureRuntimeMemStats(r, 5)
+	go metrics.CaptureRuntimeMemStats(r, 5)
 
 	metrics.Log(r, 60, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 
