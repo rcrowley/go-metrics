@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 )
 
-// Output each metric in the given registry periodically using the given
-// logger.  The interval is to be given in seconds.
+// MarshalJSON returns a byte slice containing a JSON representation of all
+// the metrics in the Registry.
 func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 	data := make(map[string]map[string]interface{})
-
 	r.Each(func(name string, i interface{}) {
 		values := make(map[string]interface{})
-
 		switch m := i.(type) {
 		case Counter:
 			values["count"] = m.Count()
@@ -55,7 +53,6 @@ func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["15m.rate"] = m.Rate15()
 			values["mean.rate"] = m.RateMean()
 		}
-
 		data[name] = values
 	})
 	return json.Marshal(data)

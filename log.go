@@ -6,8 +6,8 @@ import (
 )
 
 // Output each metric in the given registry periodically using the given
-// logger.  The interval is to be given in seconds.
-func Log(r Registry, interval int, l *log.Logger) {
+// logger.
+func Log(r Registry, d time.Duration, l *log.Logger) {
 	for {
 		r.Each(func(name string, i interface{}) {
 			switch m := i.(type) {
@@ -60,6 +60,6 @@ func Log(r Registry, interval int, l *log.Logger) {
 				l.Printf("  mean rate:   %12.2f\n", m.RateMean())
 			}
 		})
-		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
+		time.Sleep(d)
 	}
 }

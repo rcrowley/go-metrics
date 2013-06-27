@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func Graphite(r Registry, interval int, prefix string, addr *net.TCPAddr) {
+func Graphite(r Registry, d time.Duration, prefix string, addr *net.TCPAddr) {
 	for {
 		now := time.Now().Unix()
 		conn, err := net.DialTCP("tcp", nil, addr)
@@ -58,6 +58,6 @@ func Graphite(r Registry, interval int, prefix string, addr *net.TCPAddr) {
 			}
 			w.Flush()
 		})
-		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
+		time.Sleep(d)
 	}
 }

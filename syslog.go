@@ -9,8 +9,8 @@ import (
 )
 
 // Output each metric in the given registry to syslog periodically using
-// the given syslogger.  The interval is to be given in seconds.
-func Syslog(r Registry, interval int, w *syslog.Writer) {
+// the given syslogger.
+func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 	for {
 		r.Each(func(name string, i interface{}) {
 			switch m := i.(type) {
@@ -69,6 +69,6 @@ func Syslog(r Registry, interval int, w *syslog.Writer) {
 				))
 			}
 		})
-		time.Sleep(time.Duration(int64(1e9) * int64(interval)))
+		time.Sleep(d)
 	}
 }
