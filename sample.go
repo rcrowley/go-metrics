@@ -138,12 +138,12 @@ func (s *ExpDecaySample) arbiter() {
 					heap.Push(&values, e)
 				}
 			}
-		case c := <-s.out:
+		case ch := <-s.out:
 			valuesCopy := make([]int64, len(values))
 			for i, e := range values {
 				valuesCopy[i] = e.v
 			}
-			c <- valuesCopy
+			ch <- valuesCopy
 		case <-s.reset:
 			values = make(expDecaySampleHeap, 0, s.reservoirSize)
 			start = time.Now()
@@ -210,12 +210,10 @@ func (s *UniformSample) arbiter() {
 			} else {
 				values[rand.Intn(s.reservoirSize)] = v
 			}
-		case c := <-s.out:
+		case ch := <-s.out:
 			valuesCopy := make([]int64, n)
-			for i := 0; i < n; i++ {
-				valuesCopy[i] = values[i]
-			}
-			c <- valuesCopy
+			copy(valuesCopy, values[:n])
+			ch <- valuesCopy
 		case <-s.reset:
 			values = make([]int64, 0, s.reservoirSize)
 		}
