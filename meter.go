@@ -85,7 +85,7 @@ func (m *StandardMeter) arbiter() {
 	a1 := NewEWMA1()
 	a5 := NewEWMA5()
 	a15 := NewEWMA15()
-	tsStart := time.Now()
+	t := time.Now()
 	for {
 		select {
 		case n := <-m.in:
@@ -96,8 +96,7 @@ func (m *StandardMeter) arbiter() {
 			mv.rate5 = a5.Rate()
 			a15.Update(n)
 			mv.rate15 = a15.Rate()
-			mv.rateMean = float64(1e9*mv.count) / float64(
-				time.Now().Sub(tsStart))
+			mv.rateMean = float64(1e9*mv.count) / float64(time.Since(t))
 		case m.out <- mv:
 		case <-m.ticker.C:
 			a1.Tick()
