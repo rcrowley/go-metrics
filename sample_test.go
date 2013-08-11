@@ -1,11 +1,34 @@
 package metrics
 
 import (
-	"math/rand"
 	"runtime"
 	"testing"
 	"time"
 )
+
+func BenchmarkExpDecaySample257(b *testing.B) {
+	benchmarkSample(b, NewExpDecaySample(257, 0.015))
+}
+
+func BenchmarkExpDecaySample514(b *testing.B) {
+	benchmarkSample(b, NewExpDecaySample(514, 0.015))
+}
+
+func BenchmarkExpDecaySample1028(b *testing.B) {
+	benchmarkSample(b, NewExpDecaySample(1028, 0.015))
+}
+
+func BenchmarkUniformSample257(b *testing.B) {
+	benchmarkSample(b, NewUniformSample(257))
+}
+
+func BenchmarkUniformSample514(b *testing.B) {
+	benchmarkSample(b, NewUniformSample(514))
+}
+
+func BenchmarkUniformSample1028(b *testing.B) {
+	benchmarkSample(b, NewUniformSample(1028))
+}
 
 func TestExpDecaySample10(t *testing.T) {
 	s := NewExpDecaySample(100, 0.99)
@@ -131,44 +154,17 @@ func TestUniformSampleIncludesTail(t *testing.T) {
 }
 
 func benchmarkSample(b *testing.B, s Sample) {
-	var m runtime.MemStats
-	var p [2]uint64
-
-	runtime.ReadMemStats(&m)
-	p[0] = m.PauseTotalNs
-
+	b.StopTimer()
+	var memStats runtime.MemStats
+	var pauseTotalNs uint64
+	runtime.ReadMemStats(&memStats)
+	pauseTotalNs = memStats.PauseTotalNs
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		s.Update(rand.Int63())
+		s.Update(1)
 	}
-
+	b.StopTimer()
 	runtime.GC()
-
-	runtime.ReadMemStats(&m)
-	p[1] = m.PauseTotalNs
-
-	b.Logf("GC cost: %d ns/op", int(p[1]-p[0])/b.N)
-}
-
-func BenchmarkExpDecaySample257(b *testing.B) {
-	benchmarkSample(b, NewExpDecaySample(257, 0.015))
-}
-
-func BenchmarkExpDecaySample514(b *testing.B) {
-	benchmarkSample(b, NewExpDecaySample(514, 0.015))
-}
-
-func BenchmarkExpDecaySample1028(b *testing.B) {
-	benchmarkSample(b, NewExpDecaySample(1028, 0.015))
-}
-
-func BenchmarkUniformSample257(b *testing.B) {
-	benchmarkSample(b, NewUniformSample(257))
-}
-
-func BenchmarkUniformSample514(b *testing.B) {
-	benchmarkSample(b, NewUniformSample(514))
-}
-
-func BenchmarkUniformSample1028(b *testing.B) {
-	benchmarkSample(b, NewUniformSample(1028))
+	runtime.ReadMemStats(&memStats)
+	b.Logf("GC cost: %d ns/op", int(memStats.PauseTotalNs-pauseTotalNs)/b.N)
 }

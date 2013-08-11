@@ -22,9 +22,9 @@ type EWMA interface {
 // to manage uncounted events.
 type StandardEWMA struct {
 	alpha     float64
-	init bool
-	mutex *sync.Mutex
-	rate float64
+	init      bool
+	mutex     *sync.Mutex
+	rate      float64
 	uncounted int64
 }
 

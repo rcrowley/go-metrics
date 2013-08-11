@@ -68,47 +68,9 @@ func (s *ExpDecaySample) Update(v int64) {
 
 // Return all the values in the sample.
 func (s *ExpDecaySample) Values() []int64 {
-	c := make(chan []int64)
-	s.out <- c
-	return <-c
-}
-
-// An individual sample.
-type expDecaySample struct {
-	k float64
-	v int64
-}
-
-// A min-heap of samples.
-type expDecaySampleHeap []expDecaySample
-
-func (q expDecaySampleHeap) Len() int {
-	return len(q)
-}
-
-func (q expDecaySampleHeap) Less(i, j int) bool {
-	return q[i].k < q[j].k
-}
-
-func (q expDecaySampleHeap) Swap(i, j int) {
-	q[i], q[j] = q[j], q[i]
-}
-
-func (q *expDecaySampleHeap) Push(x interface{}) {
-	q_ := *q
-	n := len(q_)
-	q_ = q_[0 : n+1]
-	q_[n] = x.(expDecaySample)
-	*q = q_
-}
-
-func (q *expDecaySampleHeap) Pop() interface{} {
-	q_ := *q
-	n := len(q_)
-	i := q_[n-1]
-	q_ = q_[0 : n-1]
-	*q = q_
-	return i
+	ch := make(chan []int64)
+	s.out <- ch
+	return <-ch
 }
 
 // Receive inputs and send outputs.  Count and save each input value,
@@ -191,9 +153,9 @@ func (s *UniformSample) Update(v int64) {
 
 // Return all the values in the sample.
 func (s *UniformSample) Values() []int64 {
-	c := make(chan []int64)
-	s.out <- c
-	return <-c
+	ch := make(chan []int64)
+	s.out <- ch
+	return <-ch
 }
 
 // Receive inputs and send outputs.  Count and save each input value at a
@@ -218,4 +180,42 @@ func (s *UniformSample) arbiter() {
 			values = make([]int64, 0, s.reservoirSize)
 		}
 	}
+}
+
+// An individual sample.
+type expDecaySample struct {
+	k float64
+	v int64
+}
+
+// A min-heap of samples.
+type expDecaySampleHeap []expDecaySample
+
+func (q expDecaySampleHeap) Len() int {
+	return len(q)
+}
+
+func (q expDecaySampleHeap) Less(i, j int) bool {
+	return q[i].k < q[j].k
+}
+
+func (q *expDecaySampleHeap) Pop() interface{} {
+	q_ := *q
+	n := len(q_)
+	i := q_[n-1]
+	q_ = q_[0 : n-1]
+	*q = q_
+	return i
+}
+
+func (q *expDecaySampleHeap) Push(x interface{}) {
+	q_ := *q
+	n := len(q_)
+	q_ = q_[0 : n+1]
+	q_[n] = x.(expDecaySample)
+	*q = q_
+}
+
+func (q expDecaySampleHeap) Swap(i, j int) {
+	q[i], q[j] = q[j], q[i]
 }
