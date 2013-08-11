@@ -9,8 +9,8 @@ var (
 	debugMetrics struct {
 		GCStats struct {
 			LastGC Gauge
-			NumGC Gauge
-			Pause Histogram
+			NumGC  Gauge
+			Pause  Histogram
 			//PauseQuantiles Histogram
 			PauseTotal Gauge
 		}

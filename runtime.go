@@ -6,41 +6,41 @@ import (
 )
 
 var (
-	memStats runtime.MemStats
+	memStats       runtime.MemStats
 	runtimeMetrics struct {
 		MemStats struct {
-			Alloc Gauge
-			BuckHashSys Gauge
-			DebugGC Gauge
-			EnableGC Gauge
-			Frees Gauge
-			HeapAlloc Gauge
-			HeapIdle Gauge
-			HeapInuse Gauge
-			HeapObjects Gauge
+			Alloc        Gauge
+			BuckHashSys  Gauge
+			DebugGC      Gauge
+			EnableGC     Gauge
+			Frees        Gauge
+			HeapAlloc    Gauge
+			HeapIdle     Gauge
+			HeapInuse    Gauge
+			HeapObjects  Gauge
 			HeapReleased Gauge
-			HeapSys Gauge
-			LastGC Gauge
-			Lookups Gauge
-			Mallocs Gauge
-			MCacheInuse Gauge
-			MCacheSys Gauge
-			MSpanInuse Gauge
-			MSpanSys Gauge
-			NextGC Gauge
-			NumGC Gauge
-			PauseNs Histogram
+			HeapSys      Gauge
+			LastGC       Gauge
+			Lookups      Gauge
+			Mallocs      Gauge
+			MCacheInuse  Gauge
+			MCacheSys    Gauge
+			MSpanInuse   Gauge
+			MSpanSys     Gauge
+			NextGC       Gauge
+			NumGC        Gauge
+			PauseNs      Histogram
 			PauseTotalNs Gauge
-			StackInuse Gauge
-			StackSys Gauge
-			Sys Gauge
-			TotalAlloc Gauge
+			StackInuse   Gauge
+			StackSys     Gauge
+			Sys          Gauge
+			TotalAlloc   Gauge
 		}
-		NumCgoCall Gauge
+		NumCgoCall   Gauge
 		NumGoroutine Gauge
 		ReadMemStats Timer
 	}
-	numGC    uint32
+	numGC uint32
 )
 
 // Capture new values for the Go runtime statistics exported in

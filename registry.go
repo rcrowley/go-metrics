@@ -39,7 +39,7 @@ var _ Registry = &StandardRegistry{}
 func NewRegistry() *StandardRegistry {
 	return &StandardRegistry{
 		metrics: make(map[string]interface{}),
-		mutex: &sync.Mutex{},
+		mutex:   &sync.Mutex{},
 	}
 }
 
