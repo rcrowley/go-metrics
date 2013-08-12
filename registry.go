@@ -29,7 +29,7 @@ type Registry interface {
 // of names to metrics.
 type StandardRegistry struct {
 	metrics map[string]interface{}
-	mutex   *sync.Mutex
+	mutex   sync.Mutex
 }
 
 // Force the compiler to check that StandardRegistry implements Registry.
@@ -37,10 +37,7 @@ var _ Registry = &StandardRegistry{}
 
 // Create a new registry.
 func NewRegistry() *StandardRegistry {
-	return &StandardRegistry{
-		metrics: make(map[string]interface{}),
-		mutex:   &sync.Mutex{},
-	}
+	return &StandardRegistry{metrics: make(map[string]interface{})}
 }
 
 // Call the given function for each registered metric.

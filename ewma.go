@@ -23,7 +23,7 @@ type EWMA interface {
 type StandardEWMA struct {
 	alpha     float64
 	init      bool
-	mutex     *sync.Mutex
+	mutex     sync.Mutex
 	rate      float64
 	uncounted int64
 }
@@ -33,10 +33,7 @@ var _ EWMA = &StandardEWMA{}
 
 // Create a new EWMA with the given alpha.
 func NewEWMA(alpha float64) *StandardEWMA {
-	return &StandardEWMA{
-		alpha: alpha,
-		mutex: &sync.Mutex{},
-	}
+	return &StandardEWMA{alpha: alpha}
 }
 
 // Create a new EWMA with alpha set for a one-minute moving average.

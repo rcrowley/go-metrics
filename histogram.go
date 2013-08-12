@@ -28,7 +28,7 @@ type Histogram interface {
 // to synchronize its calculations.
 type StandardHistogram struct {
 	count, sum, min, max int64
-	mutex                *sync.Mutex
+	mutex                sync.Mutex
 	s                    Sample
 	variance             [2]float64
 }
@@ -41,12 +41,9 @@ var _ Histogram = &StandardHistogram{}
 // for special treatment on its first iteration.
 func NewHistogram(s Sample) *StandardHistogram {
 	return &StandardHistogram{
-		count:    0,
 		max:      math.MinInt64,
 		min:      math.MaxInt64,
-		mutex:    &sync.Mutex{},
 		s:        s,
-		sum:      0,
 		variance: [2]float64{-1.0, 0.0},
 	}
 }

@@ -29,7 +29,7 @@ type Sample interface {
 // <http://www.research.att.com/people/Cormode_Graham/library/publications/CormodeShkapenyukSrivastavaXu09.pdf>
 type ExpDecaySample struct {
 	alpha         float64
-	mutex         *sync.Mutex
+	mutex         sync.Mutex
 	reservoirSize int
 	t0, t1        time.Time
 	values        expDecaySampleHeap
@@ -43,7 +43,6 @@ var _ Sample = &ExpDecaySample{}
 func NewExpDecaySample(reservoirSize int, alpha float64) *ExpDecaySample {
 	s := &ExpDecaySample{
 		alpha:         alpha,
-		mutex:         &sync.Mutex{},
 		reservoirSize: reservoirSize,
 		t0:            time.Now(),
 		values:        make(expDecaySampleHeap, 0, reservoirSize),
@@ -108,17 +107,14 @@ func (s *ExpDecaySample) Values() []int64 {
 //
 // <http://www.cs.umd.edu/~samir/498/vitter.pdf>
 type UniformSample struct {
-	mutex         *sync.Mutex
+	mutex         sync.Mutex
 	reservoirSize int
 	values        []int64
 }
 
 // Create a new uniform sample with the given reservoir size.
 func NewUniformSample(reservoirSize int) *UniformSample {
-	return &UniformSample{
-		mutex:         &sync.Mutex{},
-		reservoirSize: reservoirSize,
-	}
+	return &UniformSample{reservoirSize: reservoirSize}
 }
 
 // Clear all samples.
