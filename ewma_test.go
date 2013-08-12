@@ -2,6 +2,14 @@ package metrics
 
 import "testing"
 
+func BenchmarkEWMA(b *testing.B) {
+	a := NewEWMA1()
+	for i := 0; i < b.N; i++ {
+		a.Update(1)
+		a.Tick()
+	}
+}
+
 func TestEWMA1(t *testing.T) {
 	a := NewEWMA1()
 	a.Update(3)
