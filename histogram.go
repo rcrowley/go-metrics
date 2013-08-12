@@ -50,12 +50,12 @@ func NewHistogram(s Sample) *StandardHistogram {
 
 // Clear the histogram.
 func (h *StandardHistogram) Clear() {
-	h.s.Clear()
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 	h.count = 0
 	h.max = math.MinInt64
 	h.min = math.MaxInt64
+	h.s.Clear()
 	h.sum = 0
 	h.variance = [...]float64{-1.0, 0.0}
 }
