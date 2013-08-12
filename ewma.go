@@ -56,6 +56,8 @@ func NewEWMA15() *StandardEWMA {
 
 // Return the moving average rate of events per second.
 func (a *StandardEWMA) Rate() float64 {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
 	return a.rate * float64(1e9)
 }
 
