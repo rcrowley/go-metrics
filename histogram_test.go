@@ -2,6 +2,13 @@ package metrics
 
 import "testing"
 
+func BenchmarkHistogram(b *testing.B) {
+	h := NewHistogram(NewUniformSample(100))
+	for i := 0; i < b.N; i++ {
+		h.Update(1)
+	}
+}
+
 func TestEmptyHistogram(t *testing.T) {
 	h := NewHistogram(NewUniformSample(100))
 	if count := h.Count(); 0 != count {
