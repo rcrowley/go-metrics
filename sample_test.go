@@ -79,7 +79,7 @@ func TestExpDecaySample1000(t *testing.T) {
 	}
 	for _, v := range s.Values() {
 		if v > 1000 || v < 0 {
-			t.Errorf("out of range [0, 100): %v\n", v)
+			t.Errorf("out of range [0, 1000): %v\n", v)
 		}
 	}
 }
