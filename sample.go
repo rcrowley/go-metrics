@@ -87,7 +87,7 @@ func (s *ExpDecaySample) Update(v int64) {
 		s.t1 = s.t0.Add(rescaleThreshold)
 		for _, v := range values {
 			v.k = v.k * math.Exp(-s.alpha*float64(s.t0.Sub(t0)))
-			heap.Push(&values, v)
+			heap.Push(&s.values, v)
 		}
 	}
 }
