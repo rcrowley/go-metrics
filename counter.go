@@ -13,6 +13,32 @@ type Counter interface {
 	Inc(int64)
 }
 
+// Create a new Counter.
+func NewCounter() Counter {
+	if !ObserverEffect {
+		return NilCounter{}
+	}
+	return &StandardCounter{0}
+}
+
+// No-op Counter.
+type NilCounter struct{}
+
+// Force the compiler to check that NilCounter implements Counter.
+var _ Counter = NilCounter{}
+
+// No-op.
+func (c NilCounter) Clear() {}
+
+// No-op.
+func (c NilCounter) Count() int64 { return 0 }
+
+// No-op.
+func (c NilCounter) Dec(i int64) {}
+
+// No-op.
+func (c NilCounter) Inc(i int64) {}
+
 // The standard implementation of a Counter uses the sync/atomic package
 // to manage a single int64 value.
 type StandardCounter struct {
@@ -21,11 +47,6 @@ type StandardCounter struct {
 
 // Force the compiler to check that StandardCounter implements Counter.
 var _ Counter = &StandardCounter{}
-
-// Create a new counter.
-func NewCounter() *StandardCounter {
-	return &StandardCounter{0}
-}
 
 // Clear the counter: set it to zero.
 func (c *StandardCounter) Clear() {
