@@ -23,6 +23,80 @@ type Timer interface {
 	UpdateSince(time.Time)
 }
 
+// Create a new timer with the given Histogram and Meter.
+func NewCustomTimer(h Histogram, m Meter) Timer {
+	if UseNilMetrics {
+		return NilTimer{}
+	}
+	return &StandardTimer{h, m}
+}
+
+// Create a new timer with a standard histogram and meter.  The histogram
+// will use an exponentially-decaying sample with the same reservoir size
+// and alpha as UNIX load averages.
+func NewTimer() Timer {
+	if UseNilMetrics {
+		return NilTimer{}
+	}
+	return &StandardTimer{
+		NewHistogram(NewExpDecaySample(1028, 0.015)),
+		NewMeter(),
+	}
+}
+
+// No-op Timer.
+type NilTimer struct {
+	h Histogram
+	m Meter
+}
+
+// Force the compiler to check that NilTimer implements Timer.
+var _ Timer = NilTimer{}
+
+// No-op.
+func (t NilTimer) Count() int64 { return 0 }
+
+// No-op.
+func (t NilTimer) Max() int64 { return 0 }
+
+// No-op.
+func (t NilTimer) Mean() float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) Min() int64 { return 0 }
+
+// No-op.
+func (t NilTimer) Percentile(p float64) float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) Percentiles(ps []float64) []float64 {
+	return make([]float64, len(ps))
+}
+
+// No-op.
+func (t NilTimer) Rate1() float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) Rate5() float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) Rate15() float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) RateMean() float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) StdDev() float64 { return 0.0 }
+
+// No-op.
+func (t NilTimer) Time(f func()) {}
+
+// No-op.
+func (t NilTimer) Update(d time.Duration) {}
+
+// No-op.
+func (t NilTimer) UpdateSince(ts time.Time) {}
+
 // The standard implementation of a Timer uses a Histogram and Meter directly.
 type StandardTimer struct {
 	h Histogram
@@ -31,21 +105,6 @@ type StandardTimer struct {
 
 // Force the compiler to check that StandardTimer implements Timer.
 var _ Timer = &StandardTimer{}
-
-// Create a new timer with the given Histogram and Meter.
-func NewCustomTimer(h Histogram, m Meter) *StandardTimer {
-	return &StandardTimer{h, m}
-}
-
-// Create a new timer with a standard histogram and meter.  The histogram
-// will use an exponentially-decaying sample with the same reservoir size
-// and alpha as UNIX load averages.
-func NewTimer() *StandardTimer {
-	return &StandardTimer{
-		NewHistogram(NewExpDecaySample(1028, 0.015)),
-		NewMeter(),
-	}
-}
 
 // Return the count of inputs.
 func (t *StandardTimer) Count() int64 {

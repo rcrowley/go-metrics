@@ -17,6 +17,44 @@ type EWMA interface {
 	Update(int64)
 }
 
+// Create a new EWMA with the given alpha.
+func NewEWMA(alpha float64) EWMA {
+	if UseNilMetrics {
+		return NilEWMA{}
+	}
+	return &StandardEWMA{alpha: alpha}
+}
+
+// Create a new EWMA with alpha set for a one-minute moving average.
+func NewEWMA1() EWMA {
+	return NewEWMA(1 - math.Exp(-5.0/60.0/1))
+}
+
+// Create a new EWMA with alpha set for a five-minute moving average.
+func NewEWMA5() EWMA {
+	return NewEWMA(1 - math.Exp(-5.0/60.0/5))
+}
+
+// Create a new EWMA with alpha set for a fifteen-minute moving average.
+func NewEWMA15() EWMA {
+	return NewEWMA(1 - math.Exp(-5.0/60.0/15))
+}
+
+// No-op EWMA.
+type NilEWMA struct{}
+
+// Force the compiler to check that NilEWMA implements EWMA.
+var _ EWMA = NilEWMA{}
+
+// No-op.
+func (a NilEWMA) Rate() float64 { return 0.0 }
+
+// No-op.
+func (a NilEWMA) Tick() {}
+
+// No-op.
+func (a NilEWMA) Update(n int64) {}
+
 // The standard implementation of an EWMA tracks the number of uncounted
 // events and processes them on each tick.  It uses the sync/atomic package
 // to manage uncounted events.
@@ -30,26 +68,6 @@ type StandardEWMA struct {
 
 // Force the compiler to check that StandardEWMA implements EWMA.
 var _ EWMA = &StandardEWMA{}
-
-// Create a new EWMA with the given alpha.
-func NewEWMA(alpha float64) *StandardEWMA {
-	return &StandardEWMA{alpha: alpha}
-}
-
-// Create a new EWMA with alpha set for a one-minute moving average.
-func NewEWMA1() *StandardEWMA {
-	return NewEWMA(1 - math.Exp(-5.0/60.0/1))
-}
-
-// Create a new EWMA with alpha set for a five-minute moving average.
-func NewEWMA5() *StandardEWMA {
-	return NewEWMA(1 - math.Exp(-5.0/60.0/5))
-}
-
-// Create a new EWMA with alpha set for a fifteen-minute moving average.
-func NewEWMA15() *StandardEWMA {
-	return NewEWMA(1 - math.Exp(-5.0/60.0/15))
-}
 
 // Return the moving average rate of events per second.
 func (a *StandardEWMA) Rate() float64 {
