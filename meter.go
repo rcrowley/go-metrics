@@ -19,7 +19,7 @@ type Meter interface {
 // Create a new Meter.  Create the communication channels and start the
 // synchronizing goroutine.
 func NewMeter() Meter {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilMeter{}
 	}
 	m := &StandardMeter{

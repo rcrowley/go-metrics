@@ -41,7 +41,7 @@ var _ Sample = &ExpDecaySample{}
 // Create a new exponentially-decaying sample with the given reservoir size
 // and alpha.
 func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilSample{}
 	}
 	s := &ExpDecaySample{
@@ -135,7 +135,7 @@ type UniformSample struct {
 
 // Create a new uniform sample with the given reservoir size.
 func NewUniformSample(reservoirSize int) Sample {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilSample{}
 	}
 	return &UniformSample{reservoirSize: reservoirSize}

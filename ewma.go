@@ -19,7 +19,7 @@ type EWMA interface {
 
 // Create a new EWMA with the given alpha.
 func NewEWMA(alpha float64) EWMA {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilEWMA{}
 	}
 	return &StandardEWMA{alpha: alpha}

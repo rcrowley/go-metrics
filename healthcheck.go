@@ -14,7 +14,7 @@ type Healthcheck interface {
 // Create a new Healthcheck, which will use the given function to update
 // its status.
 func NewHealthcheck(f func(Healthcheck)) Healthcheck {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilHealthcheck{}
 	}
 	return &StandardHealthcheck{nil, f}

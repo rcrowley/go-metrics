@@ -15,7 +15,7 @@ type Counter interface {
 
 // Create a new Counter.
 func NewCounter() Counter {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilCounter{}
 	}
 	return &StandardCounter{0}

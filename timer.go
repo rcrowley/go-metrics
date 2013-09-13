@@ -25,7 +25,7 @@ type Timer interface {
 
 // Create a new timer with the given Histogram and Meter.
 func NewCustomTimer(h Histogram, m Meter) Timer {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilTimer{}
 	}
 	return &StandardTimer{h, m}
@@ -35,7 +35,7 @@ func NewCustomTimer(h Histogram, m Meter) Timer {
 // will use an exponentially-decaying sample with the same reservoir size
 // and alpha as UNIX load averages.
 func NewTimer() Timer {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilTimer{}
 	}
 	return &StandardTimer{

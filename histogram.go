@@ -28,7 +28,7 @@ type Histogram interface {
 // so that the first value will be both min and max and the variance is flagged
 // for special treatment on its first iteration.
 func NewHistogram(s Sample) Histogram {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilHistogram{}
 	}
 	return &StandardHistogram{

@@ -13,7 +13,7 @@ type Gauge interface {
 
 // Create a new Gauge.
 func NewGauge() Gauge {
-	if !ObserverEffect {
+	if UseNilMetrics {
 		return NilGauge{}
 	}
 	return &StandardGauge{0}
