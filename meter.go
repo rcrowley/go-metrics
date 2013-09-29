@@ -91,10 +91,10 @@ func (m *StandardMeter) arbiter() {
 		case n := <-m.in:
 			mv.count += n
 			a1.Update(n)
-			mv.rate1 = a1.Rate()
 			a5.Update(n)
-			mv.rate5 = a5.Rate()
 			a15.Update(n)
+			mv.rate1 = a1.Rate()
+			mv.rate5 = a5.Rate()
 			mv.rate15 = a15.Rate()
 			mv.rateMean = float64(1e9*mv.count) / float64(time.Since(t))
 		case m.out <- mv:
@@ -102,6 +102,10 @@ func (m *StandardMeter) arbiter() {
 			a1.Tick()
 			a5.Tick()
 			a15.Tick()
+			mv.rate1 = a1.Rate()
+			mv.rate5 = a5.Rate()
+			mv.rate15 = a15.Rate()
+			mv.rateMean = float64(1e9*mv.count) / float64(time.Since(t))
 		}
 	}
 }
