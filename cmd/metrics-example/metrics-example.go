@@ -116,7 +116,7 @@ func main() {
 	metrics.RegisterRuntimeMemStats(r)
 	go metrics.CaptureRuntimeMemStats(r, 5e9)
 
-	go metrics.Stathat(r,10e9,"bketelsen@clarityservices.com")
+	go metrics.Stathat(r,10e9,"your@email.domain")
 	metrics.Log(r, 60e9, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 
 
