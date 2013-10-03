@@ -54,9 +54,23 @@ addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
 go metrics.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 ```
 
+Periodically emit every metric to StatHat:
+
+```go
+import "github.com/rcrowley/go-metrics/stathat"
+
+stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
+```
+
 Installation
 ------------
 
 ```sh
 go get github.com/rcrowley/go-metrics
+```
+
+StatHat support additionally requires their Go client:
+
+```sh
+go get github.com/stathat/go
 ```
