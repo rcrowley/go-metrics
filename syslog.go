@@ -50,7 +50,7 @@ func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 			case Timer:
 				ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 				w.Info(fmt.Sprintf(
-					"timer %s: count: %d min: %d max: %d mean: %.2f stddev: %.2f median: %.2f 75%%: %.2f 95%%: %.2f 99%%: %.2f 99.9%%: %.2f 1-min: %.2f 5-min: %.2f 15-min: %.2f mean: %.2f",
+					"timer %s: count: %d min: %d max: %d mean: %.2f stddev: %.2f median: %.2f 75%%: %.2f 95%%: %.2f 99%%: %.2f 99.9%%: %.2f 1-min: %.2f 5-min: %.2f 15-min: %.2f mean-rate: %.2f",
 					name,
 					m.Count(),
 					m.Min(),

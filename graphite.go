@@ -64,7 +64,7 @@ func graphite(r Registry, prefix string, addr *net.TCPAddr) error {
 			fmt.Fprintf(w, "%s.%s.one-minute %.2f %d\n", prefix, name, m.Rate1(), now)
 			fmt.Fprintf(w, "%s.%s.five-minute %.2f %d\n", prefix, name, m.Rate5(), now)
 			fmt.Fprintf(w, "%s.%s.fifteen-minute %.2f %d\n", prefix, name, m.Rate15(), now)
-			fmt.Fprintf(w, "%s.%s.mean %.2f %d\n", prefix, name, m.RateMean(), now)
+			fmt.Fprintf(w, "%s.%s.mean-rate %.2f %d\n", prefix, name, m.RateMean(), now)
 		}
 		w.Flush()
 	})

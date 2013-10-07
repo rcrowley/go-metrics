@@ -57,7 +57,7 @@ func sh(r metrics.Registry, userkey string) error {
 			stathat.PostEZValue(name+".one-minute", userkey, float64(m.Rate1()))
 			stathat.PostEZValue(name+".five-minute", userkey, float64(m.Rate5()))
 			stathat.PostEZValue(name+".fifteen-minute", userkey, float64(m.Rate15()))
-			stathat.PostEZValue(name+".mean", userkey, float64(m.RateMean()))
+			stathat.PostEZValue(name+".mean-rate", userkey, float64(m.RateMean()))
 		}
 	})
 	return nil
