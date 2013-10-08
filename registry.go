@@ -36,7 +36,7 @@ type StandardRegistry struct {
 var _ Registry = &StandardRegistry{}
 
 // Create a new registry.
-func NewRegistry() *StandardRegistry {
+func NewRegistry() Registry {
 	return &StandardRegistry{metrics: make(map[string]interface{})}
 }
 
@@ -92,7 +92,7 @@ func (r *StandardRegistry) registered() map[string]interface{} {
 	return metrics
 }
 
-var DefaultRegistry *StandardRegistry = NewRegistry()
+var DefaultRegistry Registry = NewRegistry()
 
 // Call the given function for each registered metric.
 func Each(f func(string, interface{})) {
