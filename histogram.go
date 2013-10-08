@@ -24,6 +24,59 @@ type Histogram interface {
 	Variance() float64
 }
 
+// Create a new Histogram with the given Sample.  The initial values compare
+// so that the first value will be both min and max and the variance is flagged
+// for special treatment on its first iteration.
+func NewHistogram(s Sample) Histogram {
+	if UseNilMetrics {
+		return NilHistogram{}
+	}
+	return &StandardHistogram{
+		max:      math.MinInt64,
+		min:      math.MaxInt64,
+		s:        s,
+		variance: [2]float64{-1.0, 0.0},
+	}
+}
+
+// No-op Histogram.
+type NilHistogram struct{}
+
+// Force the compiler to check that NilHistogram implements Histogram.
+var _ Histogram = NilHistogram{}
+
+// No-op.
+func (h NilHistogram) Clear() {}
+
+// No-op.
+func (h NilHistogram) Count() int64 { return 0 }
+
+// No-op.
+func (h NilHistogram) Max() int64 { return 0 }
+
+// No-op.
+func (h NilHistogram) Mean() float64 { return 0.0 }
+
+// No-op.
+func (h NilHistogram) Min() int64 { return 0 }
+
+// No-op.
+func (h NilHistogram) Percentile(p float64) float64 { return 0.0 }
+
+// No-op.
+func (h NilHistogram) Percentiles(ps []float64) []float64 {
+	return make([]float64, len(ps))
+}
+
+// No-op.
+func (h NilHistogram) StdDev() float64 { return 0.0 }
+
+// No-op.
+func (h NilHistogram) Update(v int64) {}
+
+// No-op.
+func (h NilHistogram) Variance() float64 { return 0.0 }
+
 // The standard implementation of a Histogram uses a Sample and a goroutine
 // to synchronize its calculations.
 type StandardHistogram struct {
@@ -35,18 +88,6 @@ type StandardHistogram struct {
 
 // Force the compiler to check that StandardHistogram implements Histogram.
 var _ Histogram = &StandardHistogram{}
-
-// Create a new histogram with the given Sample.  The initial values compare
-// so that the first value will be both min and max and the variance is flagged
-// for special treatment on its first iteration.
-func NewHistogram(s Sample) *StandardHistogram {
-	return &StandardHistogram{
-		max:      math.MinInt64,
-		min:      math.MaxInt64,
-		s:        s,
-		variance: [2]float64{-1.0, 0.0},
-	}
-}
 
 // Clear the histogram.
 func (h *StandardHistogram) Clear() {

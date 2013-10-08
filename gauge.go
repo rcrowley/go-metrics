@@ -11,6 +11,26 @@ type Gauge interface {
 	Value() int64
 }
 
+// Create a new Gauge.
+func NewGauge() Gauge {
+	if UseNilMetrics {
+		return NilGauge{}
+	}
+	return &StandardGauge{0}
+}
+
+// No-op Gauge.
+type NilGauge struct{}
+
+// Force the compiler to check that NilGauge implements Gauge.
+var _ Gauge = NilGauge{}
+
+// No-op.
+func (g NilGauge) Update(v int64) {}
+
+// No-op.
+func (g NilGauge) Value() int64 { return 0 }
+
 // The standard implementation of a Gauge uses the sync/atomic package
 // to manage a single int64 value.
 type StandardGauge struct {
@@ -19,11 +39,6 @@ type StandardGauge struct {
 
 // Force the compiler to check that StandardGauge implements Gauge.
 var _ Gauge = &StandardGauge{}
-
-// Create a new gauge.
-func NewGauge() *StandardGauge {
-	return &StandardGauge{0}
-}
 
 // Update the gauge's value.
 func (g *StandardGauge) Update(v int64) {

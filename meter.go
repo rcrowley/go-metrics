@@ -16,6 +16,45 @@ type Meter interface {
 	RateMean() float64
 }
 
+// Create a new Meter.  Create the communication channels and start the
+// synchronizing goroutine.
+func NewMeter() Meter {
+	if UseNilMetrics {
+		return NilMeter{}
+	}
+	m := &StandardMeter{
+		make(chan int64),
+		make(chan meterV),
+		time.NewTicker(5e9),
+	}
+	go m.arbiter()
+	return m
+}
+
+// No-op Meter.
+type NilMeter struct{}
+
+// Force the compiler to check that NilMeter implements Meter.
+var _ Meter = NilMeter{}
+
+// No-op.
+func (m NilMeter) Count() int64 { return 0 }
+
+// No-op.
+func (m NilMeter) Mark(n int64) {}
+
+// No-op.
+func (m NilMeter) Rate1() float64 { return 0.0 }
+
+// No-op.
+func (m NilMeter) Rate5() float64 { return 0.0 }
+
+// No-op.
+func (m NilMeter) Rate15() float64 { return 0.0 }
+
+// No-op.
+func (m NilMeter) RateMean() float64 { return 0.0 }
+
 // The standard implementation of a Meter uses a goroutine to synchronize
 // its calculations and another goroutine (via time.Ticker) to produce
 // clock ticks.
@@ -27,25 +66,6 @@ type StandardMeter struct {
 
 // Force the compiler to check that StandardMeter implements Meter.
 var _ Meter = &StandardMeter{}
-
-// A meterV contains all the values that would need to be passed back
-// from the synchronizing goroutine.
-type meterV struct {
-	count                          int64
-	rate1, rate5, rate15, rateMean float64
-}
-
-// Create a new meter.  Create the communication channels and start the
-// synchronizing goroutine.
-func NewMeter() *StandardMeter {
-	m := &StandardMeter{
-		make(chan int64),
-		make(chan meterV),
-		time.NewTicker(5e9),
-	}
-	go m.arbiter()
-	return m
-}
 
 // Return the count of events seen.
 func (m *StandardMeter) Count() int64 {
@@ -108,4 +128,11 @@ func (m *StandardMeter) arbiter() {
 			mv.rateMean = float64(1e9*mv.count) / float64(time.Since(t))
 		}
 	}
+}
+
+// A meterV contains all the values that would need to be passed back
+// from the synchronizing goroutine.
+type meterV struct {
+	count                          int64
+	rate1, rate5, rate15, rateMean float64
 }

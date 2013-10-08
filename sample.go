@@ -40,7 +40,10 @@ var _ Sample = &ExpDecaySample{}
 
 // Create a new exponentially-decaying sample with the given reservoir size
 // and alpha.
-func NewExpDecaySample(reservoirSize int, alpha float64) *ExpDecaySample {
+func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
+	if UseNilMetrics {
+		return NilSample{}
+	}
 	s := &ExpDecaySample{
 		alpha:         alpha,
 		reservoirSize: reservoirSize,
@@ -103,6 +106,24 @@ func (s *ExpDecaySample) Values() []int64 {
 	return values
 }
 
+// No-op Sample.
+type NilSample struct{}
+
+// Force the compiler to check that ExpDecaySample implements Sample.
+var _ Sample = NilSample{}
+
+// No-op.
+func (s NilSample) Clear() {}
+
+// No-op.
+func (s NilSample) Size() int { return 0 }
+
+// No-op.
+func (s NilSample) Update(v int64) {}
+
+// No-op.
+func (s NilSample) Values() []int64 { return []int64{} }
+
 // A uniform sample using Vitter's Algorithm R.
 //
 // <http://www.cs.umd.edu/~samir/498/vitter.pdf>
@@ -113,7 +134,10 @@ type UniformSample struct {
 }
 
 // Create a new uniform sample with the given reservoir size.
-func NewUniformSample(reservoirSize int) *UniformSample {
+func NewUniformSample(reservoirSize int) Sample {
+	if UseNilMetrics {
+		return NilSample{}
+	}
 	return &UniformSample{reservoirSize: reservoirSize}
 }
 

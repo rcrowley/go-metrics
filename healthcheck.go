@@ -11,6 +11,33 @@ type Healthcheck interface {
 	Unhealthy(error)
 }
 
+// Create a new Healthcheck, which will use the given function to update
+// its status.
+func NewHealthcheck(f func(Healthcheck)) Healthcheck {
+	if UseNilMetrics {
+		return NilHealthcheck{}
+	}
+	return &StandardHealthcheck{nil, f}
+}
+
+// No-op Healthcheck.
+type NilHealthcheck struct{}
+
+// Force the compiler to check that NilHealthcheck implements Healthcheck.
+var _ Healthcheck = NilHealthcheck{}
+
+// No-op.
+func (h NilHealthcheck) Check() {}
+
+// No-op.
+func (h NilHealthcheck) Error() error { return nil }
+
+// No-op.
+func (h NilHealthcheck) Healthy() {}
+
+// No-op.
+func (h NilHealthcheck) Unhealthy(err error) {}
+
 // The standard implementation of a Healthcheck stores the status and a
 // function to call to update the status.
 type StandardHealthcheck struct {
@@ -20,12 +47,6 @@ type StandardHealthcheck struct {
 
 // Force the compiler to check that StandardHealthcheck implements Healthcheck.
 var _ Healthcheck = &StandardHealthcheck{}
-
-// Create a new healthcheck, which will use the given function to update
-// its status.
-func NewHealthcheck(f func(Healthcheck)) *StandardHealthcheck {
-	return &StandardHealthcheck{nil, f}
-}
 
 // Update the healthcheck's status.
 func (h *StandardHealthcheck) Check() {
