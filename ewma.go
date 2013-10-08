@@ -43,9 +43,6 @@ func NewEWMA15() EWMA {
 // No-op EWMA.
 type NilEWMA struct{}
 
-// Force the compiler to check that NilEWMA implements EWMA.
-var _ EWMA = NilEWMA{}
-
 // No-op.
 func (a NilEWMA) Rate() float64 { return 0.0 }
 
@@ -65,9 +62,6 @@ type StandardEWMA struct {
 	rate      float64
 	uncounted int64
 }
-
-// Force the compiler to check that StandardEWMA implements EWMA.
-var _ EWMA = &StandardEWMA{}
 
 // Return the moving average rate of events per second.
 func (a *StandardEWMA) Rate() float64 {

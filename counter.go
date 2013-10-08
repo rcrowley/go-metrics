@@ -24,9 +24,6 @@ func NewCounter() Counter {
 // No-op Counter.
 type NilCounter struct{}
 
-// Force the compiler to check that NilCounter implements Counter.
-var _ Counter = NilCounter{}
-
 // No-op.
 func (c NilCounter) Clear() {}
 
@@ -44,9 +41,6 @@ func (c NilCounter) Inc(i int64) {}
 type StandardCounter struct {
 	count int64
 }
-
-// Force the compiler to check that StandardCounter implements Counter.
-var _ Counter = &StandardCounter{}
 
 // Clear the counter: set it to zero.
 func (c *StandardCounter) Clear() {

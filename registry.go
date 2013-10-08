@@ -32,9 +32,6 @@ type StandardRegistry struct {
 	mutex   sync.Mutex
 }
 
-// Force the compiler to check that StandardRegistry implements Registry.
-var _ Registry = &StandardRegistry{}
-
 // Create a new registry.
 func NewRegistry() Registry {
 	return &StandardRegistry{metrics: make(map[string]interface{})}

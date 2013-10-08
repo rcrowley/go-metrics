@@ -23,9 +23,6 @@ func NewHealthcheck(f func(Healthcheck)) Healthcheck {
 // No-op Healthcheck.
 type NilHealthcheck struct{}
 
-// Force the compiler to check that NilHealthcheck implements Healthcheck.
-var _ Healthcheck = NilHealthcheck{}
-
 // No-op.
 func (h NilHealthcheck) Check() {}
 
@@ -44,9 +41,6 @@ type StandardHealthcheck struct {
 	err error
 	f   func(Healthcheck)
 }
-
-// Force the compiler to check that StandardHealthcheck implements Healthcheck.
-var _ Healthcheck = &StandardHealthcheck{}
 
 // Update the healthcheck's status.
 func (h *StandardHealthcheck) Check() {

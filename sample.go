@@ -35,9 +35,6 @@ type ExpDecaySample struct {
 	values        expDecaySampleHeap
 }
 
-// Force the compiler to check that ExpDecaySample implements Sample.
-var _ Sample = &ExpDecaySample{}
-
 // Create a new exponentially-decaying sample with the given reservoir size
 // and alpha.
 func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
@@ -108,9 +105,6 @@ func (s *ExpDecaySample) Values() []int64 {
 
 // No-op Sample.
 type NilSample struct{}
-
-// Force the compiler to check that ExpDecaySample implements Sample.
-var _ Sample = NilSample{}
 
 // No-op.
 func (s NilSample) Clear() {}

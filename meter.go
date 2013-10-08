@@ -34,9 +34,6 @@ func NewMeter() Meter {
 // No-op Meter.
 type NilMeter struct{}
 
-// Force the compiler to check that NilMeter implements Meter.
-var _ Meter = NilMeter{}
-
 // No-op.
 func (m NilMeter) Count() int64 { return 0 }
 
@@ -63,9 +60,6 @@ type StandardMeter struct {
 	out    chan meterV
 	ticker *time.Ticker
 }
-
-// Force the compiler to check that StandardMeter implements Meter.
-var _ Meter = &StandardMeter{}
 
 // Return the count of events seen.
 func (m *StandardMeter) Count() int64 {

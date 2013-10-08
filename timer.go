@@ -50,9 +50,6 @@ type NilTimer struct {
 	m Meter
 }
 
-// Force the compiler to check that NilTimer implements Timer.
-var _ Timer = NilTimer{}
-
 // No-op.
 func (t NilTimer) Count() int64 { return 0 }
 
@@ -102,9 +99,6 @@ type StandardTimer struct {
 	h Histogram
 	m Meter
 }
-
-// Force the compiler to check that StandardTimer implements Timer.
-var _ Timer = &StandardTimer{}
 
 // Return the count of inputs.
 func (t *StandardTimer) Count() int64 {

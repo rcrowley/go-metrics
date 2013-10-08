@@ -42,9 +42,6 @@ func NewHistogram(s Sample) Histogram {
 // No-op Histogram.
 type NilHistogram struct{}
 
-// Force the compiler to check that NilHistogram implements Histogram.
-var _ Histogram = NilHistogram{}
-
 // No-op.
 func (h NilHistogram) Clear() {}
 
@@ -85,9 +82,6 @@ type StandardHistogram struct {
 	s                    Sample
 	variance             [2]float64
 }
-
-// Force the compiler to check that StandardHistogram implements Histogram.
-var _ Histogram = &StandardHistogram{}
 
 // Clear the histogram.
 func (h *StandardHistogram) Clear() {

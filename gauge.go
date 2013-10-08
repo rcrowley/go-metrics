@@ -22,9 +22,6 @@ func NewGauge() Gauge {
 // No-op Gauge.
 type NilGauge struct{}
 
-// Force the compiler to check that NilGauge implements Gauge.
-var _ Gauge = NilGauge{}
-
 // No-op.
 func (g NilGauge) Update(v int64) {}
 
@@ -36,9 +33,6 @@ func (g NilGauge) Value() int64 { return 0 }
 type StandardGauge struct {
 	value int64
 }
-
-// Force the compiler to check that StandardGauge implements Gauge.
-var _ Gauge = &StandardGauge{}
 
 // Update the gauge's value.
 func (g *StandardGauge) Update(v int64) {
