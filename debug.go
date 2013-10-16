@@ -63,4 +63,5 @@ func RegisterDebugGCStats(r Registry) {
 	r.Register("debug.GCStats.Pause", debugMetrics.GCStats.Pause)
 	//r.Register("debug.GCStats.PauseQuantiles", debugMetrics.GCStats.PauseQuantiles)
 	r.Register("debug.GCStats.PauseTotal", debugMetrics.GCStats.PauseTotal)
+	r.Register("debug.ReadGCStats", debugMetrics.ReadGCStats)
 }
