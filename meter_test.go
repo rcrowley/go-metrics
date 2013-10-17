@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+func BenchmarkMeter(b *testing.B) {
+	m := NewMeter()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Mark(1)
+	}
+}
+
 func TestMeterDecay(t *testing.T) {
 	m := &StandardMeter{
 		make(chan int64),

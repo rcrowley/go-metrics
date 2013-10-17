@@ -2,6 +2,14 @@ package metrics
 
 import "testing"
 
+func BenchmarkGuage(b *testing.B) {
+	g := NewGauge()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g.Update(int64(i))
+	}
+}
+
 func TestGauge(t *testing.T) {
 	g := NewGauge()
 	g.Update(int64(47))

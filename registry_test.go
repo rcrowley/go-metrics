@@ -2,6 +2,15 @@ package metrics
 
 import "testing"
 
+func BenchmarkRegistry(b *testing.B) {
+	r := NewRegistry()
+	r.Register("foo", NewCounter())
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		r.Each(func(string, interface{}) {})
+	}
+}
+
 func TestRegistry(t *testing.T) {
 	r := NewRegistry()
 	r.Register("foo", NewCounter())

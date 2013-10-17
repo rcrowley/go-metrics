@@ -6,6 +6,14 @@ import (
 	"time"
 )
 
+func BenchmarkTimer(b *testing.B) {
+	tm := NewTimer()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tm.Update(1)
+	}
+}
+
 func TestTimerExtremes(t *testing.T) {
 	tm := NewTimer()
 	tm.Update(math.MaxInt64)

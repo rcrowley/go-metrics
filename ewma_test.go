@@ -4,6 +4,7 @@ import "testing"
 
 func BenchmarkEWMA(b *testing.B) {
 	a := NewEWMA1()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		a.Update(1)
 		a.Tick()
