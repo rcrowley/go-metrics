@@ -90,24 +90,18 @@ func TestExpDecaySample1000(t *testing.T) {
 // effectively freezing the set of samples until a rescale step happens.
 func TestExpDecaySampleNanosecondRegression(t *testing.T) {
 	s := NewExpDecaySample(100, 0.99)
-
 	for i := 0; i < 100; i++ {
 		s.Update(10)
 	}
-
 	time.Sleep(1 * time.Millisecond)
-
 	for i := 0; i < 100; i++ {
 		s.Update(20)
 	}
-
 	v := s.Values()
 	avg := float64(0)
-
 	for i := 0; i < len(v); i++ {
 		avg += float64(v[i])
 	}
-
 	avg /= float64(len(v))
 	if avg > 16 || avg < 14 {
 		t.Errorf("out of range [14, 16]: %v\n", avg)
@@ -154,12 +148,10 @@ func TestUniformSampleIncludesTail(t *testing.T) {
 }
 
 func benchmarkSample(b *testing.B, s Sample) {
-	b.StopTimer()
 	var memStats runtime.MemStats
-	var pauseTotalNs uint64
 	runtime.ReadMemStats(&memStats)
-	pauseTotalNs = memStats.PauseTotalNs
-	b.StartTimer()
+	pauseTotalNs := memStats.PauseTotalNs
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		s.Update(1)
 	}

@@ -9,35 +9,6 @@ func BenchmarkHistogram(b *testing.B) {
 	}
 }
 
-func TestEmptyHistogram(t *testing.T) {
-	h := NewHistogram(NewUniformSample(100))
-	if count := h.Count(); 0 != count {
-		t.Errorf("h.Count(): 0 != %v\n", count)
-	}
-	if min := h.Min(); 0 != min {
-		t.Errorf("h.Min(): 0 != %v\n", min)
-	}
-	if max := h.Max(); 0 != max {
-		t.Errorf("h.Max(): 0 != %v\n", max)
-	}
-	if mean := h.Mean(); 0.0 != mean {
-		t.Errorf("h.Mean(): 0.0 != %v\n", mean)
-	}
-	if stdDev := h.StdDev(); 0.0 != stdDev {
-		t.Errorf("h.StdDev(): 0.0 != %v\n", stdDev)
-	}
-	ps := h.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 0.0 != ps[0] {
-		t.Errorf("median: 0.0 != %v\n", ps[0])
-	}
-	if 0.0 != ps[1] {
-		t.Errorf("75th percentile: 0.0 != %v\n", ps[1])
-	}
-	if 0.0 != ps[2] {
-		t.Errorf("99th percentile: 0.0 != %v\n", ps[2])
-	}
-}
-
 func TestHistogram10000(t *testing.T) {
 	h := NewHistogram(NewUniformSample(100000))
 	for i := 1; i <= 10000; i++ {
@@ -67,5 +38,34 @@ func TestHistogram10000(t *testing.T) {
 	}
 	if 9900.99 != ps[2] {
 		t.Errorf("99th percentile: 9900.99 != %v\n", ps[2])
+	}
+}
+
+func TestHistogramEmpty(t *testing.T) {
+	h := NewHistogram(NewUniformSample(100))
+	if count := h.Count(); 0 != count {
+		t.Errorf("h.Count(): 0 != %v\n", count)
+	}
+	if min := h.Min(); 0 != min {
+		t.Errorf("h.Min(): 0 != %v\n", min)
+	}
+	if max := h.Max(); 0 != max {
+		t.Errorf("h.Max(): 0 != %v\n", max)
+	}
+	if mean := h.Mean(); 0.0 != mean {
+		t.Errorf("h.Mean(): 0.0 != %v\n", mean)
+	}
+	if stdDev := h.StdDev(); 0.0 != stdDev {
+		t.Errorf("h.StdDev(): 0.0 != %v\n", stdDev)
+	}
+	ps := h.Percentiles([]float64{0.5, 0.75, 0.99})
+	if 0.0 != ps[0] {
+		t.Errorf("median: 0.0 != %v\n", ps[0])
+	}
+	if 0.0 != ps[1] {
+		t.Errorf("75th percentile: 0.0 != %v\n", ps[1])
+	}
+	if 0.0 != ps[2] {
+		t.Errorf("99th percentile: 0.0 != %v\n", ps[2])
 	}
 }
