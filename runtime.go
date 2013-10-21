@@ -58,7 +58,7 @@ func CaptureRuntimeMemStats(r Registry, d time.Duration) {
 // RegisterRuntimeMemStats will panic.
 func CaptureRuntimeMemStatsOnce(r Registry) {
 	t := time.Now()
-	runtime.ReadMemStats(&memStats)
+	runtime.ReadMemStats(&memStats) // This takes 50-200us.
 	runtimeMetrics.ReadMemStats.UpdateSince(t)
 
 	runtimeMetrics.MemStats.Alloc.Update(int64(memStats.Alloc))
