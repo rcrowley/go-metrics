@@ -18,6 +18,9 @@ type Registry interface {
 	// Register the given metric under the given name.
 	Register(string, interface{})
 
+	// Gets an existing metric or creates and registers a new one.
+	GetOrRegister(string, interface{}) interface{}
+
 	// Run all registered healthchecks.
 	RunHealthchecks()
 
@@ -59,6 +62,24 @@ func (r *StandardRegistry) Register(name string, i interface{}) {
 		defer r.mutex.Unlock()
 		r.metrics[name] = i
 	}
+}
+
+// Gets an existing metric or creates and registers a new one. Threadsafe
+// alternative to calling Get and Register on failure.
+func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{} {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if metric, ok := r.metrics[name]; ok {
+		// Found existing metric, return it instead of the new instance
+		return metric
+	}
+
+	// No existing metric, register the new instance
+	switch i.(type) {
+	case Counter, Gauge, Healthcheck, Histogram, Meter, Timer:
+		r.metrics[name] = i
+	}
+	return i
 }
 
 // Run all registered healthchecks.
