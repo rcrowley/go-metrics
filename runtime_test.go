@@ -3,6 +3,7 @@ package metrics
 import (
 	"runtime"
 	"testing"
+	"time"
 )
 
 func BenchmarkRuntimeMemStats(b *testing.B) {
@@ -16,18 +17,26 @@ func BenchmarkRuntimeMemStats(b *testing.B) {
 
 func TestRuntimeMemStatsBlocking(t *testing.T) {
 	ch := make(chan int)
-	go func() {
-		i := 0
-		for {
-			select {
-			case ch <- i:
-				return
-			default:
-				i++
-			}
-		}
-	}()
+	go testRuntimeMemStatsBlocking(ch)
+	//runtime.Gosched()
 	var memStats runtime.MemStats
+	t0 := time.Now()
 	runtime.ReadMemStats(&memStats)
-	t.Log(<-ch)
+	t1 := time.Now()
+	t.Log("i++ during runtime.ReadMemStats:", <-ch)
+	go testRuntimeMemStatsBlocking(ch)
+	time.Sleep(t1.Sub(t0))
+	t.Log("i++ during time.Sleep:", <-ch)
+}
+
+func testRuntimeMemStatsBlocking(ch chan int) {
+	i := 0
+	for {
+		select {
+		case ch <- i:
+			return
+		default:
+			i++
+		}
+	}
 }

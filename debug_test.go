@@ -1,8 +1,10 @@
 package metrics
 
 import (
+	// "runtime"
 	"runtime/debug"
 	"testing"
+	"time"
 )
 
 func BenchmarkDebugGCStats(b *testing.B) {
@@ -16,18 +18,26 @@ func BenchmarkDebugGCStats(b *testing.B) {
 
 func TestDebugGCStatsBlocking(t *testing.T) {
 	ch := make(chan int)
-	go func() {
-		i := 0
-		for {
-			select {
-			case ch <- i:
-				return
-			default:
-				i++
-			}
-		}
-	}()
+	go testDebugGCStatsBlocking(ch)
+	//runtime.Gosched()
 	var gcStats debug.GCStats
+	t0 := time.Now()
 	debug.ReadGCStats(&gcStats)
-	t.Log(<-ch)
+	t1 := time.Now()
+	t.Log("i++ during debug.ReadGCStats:", <-ch)
+	go testDebugGCStatsBlocking(ch)
+	time.Sleep(t1.Sub(t0))
+	t.Log("i++ during time.Sleep:", <-ch)
+}
+
+func testDebugGCStatsBlocking(ch chan int) {
+	i := 0
+	for {
+		select {
+		case ch <- i:
+			return
+		default:
+			i++
+		}
+	}
 }
