@@ -120,6 +120,12 @@ func Get(name string) interface{} {
 	return DefaultRegistry.Get(name)
 }
 
+// Gets an existing metric or creates and registers a new one. Threadsafe
+// alternative to calling Get and Register on failure.
+func GetOrRegister(name string, i interface{}) interface{} {
+	return DefaultRegistry.GetOrRegister(name, i)
+}
+
 // Register the given metric under the given name.
 func Register(name string, i interface{}) {
 	DefaultRegistry.Register(name, i)
