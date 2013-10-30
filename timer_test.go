@@ -14,6 +14,14 @@ func BenchmarkTimer(b *testing.B) {
 	}
 }
 
+func TestGetOrRegisterTimer(t *testing.T) {
+	r := NewRegistry()
+	GetOrRegisterTimer("foo", r).Update(47)
+	if tm := GetOrRegisterTimer("foo", r); 1 != tm.Count() {
+		t.Fatal(tm)
+	}
+}
+
 func TestTimerExtremes(t *testing.T) {
 	tm := NewTimer()
 	tm.Update(math.MaxInt64)

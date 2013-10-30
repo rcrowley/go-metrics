@@ -16,6 +16,14 @@ type Meter interface {
 	RateMean() float64
 }
 
+// Get an existing or create and register a new Meter.
+func GetOrRegisterMeter(name string, r Registry) Meter {
+	if nil == r {
+		r = DefaultRegistry
+	}
+	return r.GetOrRegister(name, NewMeter()).(Meter)
+}
+
 // Create a new Meter.  Create the communication channels and start the
 // synchronizing goroutine.
 func NewMeter() Meter {

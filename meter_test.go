@@ -13,6 +13,14 @@ func BenchmarkMeter(b *testing.B) {
 	}
 }
 
+func TestGetOrRegisterMeter(t *testing.T) {
+	r := NewRegistry()
+	GetOrRegisterMeter("foo", r).Mark(47)
+	if m := GetOrRegisterMeter("foo", r); 47 != m.Count() {
+		t.Fatal(m)
+	}
+}
+
 func TestMeterDecay(t *testing.T) {
 	m := &StandardMeter{
 		make(chan int64),

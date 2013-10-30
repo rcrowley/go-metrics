@@ -17,3 +17,11 @@ func TestGauge(t *testing.T) {
 		t.Errorf("g.Value(): 47 != %v\n", v)
 	}
 }
+
+func TestGetOrRegisterGauge(t *testing.T) {
+	r := NewRegistry()
+	GetOrRegisterGauge("foo", r).Update(47)
+	if g := GetOrRegisterGauge("foo", r); 47 != g.Value() {
+		t.Fatal(g)
+	}
+}

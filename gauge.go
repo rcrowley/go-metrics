@@ -11,6 +11,14 @@ type Gauge interface {
 	Value() int64
 }
 
+// Get an existing or create and register a new Gauge.
+func GetOrRegisterGauge(name string, r Registry) Gauge {
+	if nil == r {
+		r = DefaultRegistry
+	}
+	return r.GetOrRegister(name, NewGauge()).(Gauge)
+}
+
 // Create a new Gauge.
 func NewGauge() Gauge {
 	if UseNilMetrics {
