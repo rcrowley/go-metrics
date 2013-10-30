@@ -32,6 +32,10 @@ func CaptureDebugGCStats(r Registry, d time.Duration) {
 // debug.GCStats.  This is designed to be called in a background goroutine.
 // Giving a registry which has not been given to RegisterDebugGCStats will
 // panic.
+//
+// Be careful (but much less so) with this because debug.ReadGCStats calls
+// the C function runtime·lock(runtime·mheap) which, while not a stop-the-world
+// operation, isn't something you want to be doing all the time.
 func CaptureDebugGCStatsOnce(r Registry) {
 	lastGC := gcStats.LastGC
 	t := time.Now()
@@ -64,4 +68,10 @@ func RegisterDebugGCStats(r Registry) {
 	//r.Register("debug.GCStats.PauseQuantiles", debugMetrics.GCStats.PauseQuantiles)
 	r.Register("debug.GCStats.PauseTotal", debugMetrics.GCStats.PauseTotal)
 	r.Register("debug.ReadGCStats", debugMetrics.ReadGCStats)
+}
+
+// Allocate an initial slice for gcStats.Pause to avoid allocations during
+// normal operation.
+func init() {
+	gcStats.Pause = make([]time.Duration, 11)
 }

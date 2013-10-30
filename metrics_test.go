@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-const FANOUT = 4
+const FANOUT = 128
 
 // Stop the compiler from complaining during debugging.
 var (
@@ -22,14 +22,34 @@ func BenchmarkMetrics(b *testing.B) {
 	h := NewRegisteredHistogram("histogram", r, NewUniformSample(100))
 	m := NewRegisteredMeter("meter", r)
 	t := NewRegisteredTimer("timer", r)
+	RegisterDebugGCStats(r)
 	RegisterRuntimeMemStats(r)
 	b.ResetTimer()
 	ch := make(chan bool)
-	wgC := &sync.WaitGroup{}
-//*
-	wgC.Add(1)
+
+	wgD := &sync.WaitGroup{}
+/*
+	wgD.Add(1)
 	go func() {
-		defer wgC.Done()
+		defer wgD.Done()
+		//log.Println("go CaptureDebugGCStats")
+		for {
+			select {
+			case <-ch:
+				//log.Println("done CaptureDebugGCStats")
+				return
+			default:
+				CaptureDebugGCStatsOnce(r)
+			}
+		}
+	}()
+//*/
+
+	wgR := &sync.WaitGroup{}
+//*
+	wgR.Add(1)
+	go func() {
+		defer wgR.Done()
 		//log.Println("go CaptureRuntimeMemStats")
 		for {
 			select {
@@ -42,6 +62,7 @@ func BenchmarkMetrics(b *testing.B) {
 		}
 	}()
 //*/
+
 	wgW := &sync.WaitGroup{}
 /*
 	wgW.Add(1)
@@ -59,6 +80,7 @@ func BenchmarkMetrics(b *testing.B) {
 		}
 	}()
 //*/
+
 	wg := &sync.WaitGroup{}
 	wg.Add(FANOUT)
 	for i := 0; i < FANOUT; i++ {
@@ -77,6 +99,7 @@ func BenchmarkMetrics(b *testing.B) {
 	}
 	wg.Wait()
 	close(ch)
-	wgC.Wait()
+	wgD.Wait()
+	wgR.Wait()
 	wgW.Wait()
 }
