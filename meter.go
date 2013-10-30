@@ -31,6 +31,16 @@ func NewMeter() Meter {
 	return m
 }
 
+// Create and register a new Meter.
+func NewRegisteredMeter(name string, r Registry) Meter {
+	c := NewMeter()
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
+}
+
 // No-op Meter.
 type NilMeter struct{}
 

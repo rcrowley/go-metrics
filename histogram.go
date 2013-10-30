@@ -39,6 +39,16 @@ func NewHistogram(s Sample) Histogram {
 	}
 }
 
+// Create and register a new Histogram.
+func NewRegisteredHistogram(name string, r Registry, s Sample) Histogram {
+	c := NewHistogram(s)
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
+}
+
 // No-op Histogram.
 type NilHistogram struct{}
 

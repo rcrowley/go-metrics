@@ -19,6 +19,16 @@ func NewGauge() Gauge {
 	return &StandardGauge{0}
 }
 
+// Create and register a new Gauge.
+func NewRegisteredGauge(name string, r Registry) Gauge {
+	c := NewGauge()
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
+}
+
 // No-op Gauge.
 type NilGauge struct{}
 

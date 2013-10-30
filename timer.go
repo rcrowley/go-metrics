@@ -31,6 +31,16 @@ func NewCustomTimer(h Histogram, m Meter) Timer {
 	return &StandardTimer{h, m}
 }
 
+// Create and register a new Timer.
+func NewRegisteredTimer(name string, r Registry) Timer {
+	c := NewTimer()
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
+}
+
 // Create a new timer with a standard histogram and meter.  The histogram
 // will use an exponentially-decaying sample with the same reservoir size
 // and alpha as UNIX load averages.
