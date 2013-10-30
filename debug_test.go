@@ -26,7 +26,9 @@ func TestDebugGCStatsBlocking(t *testing.T) {
 	t1 := time.Now()
 	t.Log("i++ during debug.ReadGCStats:", <-ch)
 	go testDebugGCStatsBlocking(ch)
-	time.Sleep(t1.Sub(t0))
+	d := t1.Sub(t0)
+	t.Log(d)
+	time.Sleep(d)
 	t.Log("i++ during time.Sleep:", <-ch)
 }
 

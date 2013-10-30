@@ -25,7 +25,9 @@ func TestRuntimeMemStatsBlocking(t *testing.T) {
 	t1 := time.Now()
 	t.Log("i++ during runtime.ReadMemStats:", <-ch)
 	go testRuntimeMemStatsBlocking(ch)
-	time.Sleep(t1.Sub(t0))
+	d := t1.Sub(t0)
+	t.Log(d)
+	time.Sleep(d)
 	t.Log("i++ during time.Sleep:", <-ch)
 }
 
