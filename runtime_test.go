@@ -3,7 +3,6 @@ package metrics
 import (
 	"runtime"
 	"testing"
-	"time"
 )
 
 func BenchmarkRuntimeMemStats(b *testing.B) {
@@ -26,7 +25,6 @@ func TestRuntimeMemStatsBlocking(t *testing.T) {
 			default:
 				i++
 			}
-			time.Sleep(1e3)
 		}
 	}()
 	var memStats runtime.MemStats

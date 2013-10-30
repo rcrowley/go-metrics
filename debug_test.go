@@ -3,7 +3,6 @@ package metrics
 import (
 	"runtime/debug"
 	"testing"
-	"time"
 )
 
 func BenchmarkDebugGCStats(b *testing.B) {
@@ -26,7 +25,6 @@ func TestDebugGCStatsBlocking(t *testing.T) {
 			default:
 				i++
 			}
-			time.Sleep(1e3)
 		}
 	}()
 	var gcStats debug.GCStats
