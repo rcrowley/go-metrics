@@ -60,7 +60,7 @@ func TestCounterZero(t *testing.T) {
 
 func TestGetOrRegisterCounter(t *testing.T) {
 	r := NewRegistry()
-	GetOrRegisterCounter("foo", r).Inc(47)
+	NewRegisteredCounter("foo", r).Inc(47)
 	if c := GetOrRegisterCounter("foo", r); 47 != c.Count() {
 		t.Fatal(c)
 	}

@@ -20,7 +20,7 @@ func TestGauge(t *testing.T) {
 
 func TestGetOrRegisterGauge(t *testing.T) {
 	r := NewRegistry()
-	GetOrRegisterGauge("foo", r).Update(47)
+	NewRegisteredGauge("foo", r).Update(47)
 	if g := GetOrRegisterGauge("foo", r); 47 != g.Value() {
 		t.Fatal(g)
 	}

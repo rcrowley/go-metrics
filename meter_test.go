@@ -15,7 +15,7 @@ func BenchmarkMeter(b *testing.B) {
 
 func TestGetOrRegisterMeter(t *testing.T) {
 	r := NewRegistry()
-	GetOrRegisterMeter("foo", r).Mark(47)
+	NewRegisteredMeter("foo", r).Mark(47)
 	if m := GetOrRegisterMeter("foo", r); 47 != m.Count() {
 		t.Fatal(m)
 	}

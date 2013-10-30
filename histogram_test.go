@@ -13,7 +13,7 @@ func BenchmarkHistogram(b *testing.B) {
 func TestGetOrRegisterHistogram(t *testing.T) {
 	r := NewRegistry()
 	s := NewUniformSample(100)
-	GetOrRegisterHistogram("foo", r, s).Update(47)
+	NewRegisteredHistogram("foo", r, s).Update(47)
 	if h := GetOrRegisterHistogram("foo", r, s); 1 != h.Count() {
 		t.Fatal(h)
 	}
