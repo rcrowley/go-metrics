@@ -35,7 +35,7 @@ func TestRegistry(t *testing.T) {
 	}
 }
 
-func TestGetOrRegister(t *testing.T) {
+func TestRegistryGetOrRegister(t *testing.T) {
 	r := NewRegistry()
 
 	// First metric wins with GetOrRegister
