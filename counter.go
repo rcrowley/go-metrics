@@ -21,6 +21,24 @@ func NewCounter() Counter {
 	return &StandardCounter{0}
 }
 
+// Create and register a new Counter.
+func NewRegisteredCounter(name string, r Registry) Counter {
+	c := NewCounter()
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
+}
+
+// Get an existing or create and register a new Counter.
+func GetOrRegisterCounter(name string, r Registry) Counter {
+	if nil == r {
+		r = DefaultRegistry
+	}
+	return r.GetOrRegister(name, NewCounter()).(Counter)
+}
+
 // No-op Counter.
 type NilCounter struct{}
 

@@ -57,3 +57,11 @@ func TestCounterZero(t *testing.T) {
 		t.Errorf("c.Count(): 0 != %v\n", count)
 	}
 }
+
+func TestGetOrRegisterCounter(t *testing.T) {
+	r := NewRegistry()
+	GetOrRegisterCounter("foo", r).Inc(47)
+	if c := GetOrRegisterCounter("foo", r); 47 != c.Count() {
+		t.Fatal(c)
+	}
+}
