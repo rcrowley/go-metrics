@@ -16,6 +16,9 @@ func BenchmarkRuntimeMemStats(b *testing.B) {
 }
 
 func TestRuntimeMemStatsBlocking(t *testing.T) {
+	if g := runtime.GOMAXPROCS(0); g < 2 {
+		t.Skipf("skipping TestRuntimeMemStatsBlocking with GOMAXPROCS=%d\n", g)
+	}
 	ch := make(chan int)
 	go testRuntimeMemStatsBlocking(ch)
 	var memStats runtime.MemStats
