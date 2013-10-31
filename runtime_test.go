@@ -18,7 +18,6 @@ func BenchmarkRuntimeMemStats(b *testing.B) {
 func TestRuntimeMemStatsBlocking(t *testing.T) {
 	ch := make(chan int)
 	go testRuntimeMemStatsBlocking(ch)
-	//runtime.Gosched()
 	var memStats runtime.MemStats
 	t0 := time.Now()
 	runtime.ReadMemStats(&memStats)

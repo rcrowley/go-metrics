@@ -19,7 +19,6 @@ func BenchmarkDebugGCStats(b *testing.B) {
 func TestDebugGCStatsBlocking(t *testing.T) {
 	ch := make(chan int)
 	go testDebugGCStatsBlocking(ch)
-	//runtime.Gosched()
 	var gcStats debug.GCStats
 	t0 := time.Now()
 	debug.ReadGCStats(&gcStats)
