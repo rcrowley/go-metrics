@@ -14,7 +14,12 @@ type LibratoReporter struct {
 	Source       string
 	Interval     time.Duration
 	Registry     metrics.Registry
-	Percentiles  []float64
+	Percentiles  []float64 // percentiles to report on histogram metrics
+}
+
+func Librato(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64) {
+	reporter := &LibratoReporter{e, t, s, d, r, p}
+	reporter.Run()
 }
 
 func (self *LibratoReporter) Run() {
