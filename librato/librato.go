@@ -23,7 +23,7 @@ func Librato(r metrics.Registry, d time.Duration, e string, t string, s string, 
 }
 
 func (self *LibratoReporter) Run() {
-	ticker := time.Tick(self.Interval * time.Millisecond)
+	ticker := time.Tick(self.Interval)
 	metricsApi := &librato.Metrics{self.Email, self.Token}
 	for now := range ticker {
 		var metrics *librato.MetricsFormat
