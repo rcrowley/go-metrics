@@ -1,9 +1,13 @@
 package librato
 
+// TODO: use map[string]interface{} and constants for keys for everything to
+// avoid the omitempty/0 problem; remove dependency on samuel/go-librato
+
+// TODO WIP status: test that the resulting JSON is actually correct..
+
 import (
 	"fmt"
 	"github.com/rcrowley/go-metrics"
-	"github.com/samuel/go-librato/librato"
 	"log"
 	"math"
 	"time"
@@ -24,14 +28,14 @@ func Librato(r metrics.Registry, d time.Duration, e string, t string, s string, 
 
 func (self *LibratoReporter) Run() {
 	ticker := time.Tick(self.Interval)
-	metricsApi := &librato.Metrics{self.Email, self.Token}
+	metricsApi := &LibratoClient{self.Email, self.Token}
 	for now := range ticker {
-		var metrics *librato.MetricsFormat
+		var metrics Batch
 		var err error
 		if metrics, err = self.BuildRequest(now, self.Registry); err != nil {
 			log.Printf("ERROR constructing librato request body %s", err)
 		}
-		if err := metricsApi.SendMetrics(metrics); err != nil {
+		if err := metricsApi.PostMetrics(metrics); err != nil {
 			log.Printf("ERROR sending metrics to librato %s", err)
 		}
 	}
@@ -60,81 +64,128 @@ func sumSquaresTimer(m metrics.Timer) float64 {
 	return sumSquares
 }
 
-func (self *LibratoReporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot *librato.MetricsFormat, err error) {
-	snapshot = &librato.MetricsFormat{}
+func (self *LibratoReporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot Batch, err error) {
+	snapshot = Batch{
+		MeasureTime: now.Unix(),
+		Source:      self.Source,
+	}
 	snapshot.MeasureTime = now.Unix()
-	snapshot.Source = self.Source
-	snapshot.Gauges = make([]interface{}, 0)
-	snapshot.Counters = make([]librato.Metric, 0)
+	snapshot.Gauges = make([]Measurement, 0)
+	snapshot.Counters = make([]Measurement, 0)
 	histogramGaugeCount := 1 + len(self.Percentiles)
 	r.Each(func(name string, metric interface{}) {
+		measurement := Measurement{}
+		measurement[Period] = self.Interval.Seconds()
 		switch m := metric.(type) {
 		case metrics.Counter:
-			libratoName := fmt.Sprintf("%s.%s", name, "count")
-			snapshot.Counters = append(snapshot.Counters, librato.Metric{Name: libratoName, Value: float64(m.Count())})
+			measurement[Name] = fmt.Sprintf("%s.%s", name, "count")
+			measurement[Value] = float64(m.Count())
+			snapshot.Counters = append(snapshot.Counters, measurement)
 		case metrics.Gauge:
-			snapshot.Gauges = append(snapshot.Gauges, librato.Metric{Name: name, Value: float64(m.Value())})
+			measurement[Name] = name
+			measurement[Value] = float64(m.Value())
+			snapshot.Gauges = append(snapshot.Gauges, measurement)
 		case metrics.Histogram:
 			if m.Count() > 0 {
-				libratoName := fmt.Sprintf("%s.%s", name, "hist")
-				gauges := make([]interface{}, histogramGaugeCount, histogramGaugeCount)
-				gauges[0] = librato.Gauge{
-					Name:       libratoName,
-					Count:      uint64(m.Count()),
-					Sum:        m.Mean() * float64(m.Count()),
-					Max:        float64(m.Max()),
-					Min:        float64(m.Min()),
-					SumSquares: sumSquares(m),
-				}
+				gauges := make([]Measurement, histogramGaugeCount, histogramGaugeCount)
+				measurement[Name] = fmt.Sprintf("%s.%s", name, "hist")
+				measurement[Count] = uint64(m.Count())
+				measurement[Sum] = m.Mean() * float64(m.Count())
+				measurement[Max] = float64(m.Max())
+				measurement[Min] = float64(m.Min())
+				measurement[SumSquares] = sumSquares(m)
+				gauges[0] = measurement
 				for i, p := range self.Percentiles {
-					gauges[i+1] = librato.Metric{Name: fmt.Sprintf("%s.%.2f", libratoName, p), Value: m.Percentile(p)}
+					pMeasurement := Measurement{}
+					pMeasurement[Name] = fmt.Sprintf("%s.%.2f", measurement[Name], p)
+					pMeasurement[Value] = m.Percentile(p)
+					pMeasurement[Period] = measurement[Period]
+					gauges[i+1] = pMeasurement
 				}
 				snapshot.Gauges = append(snapshot.Gauges, gauges...)
 			}
 		case metrics.Meter:
-			snapshot.Counters = append(snapshot.Counters, librato.Metric{Name: name, Value: float64(m.Count())})
+			measurement[Name] = name
+			measurement[Value] = float64(m.Count())
+			snapshot.Counters = append(snapshot.Counters, measurement)
 			snapshot.Gauges = append(snapshot.Gauges,
-				librato.Metric{
-					Name:  fmt.Sprintf("%s.%s", name, "1min"),
-					Value: m.Rate1(),
+				Measurement{
+					Name:   fmt.Sprintf("%s.%s", name, "1min"),
+					Value:  m.Rate1(),
+					Period: int64(self.Interval.Seconds()),
 				},
-				librato.Metric{
-					Name:  fmt.Sprintf("%s.%s", name, "5min"),
-					Value: m.Rate5(),
+				Measurement{
+					Name:   fmt.Sprintf("%s.%s", name, "5min"),
+					Value:  m.Rate5(),
+					Period: int64(self.Interval.Seconds()),
 				},
-				librato.Metric{
-					Name:  fmt.Sprintf("%s.%s", name, "15min"),
-					Value: m.Rate15(),
+				Measurement{
+					Name:   fmt.Sprintf("%s.%s", name, "15min"),
+					Value:  m.Rate15(),
+					Period: int64(self.Interval.Seconds()),
 				},
 			)
 		case metrics.Timer:
 			if m.Count() > 0 {
-				libratoName := fmt.Sprintf("%s.%s", name, "timer")
-				gauges := make([]interface{}, histogramGaugeCount, histogramGaugeCount)
-				gauges[0] = librato.Gauge{
+				libratoName := fmt.Sprintf("%s.%s", name, "timer.mean")
+				gauges := make([]Measurement, histogramGaugeCount, histogramGaugeCount)
+				gauges[0] = Measurement{
 					Name:       libratoName,
 					Count:      uint64(m.Count()),
 					Sum:        m.Mean() * float64(m.Count()),
 					Max:        float64(m.Max()),
 					Min:        float64(m.Min()),
 					SumSquares: sumSquaresTimer(m),
+					Period:     int64(self.Interval.Seconds()),
+					Attributes: map[string]interface{}{
+						DisplayTransform:  "x/1000000",
+						DisplayUnitsLong:  "milliseconds",
+						DisplayUnitsShort: "ms",
+					},
 				}
 				for i, p := range self.Percentiles {
-					gauges[i+1] = librato.Metric{Name: fmt.Sprintf("%s.%2.0f", libratoName, p*100), Value: m.Percentile(p)}
+					gauges[i+1] = Measurement{
+						Name:   fmt.Sprintf("%s.timer.%2.0f", name, p*100),
+						Value:  m.Percentile(p),
+						Period: int64(self.Interval.Seconds()),
+						Attributes: map[string]interface{}{
+							DisplayTransform:  "x/1000000",
+							DisplayUnitsLong:  "milliseconds",
+							DisplayUnitsShort: "ms",
+						},
+					}
 				}
 				snapshot.Gauges = append(snapshot.Gauges, gauges...)
 				snapshot.Gauges = append(snapshot.Gauges,
-					librato.Metric{
-						Name:  fmt.Sprintf("%s.%s", name, "1min"),
-						Value: m.Rate1(),
+					Measurement{
+						Name:   fmt.Sprintf("%s.%s", name, "rate.1min"),
+						Value:  m.Rate1(),
+						Period: int64(self.Interval.Seconds()),
+						Attributes: map[string]interface{}{
+							DisplayUnitsLong:  "occurences",
+							DisplayUnitsShort: "occ",
+							DisplayMin:        "0",
+						},
 					},
-					librato.Metric{
-						Name:  fmt.Sprintf("%s.%s", name, "5min"),
-						Value: m.Rate5(),
+					Measurement{
+						Name:   fmt.Sprintf("%s.%s", name, "rate.5min"),
+						Value:  m.Rate5(),
+						Period: int64(self.Interval.Seconds()),
+						Attributes: map[string]interface{}{
+							DisplayUnitsLong:  "occurences",
+							DisplayUnitsShort: "occ",
+							DisplayMin:        "0",
+						},
 					},
-					librato.Metric{
-						Name:  fmt.Sprintf("%s.%s", name, "15min"),
-						Value: m.Rate15(),
+					Measurement{
+						Name:   fmt.Sprintf("%s.%s", name, "rate.15min"),
+						Value:  m.Rate15(),
+						Period: int64(self.Interval.Seconds()),
+						Attributes: map[string]interface{}{
+							DisplayUnitsLong:  "occurences",
+							DisplayUnitsShort: "occ",
+							DisplayMin:        "0",
+						},
 					},
 				)
 			}
