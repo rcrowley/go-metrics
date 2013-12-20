@@ -8,6 +8,9 @@ import (
 	"net/http"
 )
 
+const Operations = "operations"
+const OperationsShort = "ops"
+
 type LibratoClient struct {
 	Email, Token string
 }

@@ -165,8 +165,8 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 						Value:  m.Rate1(),
 						Period: int64(self.Interval.Seconds()),
 						Attributes: map[string]interface{}{
-							DisplayUnitsLong:  "occurences",
-							DisplayUnitsShort: "occ",
+							DisplayUnitsLong:  Operations,
+							DisplayUnitsShort: OperationsShort,
 							DisplayMin:        "0",
 						},
 					},
@@ -175,8 +175,8 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 						Value:  m.Rate5(),
 						Period: int64(self.Interval.Seconds()),
 						Attributes: map[string]interface{}{
-							DisplayUnitsLong:  "occurences",
-							DisplayUnitsShort: "occ",
+							DisplayUnitsLong:  Operations,
+							DisplayUnitsShort: OperationsShort,
 							DisplayMin:        "0",
 						},
 					},
@@ -185,8 +185,8 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 						Value:  m.Rate15(),
 						Period: int64(self.Interval.Seconds()),
 						Attributes: map[string]interface{}{
-							DisplayUnitsLong:  "occurences",
-							DisplayUnitsShort: "occ",
+							DisplayUnitsLong:  Operations,
+							DisplayUnitsShort: OperationsShort,
 							DisplayMin:        "0",
 						},
 					},
