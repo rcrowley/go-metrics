@@ -107,11 +107,11 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				measurement[SumSquares] = sumSquares(m)
 				gauges[0] = measurement
 				for i, p := range self.Percentiles {
-					pMeasurement := Measurement{}
-					pMeasurement[Name] = fmt.Sprintf("%s.%.2f", measurement[Name], p)
-					pMeasurement[Value] = m.Percentile(p)
-					pMeasurement[Period] = measurement[Period]
-					gauges[i+1] = pMeasurement
+					gauges[i+1] = Measurement{
+						Name:   fmt.Sprintf("%s.%.2f", measurement[Name], p),
+						Value:  m.Percentile(p),
+						Period: measurement[Period],
+					}
 				}
 				snapshot.Gauges = append(snapshot.Gauges, gauges...)
 			}
