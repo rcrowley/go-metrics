@@ -137,6 +137,9 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				},
 			)
 		case metrics.Timer:
+			measurement[Name] = name
+			measurement[Value] = float64(m.Count())
+			snapshot.Counters = append(snapshot.Counters, measurement)
 			if m.Count() > 0 {
 				libratoName := fmt.Sprintf("%s.%s", name, "timer.mean")
 				gauges := make([]Measurement, histogramGaugeCount, histogramGaugeCount)
