@@ -1,32 +1,43 @@
 package librato
 
-// TODO: use map[string]interface{} and constants for keys for everything to
-// avoid the omitempty/0 problem; remove dependency on samuel/go-librato
-
-// TODO WIP status: test that the resulting JSON is actually correct..
-
 import (
 	"fmt"
 	"github.com/rcrowley/go-metrics"
 	"log"
 	"math"
+	"regexp"
 	"time"
 )
 
-type LibratoReporter struct {
-	Email, Token string
-	Source       string
-	Interval     time.Duration
-	Registry     metrics.Registry
-	Percentiles  []float64 // percentiles to report on histogram metrics
+// a regexp for extracting the unit from time.Duration.String
+var unitRegexp = regexp.MustCompile("[^\\d]+$")
+
+// a helper that turns a time.Duration into librato display attributes for timer metrics
+func translateTimerAttributes(d time.Duration) (attrs map[string]interface{}) {
+	attrs = make(map[string]interface{})
+	attrs[DisplayTransform] = fmt.Sprintf("x/%d", int64(d))
+	attrs[DisplayUnitsShort] = string(unitRegexp.Find([]byte(d.String())))
+	return
 }
 
-func Librato(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64) {
-	reporter := &LibratoReporter{e, t, s, d, r, p}
-	reporter.Run()
+type Reporter struct {
+	Email, Token    string
+	Source          string
+	Interval        time.Duration
+	Registry        metrics.Registry
+	Percentiles     []float64              // percentiles to report on histogram metrics
+	TimerAttributes map[string]interface{} // units in which timers will be displayed
 }
 
-func (self *LibratoReporter) Run() {
+func NewReporter(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64, u time.Duration) *Reporter {
+	return &Reporter{e, t, s, d, r, p, translateTimerAttributes(u)}
+}
+
+func Librato(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64, u time.Duration) {
+	NewReporter(r, d, e, t, s, p, u).Run()
+}
+
+func (self *Reporter) Run() {
 	ticker := time.Tick(self.Interval)
 	metricsApi := &LibratoClient{self.Email, self.Token}
 	for now := range ticker {
@@ -64,7 +75,7 @@ func sumSquaresTimer(m metrics.Timer) float64 {
 	return sumSquares
 }
 
-func (self *LibratoReporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot Batch, err error) {
+func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot Batch, err error) {
 	snapshot = Batch{
 		MeasureTime: now.Unix(),
 		Source:      self.Source,
@@ -137,22 +148,14 @@ func (self *LibratoReporter) BuildRequest(now time.Time, r metrics.Registry) (sn
 					Min:        float64(m.Min()),
 					SumSquares: sumSquaresTimer(m),
 					Period:     int64(self.Interval.Seconds()),
-					Attributes: map[string]interface{}{
-						DisplayTransform:  "x/1000000",
-						DisplayUnitsLong:  "milliseconds",
-						DisplayUnitsShort: "ms",
-					},
+					Attributes: self.TimerAttributes,
 				}
 				for i, p := range self.Percentiles {
 					gauges[i+1] = Measurement{
-						Name:   fmt.Sprintf("%s.timer.%2.0f", name, p*100),
-						Value:  m.Percentile(p),
-						Period: int64(self.Interval.Seconds()),
-						Attributes: map[string]interface{}{
-							DisplayTransform:  "x/1000000",
-							DisplayUnitsLong:  "milliseconds",
-							DisplayUnitsShort: "ms",
-						},
+						Name:       fmt.Sprintf("%s.timer.%2.0f", name, p*100),
+						Value:      m.Percentile(p),
+						Period:     int64(self.Interval.Seconds()),
+						Attributes: self.TimerAttributes,
 					}
 				}
 				snapshot.Gauges = append(snapshot.Gauges, gauges...)
