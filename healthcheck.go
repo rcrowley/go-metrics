@@ -24,16 +24,16 @@ func NewHealthcheck(f func(Healthcheck)) Healthcheck {
 type NilHealthcheck struct{}
 
 // No-op.
-func (h NilHealthcheck) Check() {}
+func (NilHealthcheck) Check() {}
 
 // No-op.
-func (h NilHealthcheck) Error() error { return nil }
+func (NilHealthcheck) Error() error { return nil }
 
 // No-op.
-func (h NilHealthcheck) Healthy() {}
+func (NilHealthcheck) Healthy() {}
 
 // No-op.
-func (h NilHealthcheck) Unhealthy(err error) {}
+func (NilHealthcheck) Unhealthy(err error) {}
 
 // The standard implementation of a Healthcheck stores the status and a
 // function to call to update the status.

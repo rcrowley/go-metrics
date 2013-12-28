@@ -53,22 +53,22 @@ func NewRegisteredMeter(name string, r Registry) Meter {
 type NilMeter struct{}
 
 // No-op.
-func (m NilMeter) Count() int64 { return 0 }
+func (NilMeter) Count() int64 { return 0 }
 
 // No-op.
-func (m NilMeter) Mark(n int64) {}
+func (NilMeter) Mark(n int64) {}
 
 // No-op.
-func (m NilMeter) Rate1() float64 { return 0.0 }
+func (NilMeter) Rate1() float64 { return 0.0 }
 
 // No-op.
-func (m NilMeter) Rate5() float64 { return 0.0 }
+func (NilMeter) Rate5() float64 { return 0.0 }
 
 // No-op.
-func (m NilMeter) Rate15() float64 { return 0.0 }
+func (NilMeter) Rate15() float64 { return 0.0 }
 
 // No-op.
-func (m NilMeter) RateMean() float64 { return 0.0 }
+func (NilMeter) RateMean() float64 { return 0.0 }
 
 // The standard implementation of a Meter uses a goroutine to synchronize
 // its calculations and another goroutine (via time.Ticker) to produce

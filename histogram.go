@@ -61,36 +61,36 @@ func NewRegisteredHistogram(name string, r Registry, s Sample) Histogram {
 type NilHistogram struct{}
 
 // No-op.
-func (h NilHistogram) Clear() {}
+func (NilHistogram) Clear() {}
 
 // No-op.
-func (h NilHistogram) Count() int64 { return 0 }
+func (NilHistogram) Count() int64 { return 0 }
 
 // No-op.
-func (h NilHistogram) Max() int64 { return 0 }
+func (NilHistogram) Max() int64 { return 0 }
 
 // No-op.
-func (h NilHistogram) Mean() float64 { return 0.0 }
+func (NilHistogram) Mean() float64 { return 0.0 }
 
 // No-op.
-func (h NilHistogram) Min() int64 { return 0 }
+func (NilHistogram) Min() int64 { return 0 }
 
 // No-op.
-func (h NilHistogram) Percentile(p float64) float64 { return 0.0 }
+func (NilHistogram) Percentile(p float64) float64 { return 0.0 }
 
 // No-op.
-func (h NilHistogram) Percentiles(ps []float64) []float64 {
+func (NilHistogram) Percentiles(ps []float64) []float64 {
 	return make([]float64, len(ps))
 }
 
 // No-op.
-func (h NilHistogram) StdDev() float64 { return 0.0 }
+func (NilHistogram) StdDev() float64 { return 0.0 }
 
 // No-op.
-func (h NilHistogram) Update(v int64) {}
+func (NilHistogram) Update(v int64) {}
 
 // No-op.
-func (h NilHistogram) Variance() float64 { return 0.0 }
+func (NilHistogram) Variance() float64 { return 0.0 }
 
 // The standard implementation of a Histogram uses a Sample and a goroutine
 // to synchronize its calculations.

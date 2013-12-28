@@ -41,10 +41,10 @@ func NewRegisteredGauge(name string, r Registry) Gauge {
 type NilGauge struct{}
 
 // No-op.
-func (g NilGauge) Update(v int64) {}
+func (NilGauge) Update(v int64) {}
 
 // No-op.
-func (g NilGauge) Value() int64 { return 0 }
+func (NilGauge) Value() int64 { return 0 }
 
 // The standard implementation of a Gauge uses the sync/atomic package
 // to manage a single int64 value.

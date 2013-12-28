@@ -43,16 +43,16 @@ func NewRegisteredCounter(name string, r Registry) Counter {
 type NilCounter struct{}
 
 // No-op.
-func (c NilCounter) Clear() {}
+func (NilCounter) Clear() {}
 
 // No-op.
-func (c NilCounter) Count() int64 { return 0 }
+func (NilCounter) Count() int64 { return 0 }
 
 // No-op.
-func (c NilCounter) Dec(i int64) {}
+func (NilCounter) Dec(i int64) {}
 
 // No-op.
-func (c NilCounter) Inc(i int64) {}
+func (NilCounter) Inc(i int64) {}
 
 // The standard implementation of a Counter uses the sync/atomic package
 // to manage a single int64 value.

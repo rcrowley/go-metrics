@@ -69,48 +69,48 @@ type NilTimer struct {
 }
 
 // No-op.
-func (t NilTimer) Count() int64 { return 0 }
+func (NilTimer) Count() int64 { return 0 }
 
 // No-op.
-func (t NilTimer) Max() int64 { return 0 }
+func (NilTimer) Max() int64 { return 0 }
 
 // No-op.
-func (t NilTimer) Mean() float64 { return 0.0 }
+func (NilTimer) Mean() float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) Min() int64 { return 0 }
+func (NilTimer) Min() int64 { return 0 }
 
 // No-op.
-func (t NilTimer) Percentile(p float64) float64 { return 0.0 }
+func (NilTimer) Percentile(p float64) float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) Percentiles(ps []float64) []float64 {
+func (NilTimer) Percentiles(ps []float64) []float64 {
 	return make([]float64, len(ps))
 }
 
 // No-op.
-func (t NilTimer) Rate1() float64 { return 0.0 }
+func (NilTimer) Rate1() float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) Rate5() float64 { return 0.0 }
+func (NilTimer) Rate5() float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) Rate15() float64 { return 0.0 }
+func (NilTimer) Rate15() float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) RateMean() float64 { return 0.0 }
+func (NilTimer) RateMean() float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) StdDev() float64 { return 0.0 }
+func (NilTimer) StdDev() float64 { return 0.0 }
 
 // No-op.
-func (t NilTimer) Time(f func()) {}
+func (NilTimer) Time(f func()) {}
 
 // No-op.
-func (t NilTimer) Update(d time.Duration) {}
+func (NilTimer) Update(d time.Duration) {}
 
 // No-op.
-func (t NilTimer) UpdateSince(ts time.Time) {}
+func (NilTimer) UpdateSince(ts time.Time) {}
 
 // The standard implementation of a Timer uses a Histogram and Meter directly.
 type StandardTimer struct {

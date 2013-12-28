@@ -44,13 +44,13 @@ func NewEWMA15() EWMA {
 type NilEWMA struct{}
 
 // No-op.
-func (a NilEWMA) Rate() float64 { return 0.0 }
+func (NilEWMA) Rate() float64 { return 0.0 }
 
 // No-op.
-func (a NilEWMA) Tick() {}
+func (NilEWMA) Tick() {}
 
 // No-op.
-func (a NilEWMA) Update(n int64) {}
+func (NilEWMA) Update(n int64) {}
 
 // The standard implementation of an EWMA tracks the number of uncounted
 // events and processes them on each tick.  It uses the sync/atomic package

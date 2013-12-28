@@ -107,16 +107,16 @@ func (s *ExpDecaySample) Values() []int64 {
 type NilSample struct{}
 
 // No-op.
-func (s NilSample) Clear() {}
+func (NilSample) Clear() {}
 
 // No-op.
-func (s NilSample) Size() int { return 0 }
+func (NilSample) Size() int { return 0 }
 
 // No-op.
-func (s NilSample) Update(v int64) {}
+func (NilSample) Update(v int64) {}
 
 // No-op.
-func (s NilSample) Values() []int64 { return []int64{} }
+func (NilSample) Values() []int64 { return []int64{} }
 
 // A uniform sample using Vitter's Algorithm R.
 //
