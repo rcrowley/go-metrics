@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const rescaleThreshold = 1e9 * 60 * 60
+const rescaleThreshold = time.Hour
 
 // Samples maintain a statistically-significant selection of values from
 // a stream.
@@ -136,28 +136,7 @@ func (s *ExpDecaySample) StdDev() float64 {
 
 // Update samples a new value.
 func (s *ExpDecaySample) Update(v int64) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.count++
-	if len(s.values) == s.reservoirSize {
-		heap.Pop(&s.values)
-	}
-	t := time.Now()
-	heap.Push(&s.values, expDecaySample{
-		k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(),
-		v: v,
-	})
-	if t.After(s.t1) {
-		values := s.values
-		t0 := s.t0
-		s.values = make(expDecaySampleHeap, 0, s.reservoirSize)
-		s.t0 = t
-		s.t1 = s.t0.Add(rescaleThreshold)
-		for _, v := range values {
-			v.k = v.k * math.Exp(-s.alpha*float64(s.t0.Sub(t0)))
-			heap.Push(&s.values, v)
-		}
-	}
+	s.update(time.Now(), v)
 }
 
 // Values returns a copy of the values in the sample.
@@ -174,6 +153,32 @@ func (s *ExpDecaySample) Values() []int64 {
 // Variance returns the variance of the sample.
 func (s *ExpDecaySample) Variance() float64 {
 	return variance(s.Values())
+}
+
+// update samples a new value at a particular timestamp.  This is a method all
+// its own to facilitate testing.
+func (s *ExpDecaySample) update(t time.Time, v int64) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.count++
+	if len(s.values) == s.reservoirSize {
+		heap.Pop(&s.values)
+	}
+	heap.Push(&s.values, expDecaySample{
+		k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(),
+		v: v,
+	})
+	if t.After(s.t1) {
+		values := s.values
+		t0 := s.t0
+		s.values = make(expDecaySampleHeap, 0, s.reservoirSize)
+		s.t0 = t
+		s.t1 = s.t0.Add(rescaleThreshold)
+		for _, v := range values {
+			v.k = v.k * math.Exp(-s.alpha*float64(s.t0.Sub(t0)))
+			heap.Push(&s.values, v)
+		}
+	}
 }
 
 // No-op Sample.

@@ -133,10 +133,11 @@ func TestExpDecaySampleNanosecondRegression(t *testing.T) {
 }
 
 func TestExpDecaySampleStatistics(t *testing.T) {
+	now := time.Now()
 	rand.Seed(1)
 	s := NewExpDecaySample(100, 0.99)
 	for i := 1; i <= 10000; i++ {
-		s.Update(int64(i))
+		s.(*ExpDecaySample).update(now.Add(time.Duration(i)), int64(i))
 	}
 	if count := s.Count(); 10000 != count {
 		t.Errorf("s.Count(): 10000 != %v\n", count)
