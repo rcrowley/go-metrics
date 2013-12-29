@@ -28,25 +28,25 @@ func BenchmarkMetrics(b *testing.B) {
 	ch := make(chan bool)
 
 	wgD := &sync.WaitGroup{}
-/*
-	wgD.Add(1)
-	go func() {
-		defer wgD.Done()
-		//log.Println("go CaptureDebugGCStats")
-		for {
-			select {
-			case <-ch:
-				//log.Println("done CaptureDebugGCStats")
-				return
-			default:
-				CaptureDebugGCStatsOnce(r)
+	/*
+		wgD.Add(1)
+		go func() {
+			defer wgD.Done()
+			//log.Println("go CaptureDebugGCStats")
+			for {
+				select {
+				case <-ch:
+					//log.Println("done CaptureDebugGCStats")
+					return
+				default:
+					CaptureDebugGCStatsOnce(r)
+				}
 			}
-		}
-	}()
-//*/
+		}()
+	//*/
 
 	wgR := &sync.WaitGroup{}
-//*
+	//*
 	wgR.Add(1)
 	go func() {
 		defer wgR.Done()
@@ -61,25 +61,25 @@ func BenchmarkMetrics(b *testing.B) {
 			}
 		}
 	}()
-//*/
+	//*/
 
 	wgW := &sync.WaitGroup{}
-/*
-	wgW.Add(1)
-	go func() {
-		defer wgW.Done()
-		//log.Println("go Write")
-		for {
-			select {
-			case <-ch:
-				//log.Println("done Write")
-				return
-			default:
-				WriteOnce(r, ioutil.Discard)
+	/*
+		wgW.Add(1)
+		go func() {
+			defer wgW.Done()
+			//log.Println("go Write")
+			for {
+				select {
+				case <-ch:
+					//log.Println("done Write")
+					return
+				default:
+					WriteOnce(r, ioutil.Discard)
+				}
 			}
-		}
-	}()
-//*/
+		}()
+	//*/
 
 	wg := &sync.WaitGroup{}
 	wg.Add(FANOUT)
