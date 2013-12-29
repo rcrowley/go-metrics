@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"math"
-	"sort"
 	"sync"
 	"sync/atomic"
 )
@@ -152,34 +151,14 @@ func (h *StandardHistogram) Min() int64 {
 	return h.min
 }
 
-// Return an arbitrary percentile of all values seen since the histogram was
-// last cleared.
+// Percentile returns an arbitrary percentile of sampled values.
 func (h *StandardHistogram) Percentile(p float64) float64 {
-	return h.Percentiles([]float64{p})[0]
+	return h.s.Percentile(p)
 }
 
-// Return a slice of arbitrary percentiles of all values seen since the
-// histogram was last cleared.
+// Percentiles returns a slice of arbitrary percentiles of sampled values.
 func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
-	scores := make([]float64, len(ps))
-	values := int64Slice(h.s.Values())
-	size := len(values)
-	if size > 0 {
-		sort.Sort(values)
-		for i, p := range ps {
-			pos := p * float64(size+1)
-			if pos < 1.0 {
-				scores[i] = float64(values[0])
-			} else if pos >= float64(size) {
-				scores[i] = float64(values[size-1])
-			} else {
-				lower := float64(values[int(pos)-1])
-				upper := float64(values[int(pos)])
-				scores[i] = lower + (pos-math.Floor(pos))*(upper-lower)
-			}
-		}
-	}
-	return scores
+	return h.s.Percentiles(ps)
 }
 
 // Sample returns a copy of the Sample underlying the Histogram.
