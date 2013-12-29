@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"math/rand"
 	"runtime"
 	"testing"
 	"time"
@@ -31,9 +32,13 @@ func BenchmarkUniformSample1028(b *testing.B) {
 }
 
 func TestExpDecaySample10(t *testing.T) {
+	rand.Seed(1)
 	s := NewExpDecaySample(100, 0.99)
 	for i := 0; i < 10; i++ {
 		s.Update(int64(i))
+	}
+	if size := s.Count(); 10 != size {
+		t.Errorf("s.Count(): 10 != %v\n", size)
 	}
 	if size := s.Size(); 10 != size {
 		t.Errorf("s.Size(): 10 != %v\n", size)
@@ -49,9 +54,13 @@ func TestExpDecaySample10(t *testing.T) {
 }
 
 func TestExpDecaySample100(t *testing.T) {
+	rand.Seed(1)
 	s := NewExpDecaySample(1000, 0.01)
 	for i := 0; i < 100; i++ {
 		s.Update(int64(i))
+	}
+	if size := s.Count(); 100 != size {
+		t.Errorf("s.Count(): 100 != %v\n", size)
 	}
 	if size := s.Size(); 100 != size {
 		t.Errorf("s.Size(): 100 != %v\n", size)
@@ -67,9 +76,13 @@ func TestExpDecaySample100(t *testing.T) {
 }
 
 func TestExpDecaySample1000(t *testing.T) {
+	rand.Seed(1)
 	s := NewExpDecaySample(100, 0.99)
 	for i := 0; i < 1000; i++ {
 		s.Update(int64(i))
+	}
+	if size := s.Count(); 1000 != size {
+		t.Errorf("s.Count(): 1000 != %v\n", size)
 	}
 	if size := s.Size(); 100 != size {
 		t.Errorf("s.Size(): 100 != %v\n", size)
@@ -84,11 +97,22 @@ func TestExpDecaySample1000(t *testing.T) {
 	}
 }
 
+func TestExpDecaySampleDup(t *testing.T) {
+	s1 := NewExpDecaySample(100, 0.99)
+	s1.Update(1)
+	s2 := s1.Dup()
+	s1.Update(1)
+	if 1 != s2.Size() {
+		t.Fatal(s2)
+	}
+}
+
 // This test makes sure that the sample's priority is not amplified by using
 // nanosecond duration since start rather than second duration since start.
 // The priority becomes +Inf quickly after starting if this is done,
 // effectively freezing the set of samples until a rescale step happens.
 func TestExpDecaySampleNanosecondRegression(t *testing.T) {
+	rand.Seed(1)
 	s := NewExpDecaySample(100, 0.99)
 	for i := 0; i < 100; i++ {
 		s.Update(10)
@@ -108,10 +132,47 @@ func TestExpDecaySampleNanosecondRegression(t *testing.T) {
 	}
 }
 
+func TestExpDecaySampleStatistics(t *testing.T) {
+	rand.Seed(1)
+	s := NewExpDecaySample(100, 0.99)
+	for i := 1; i <= 10000; i++ {
+		s.Update(int64(i))
+	}
+	if count := s.Count(); 10000 != count {
+		t.Errorf("s.Count(): 10000 != %v\n", count)
+	}
+	if min := s.Min(); 107 != min {
+		t.Errorf("s.Min(): 107 != %v\n", min)
+	}
+	if max := s.Max(); 10000 != max {
+		t.Errorf("s.Max(): 10000 != %v\n", max)
+	}
+	if mean := s.Mean(); 4965.98 != mean {
+		t.Errorf("s.Mean(): 4965.98 != %v\n", mean)
+	}
+	if stdDev := s.StdDev(); 2959.825156930727 != stdDev {
+		t.Errorf("s.StdDev(): 2959.825156930727 != %v\n", stdDev)
+	}
+	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
+	if 4615 != ps[0] {
+		t.Errorf("median: 4615 != %v\n", ps[0])
+	}
+	if 7672 != ps[1] {
+		t.Errorf("75th percentile: 7672 != %v\n", ps[1])
+	}
+	if 9998.99 != ps[2] {
+		t.Errorf("99th percentile: 9998.99 != %v\n", ps[2])
+	}
+}
+
 func TestUniformSample(t *testing.T) {
+	rand.Seed(1)
 	s := NewUniformSample(100)
 	for i := 0; i < 1000; i++ {
 		s.Update(int64(i))
+	}
+	if size := s.Count(); 1000 != size {
+		t.Errorf("s.Count(): 1000 != %v\n", size)
 	}
 	if size := s.Size(); 100 != size {
 		t.Errorf("s.Size(): 100 != %v\n", size)
@@ -126,7 +187,18 @@ func TestUniformSample(t *testing.T) {
 	}
 }
 
+func TestUniformSampleDup(t *testing.T) {
+	s1 := NewUniformSample(100)
+	s1.Update(1)
+	s2 := s1.Dup()
+	s1.Update(1)
+	if 1 != s2.Size() {
+		t.Fatal(s2)
+	}
+}
+
 func TestUniformSampleIncludesTail(t *testing.T) {
+	rand.Seed(1)
 	s := NewUniformSample(100)
 	max := 100
 
@@ -144,6 +216,39 @@ func TestUniformSampleIncludesTail(t *testing.T) {
 
 	if exp != sum {
 		t.Errorf("sum: %v != %v\n", exp, sum)
+	}
+}
+
+func TestUniformSampleStatistics(t *testing.T) {
+	rand.Seed(1)
+	s := NewUniformSample(100)
+	for i := 1; i <= 10000; i++ {
+		s.Update(int64(i))
+	}
+	if count := s.Count(); 10000 != count {
+		t.Errorf("s.Count(): 10000 != %v\n", count)
+	}
+	if min := s.Min(); 9412 != min {
+		t.Errorf("s.Min(): 9412 != %v\n", min)
+	}
+	if max := s.Max(); 10000 != max {
+		t.Errorf("s.Max(): 10000 != %v\n", max)
+	}
+	if mean := s.Mean(); 9902.26 != mean {
+		t.Errorf("s.Mean(): 9902.26 != %v\n", mean)
+	}
+	if stdDev := s.StdDev(); 101.8667384380201 != stdDev {
+		t.Errorf("s.StdDev(): 101.8667384380201 != %v\n", stdDev)
+	}
+	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
+	if 9930.5 != ps[0] {
+		t.Errorf("median: 9930.5 != %v\n", ps[0])
+	}
+	if 9973.75 != ps[1] {
+		t.Errorf("75th percentile: 9973.75 != %v\n", ps[1])
+	}
+	if 9999.99 != ps[2] {
+		t.Errorf("99th percentile: 9999.99 != %v\n", ps[2])
 	}
 }
 
