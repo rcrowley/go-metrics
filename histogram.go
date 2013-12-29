@@ -19,6 +19,7 @@ type Histogram interface {
 	Min() int64
 	Percentile(float64) float64
 	Percentiles([]float64) []float64
+	Sample() Sample
 	StdDev() float64
 	Update(int64)
 	Variance() float64
@@ -84,6 +85,9 @@ func (NilHistogram) Percentiles(ps []float64) []float64 {
 }
 
 // No-op.
+func (NilHistogram) Sample() Sample { return NilSample{} }
+
+// No-op.
 func (NilHistogram) StdDev() float64 { return 0.0 }
 
 // No-op.
@@ -110,7 +114,7 @@ func (h *StandardHistogram) Clear() {
 	h.min = math.MaxInt64
 	h.s.Clear()
 	h.sum = 0
-	h.variance = [...]float64{-1.0, 0.0}
+	h.variance = [2]float64{-1.0, 0.0}
 }
 
 // Return the count of inputs since the histogram was last cleared.
@@ -176,6 +180,11 @@ func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
 		}
 	}
 	return scores
+}
+
+// Sample returns a copy of the Sample underlying the Histogram.
+func (h *StandardHistogram) Sample() Sample {
+	return h.s.Dup()
 }
 
 // Return the standard deviation of all values seen since the histogram was
