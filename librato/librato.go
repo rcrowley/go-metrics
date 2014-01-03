@@ -91,6 +91,11 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 		case metrics.Counter:
 			measurement[Name] = fmt.Sprintf("%s.%s", name, "count")
 			measurement[Value] = float64(m.Count())
+			measurement[Attributes] = map[string]interface{}{
+				DisplayUnitsLong:  Operations,
+				DisplayUnitsShort: OperationsShort,
+				DisplayMin:        "0",
+			}
 			snapshot.Counters = append(snapshot.Counters, measurement)
 		case metrics.Gauge:
 			measurement[Name] = name
@@ -124,16 +129,31 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 					Name:   fmt.Sprintf("%s.%s", name, "1min"),
 					Value:  m.Rate1(),
 					Period: int64(self.Interval.Seconds()),
+					Attributes: map[string]interface{}{
+						DisplayUnitsLong:  Operations,
+						DisplayUnitsShort: OperationsShort,
+						DisplayMin:        "0",
+					},
 				},
 				Measurement{
 					Name:   fmt.Sprintf("%s.%s", name, "5min"),
 					Value:  m.Rate5(),
 					Period: int64(self.Interval.Seconds()),
+					Attributes: map[string]interface{}{
+						DisplayUnitsLong:  Operations,
+						DisplayUnitsShort: OperationsShort,
+						DisplayMin:        "0",
+					},
 				},
 				Measurement{
 					Name:   fmt.Sprintf("%s.%s", name, "15min"),
 					Value:  m.Rate15(),
 					Period: int64(self.Interval.Seconds()),
+					Attributes: map[string]interface{}{
+						DisplayUnitsLong:  Operations,
+						DisplayUnitsShort: OperationsShort,
+						DisplayMin:        "0",
+					},
 				},
 			)
 		case metrics.Timer:
