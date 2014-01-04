@@ -98,28 +98,28 @@ func (s *ExpDecaySample) Count() int64 {
 // Max returns the maximum value in the sample, which may not be the maximum
 // value ever to be part of the sample.
 func (s *ExpDecaySample) Max() int64 {
-	return max(s.Values())
+	return SampleMax(s.Values())
 }
 
 // Return the mean of all values seen since the histogram was last cleared.
 func (s *ExpDecaySample) Mean() float64 {
-	return mean(s.Values())
+	return SampleMean(s.Values())
 }
 
 // Min returns the minimum value in the sample, which may not be the minimum
 // value ever to be part of the sample.
 func (s *ExpDecaySample) Min() int64 {
-	return min(s.Values())
+	return SampleMin(s.Values())
 }
 
 // Percentile returns an arbitrary percentile of sampled values.
 func (s *ExpDecaySample) Percentile(p float64) float64 {
-	return s.Percentiles([]float64{p})[0]
+	return SamplePercentile(s.Values(), p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of sampled values.
 func (s *ExpDecaySample) Percentiles(ps []float64) []float64 {
-	return percentiles(s.Values(), ps)
+	return SamplePercentiles(s.Values(), ps)
 }
 
 // Size returns the size of the sample, which is at most the reservoir size.
@@ -131,7 +131,7 @@ func (s *ExpDecaySample) Size() int {
 
 // StdDev returns the standard deviation of the sample.
 func (s *ExpDecaySample) StdDev() float64 {
-	return math.Sqrt(s.Variance())
+	return SampleStdDev(s.Values())
 }
 
 // Update samples a new value.
@@ -152,7 +152,7 @@ func (s *ExpDecaySample) Values() []int64 {
 
 // Variance returns the variance of the sample.
 func (s *ExpDecaySample) Variance() float64 {
-	return variance(s.Values())
+	return SampleVariance(s.Values())
 }
 
 // update samples a new value at a particular timestamp.  This is a method all
@@ -225,6 +225,90 @@ func (NilSample) Values() []int64 { return []int64{} }
 // No-op.
 func (NilSample) Variance() float64 { return 0.0 }
 
+// SampleMax returns the maximum value of the slice of int64.
+func SampleMax(values []int64) int64 {
+	if 0 == len(values) {
+		return 0
+	}
+	var max int64 = math.MinInt64
+	for _, v := range values {
+		if max < v {
+			max = v
+		}
+	}
+	return max
+}
+
+// SampleMean returns the mean value of the slice of int64.
+func SampleMean(values []int64) float64 {
+	if 0 == len(values) {
+		return 0.0
+	}
+	var sum int64
+	for _, v := range values {
+		sum += v
+	}
+	return float64(sum) / float64(len(values))
+}
+
+// SampleMin returns the minimum value of the slice of int64.
+func SampleMin(values []int64) int64 {
+	if 0 == len(values) {
+		return 0
+	}
+	var min int64 = math.MaxInt64
+	for _, v := range values {
+		if min > v {
+			min = v
+		}
+	}
+	return min
+}
+
+// SamplePercentiles returns an arbitrary percentile of the slice of int64.
+func SamplePercentile(values int64Slice, p float64) float64 {
+	return SamplePercentiles(values, []float64{p})[0]
+}
+
+// SamplePercentiles returns a slice of arbitrary percentiles of the slice of
+// int64.
+func SamplePercentiles(values int64Slice, ps []float64) []float64 {
+	scores := make([]float64, len(ps))
+	size := len(values)
+	if size > 0 {
+		sort.Sort(values)
+		for i, p := range ps {
+			pos := p * float64(size+1)
+			if pos < 1.0 {
+				scores[i] = float64(values[0])
+			} else if pos >= float64(size) {
+				scores[i] = float64(values[size-1])
+			} else {
+				lower := float64(values[int(pos)-1])
+				upper := float64(values[int(pos)])
+				scores[i] = lower + (pos-math.Floor(pos))*(upper-lower)
+			}
+		}
+	}
+	return scores
+}
+
+// SampleStdDev returns the standard deviation of the slice of int64.
+func SampleStdDev(values []int64) float64 {
+	return math.Sqrt(SampleVariance(values))
+}
+
+// SampleVariance returns the variance of the slice of int64.
+func SampleVariance(values []int64) float64 {
+	m := SampleMean(values)
+	var sum float64
+	for _, v := range values {
+		d := float64(v) - m
+		sum += d * d
+	}
+	return sum / float64(len(values))
+}
+
 // A uniform sample using Vitter's Algorithm R.
 //
 // <http://www.cs.umd.edu/~samir/498/vitter.pdf>
@@ -275,14 +359,14 @@ func (s *UniformSample) Dup() Sample {
 func (s *UniformSample) Max() int64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return max(s.values)
+	return SampleMax(s.values)
 }
 
 // Return the mean of all values seen since the histogram was last cleared.
 func (s *UniformSample) Mean() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return mean(s.values)
+	return SampleMean(s.values)
 }
 
 // Min returns the minimum value in the sample, which may not be the minimum
@@ -290,19 +374,21 @@ func (s *UniformSample) Mean() float64 {
 func (s *UniformSample) Min() int64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return min(s.values)
+	return SampleMin(s.values)
 }
 
 // Percentile returns an arbitrary percentile of sampled values.
 func (s *UniformSample) Percentile(p float64) float64 {
-	return s.Percentiles([]float64{p})[0]
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return SamplePercentile(s.values, p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of sampled values.
 func (s *UniformSample) Percentiles(ps []float64) []float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return percentiles(s.values, ps)
+	return SamplePercentiles(s.values, ps)
 }
 
 // Return the size of the sample, which is at most the reservoir size.
@@ -314,7 +400,9 @@ func (s *UniformSample) Size() int {
 
 // StdDev returns the standard deviation of the sample.
 func (s *UniformSample) StdDev() float64 {
-	return math.Sqrt(s.Variance())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return SampleStdDev(s.values)
 }
 
 // Update the sample with a new value.
@@ -342,7 +430,7 @@ func (s *UniformSample) Values() []int64 {
 func (s *UniformSample) Variance() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return variance(s.values)
+	return SampleVariance(s.values)
 }
 
 // expDecaySample represents an individual sample in a heap.
@@ -381,72 +469,4 @@ func (q *expDecaySampleHeap) Push(x interface{}) {
 
 func (q expDecaySampleHeap) Swap(i, j int) {
 	q[i], q[j] = q[j], q[i]
-}
-
-func max(values []int64) int64 {
-	if 0 == len(values) {
-		return 0
-	}
-	var max int64 = math.MinInt64
-	for _, v := range values {
-		if max < v {
-			max = v
-		}
-	}
-	return max
-}
-
-func mean(values []int64) float64 {
-	if 0 == len(values) {
-		return 0.0
-	}
-	var sum int64
-	for _, v := range values {
-		sum += v
-	}
-	return float64(sum) / float64(len(values))
-}
-
-func min(values []int64) int64 {
-	if 0 == len(values) {
-		return 0
-	}
-	var min int64 = math.MaxInt64
-	for _, v := range values {
-		if min > v {
-			min = v
-		}
-	}
-	return min
-}
-
-func percentiles(values int64Slice, ps []float64) []float64 {
-	scores := make([]float64, len(ps))
-	size := len(values)
-	if size > 0 {
-		sort.Sort(values)
-		for i, p := range ps {
-			pos := p * float64(size+1)
-			if pos < 1.0 {
-				scores[i] = float64(values[0])
-			} else if pos >= float64(size) {
-				scores[i] = float64(values[size-1])
-			} else {
-				lower := float64(values[int(pos)-1])
-				upper := float64(values[int(pos)])
-				scores[i] = lower + (pos-math.Floor(pos))*(upper-lower)
-			}
-		}
-	}
-	return scores
-}
-
-func variance(values []int64) float64 {
-	m := mean(values)
-	var sum float64
-	for _, v := range values {
-		d := float64(v) - m
-		sum += d * d
-	}
-	return sum / float64(len(values))
 }
