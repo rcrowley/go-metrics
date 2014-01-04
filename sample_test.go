@@ -7,6 +7,53 @@ import (
 	"time"
 )
 
+// Benchmark{Compute,Copy}{1000,1000000} demonstrate that, even for relatively
+// expensive computations like Variance, the cost of copying the Sample, as
+// approximated by a make and copy, is much greater than the cost of the
+// computation for small samples and only slightly less for large samples.
+func BenchmarkCompute1000(b *testing.B) {
+	s := make([]int64, 1000)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleVariance(s)
+	}
+}
+func BenchmarkCompute1000000(b *testing.B) {
+	s := make([]int64, 1000000)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleVariance(s)
+	}
+}
+func BenchmarkCopy1000(b *testing.B) {
+	s := make([]int64, 1000)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sCopy := make([]int64, len(s))
+		copy(sCopy, s)
+	}
+}
+func BenchmarkCopy1000000(b *testing.B) {
+	s := make([]int64, 1000000)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sCopy := make([]int64, len(s))
+		copy(sCopy, s)
+	}
+}
+
 func BenchmarkExpDecaySample257(b *testing.B) {
 	benchmarkSample(b, NewExpDecaySample(257, 0.015))
 }
