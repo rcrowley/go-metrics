@@ -54,11 +54,10 @@ func (self *Reporter) Run() {
 
 // calculate sum of squares from data provided by metrics.Histogram
 // see http://en.wikipedia.org/wiki/Standard_deviation#Rapid_calculation_methods
-func sumSquares(m metrics.Histogram) float64 {
-	count := float64(m.Count())
-	sum := m.Mean() * float64(m.Count())
-	sumSquared := math.Pow(float64(sum), 2)
-	sumSquares := math.Pow(count*m.StdDev(), 2) + sumSquared/float64(m.Count())
+func sumSquares(s metrics.Sample) float64 {
+	count := float64(s.Count())
+	sumSquared := math.Pow(float64(s.Sum()), 2)
+	sumSquares := math.Pow(count*s.StdDev(), 2) + sumSquared/float64(s.Count())
 	if math.IsNaN(sumSquares) {
 		return 0.0
 	}
@@ -66,8 +65,7 @@ func sumSquares(m metrics.Histogram) float64 {
 }
 func sumSquaresTimer(m metrics.Timer) float64 {
 	count := float64(m.Count())
-	sum := m.Mean() * float64(m.Count())
-	sumSquared := math.Pow(float64(sum), 2)
+	sumSquared := math.Pow(float64(s.Sum()), 2)
 	sumSquares := math.Pow(count*m.StdDev(), 2) + sumSquared/float64(m.Count())
 	if math.IsNaN(sumSquares) {
 		return 0.0
@@ -102,7 +100,7 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				s := m.Sample()
 				measurement[Name] = fmt.Sprintf("%s.%s", name, "hist")
 				measurement[Count] = uint64(s.Count())
-				measurement[Sum] = s.Mean() * float64(s.Count())
+				measurement[Sum] = s.Sum()
 				measurement[Max] = float64(s.Max())
 				measurement[Min] = float64(s.Min())
 				measurement[SumSquares] = sumSquares(s)

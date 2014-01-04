@@ -28,6 +28,7 @@ type Sample interface {
 	Percentiles([]float64) []float64
 	Size() int
 	StdDev() float64
+	Sum() int64
 	Update(int64)
 	Values() []int64
 	Variance() float64
@@ -134,6 +135,11 @@ func (s *ExpDecaySample) StdDev() float64 {
 	return SampleStdDev(s.Values())
 }
 
+// Sum returns the sum of the sample.
+func (s *ExpDecaySample) Sum() int64 {
+	return SampleSum(s.Values())
+}
+
 // Update samples a new value.
 func (s *ExpDecaySample) Update(v int64) {
 	s.update(time.Now(), v)
@@ -217,6 +223,9 @@ func (NilSample) Size() int { return 0 }
 func (NilSample) StdDev() float64 { return 0.0 }
 
 // No-op.
+func (NilSample) Sum() int64 { return 0 }
+
+// No-op.
 func (NilSample) Update(v int64) {}
 
 // No-op.
@@ -244,11 +253,7 @@ func SampleMean(values []int64) float64 {
 	if 0 == len(values) {
 		return 0.0
 	}
-	var sum int64
-	for _, v := range values {
-		sum += v
-	}
-	return float64(sum) / float64(len(values))
+	return float64(SampleSum(values)) / float64(len(values))
 }
 
 // SampleMin returns the minimum value of the slice of int64.
@@ -296,6 +301,15 @@ func SamplePercentiles(values int64Slice, ps []float64) []float64 {
 // SampleStdDev returns the standard deviation of the slice of int64.
 func SampleStdDev(values []int64) float64 {
 	return math.Sqrt(SampleVariance(values))
+}
+
+// SampleSum returns the sum of the slice of int64.
+func SampleSum(values []int64) int64 {
+	var sum int64
+	for _, v := range values {
+		sum += v
+	}
+	return sum
 }
 
 // SampleVariance returns the variance of the slice of int64.
@@ -403,6 +417,11 @@ func (s *UniformSample) StdDev() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return SampleStdDev(s.values)
+}
+
+// Sum returns the sum of the sample.
+func (s *UniformSample) Sum() int64 {
+	return SampleSum(s.values)
 }
 
 // Update the sample with a new value.

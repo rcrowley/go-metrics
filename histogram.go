@@ -20,6 +20,7 @@ type Histogram interface {
 	Percentiles([]float64) []float64
 	Sample() Sample
 	StdDev() float64
+	Sum() int64
 	Update(int64)
 	Variance() float64
 }
@@ -88,6 +89,9 @@ func (NilHistogram) Sample() Sample { return NilSample{} }
 
 // No-op.
 func (NilHistogram) StdDev() float64 { return 0.0 }
+
+// No-op.
+func (NilHistogram) Sum() int64 { return 0 }
 
 // No-op.
 func (NilHistogram) Update(v int64) {}
@@ -170,6 +174,11 @@ func (h *StandardHistogram) Sample() Sample {
 // last cleared.
 func (h *StandardHistogram) StdDev() float64 {
 	return math.Sqrt(h.Variance())
+}
+
+// Return the sum of inputs since the histogram was last cleared.
+func (h *StandardHistogram) Sum() int64 {
+	return atomic.LoadInt64(&h.sum)
 }
 
 // Update the histogram with a new value.
