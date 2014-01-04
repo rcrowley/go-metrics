@@ -22,15 +22,16 @@ func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 				m.Check()
 				w.Info(fmt.Sprintf("healthcheck %s: error: %v", name, m.Error()))
 			case Histogram:
-				ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+				s := m.Sample()
+				ps := s.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 				w.Info(fmt.Sprintf(
 					"histogram %s: count: %d min: %d max: %d mean: %.2f stddev: %.2f median: %.2f 75%%: %.2f 95%%: %.2f 99%%: %.2f 99.9%%: %.2f",
 					name,
-					m.Count(),
-					m.Min(),
-					m.Max(),
-					m.Mean(),
-					m.StdDev(),
+					s.Count(),
+					s.Min(),
+					s.Max(),
+					s.Mean(),
+					s.StdDev(),
 					ps[0],
 					ps[1],
 					ps[2],

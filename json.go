@@ -19,12 +19,13 @@ func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 			m.Check()
 			values["error"] = m.Error()
 		case Histogram:
-			ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
-			values["count"] = m.Count()
-			values["min"] = m.Min()
-			values["max"] = m.Max()
-			values["mean"] = m.Mean()
-			values["stddev"] = m.StdDev()
+			s := m.Sample()
+			ps := s.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+			values["count"] = s.Count()
+			values["min"] = s.Min()
+			values["max"] = s.Max()
+			values["mean"] = s.Mean()
+			values["stddev"] = s.StdDev()
 			values["median"] = ps[0]
 			values["75%%"] = ps[1]
 			values["95%%"] = ps[2]
