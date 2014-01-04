@@ -22,6 +22,8 @@ type Histogram interface {
 	StdDev() float64
 	Update(int64)
 	Variance() float64
+
+	Snapshot() *Snapshot
 }
 
 // Get an existing or create and register a new Histogram.
@@ -92,6 +94,11 @@ func (h NilHistogram) Update(v int64) {}
 // No-op.
 func (h NilHistogram) Variance() float64 { return 0.0 }
 
+// No-op.
+func (h NilHistogram) Snapshot() *Snapshot {
+	return NewSnapshot(NewUniformSample(0))
+}
+
 // The standard implementation of a Histogram uses a Sample and a goroutine
 // to synchronize its calculations.
 type StandardHistogram struct {
@@ -111,6 +118,10 @@ func (h *StandardHistogram) Clear() {
 	h.s.Clear()
 	h.sum = 0
 	h.variance = [...]float64{-1.0, 0.0}
+}
+
+func (h *StandardHistogram) Snapshot() *Snapshot {
+	return NewSnapshot(h.s)
 }
 
 // Return the count of inputs since the histogram was last cleared.
