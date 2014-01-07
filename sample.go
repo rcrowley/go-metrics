@@ -23,6 +23,7 @@ type Sample interface {
 	Percentile(float64) float64
 	Percentiles([]float64) []float64
 	Size() int
+	Snapshot() Sample
 	StdDev() float64
 	Sum() int64
 	Update(int64)
@@ -111,7 +112,21 @@ func (s *ExpDecaySample) Size() int {
 	return len(s.values)
 }
 
-// StdDev returns the standard deviation of the sample.
+// Snapshot returns a read-only copy of the sample.
+func (s *ExpDecaySample) Snapshot() Sample {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	values := make([]int64, len(s.values))
+	for i, v := range s.values {
+		values[i] = v.v
+	}
+	return &SampleSnapshot{
+		count:  s.count,
+		values: values,
+	}
+}
+
+// StdDev returns the standard deviation of the values in the sample.
 func (s *ExpDecaySample) StdDev() float64 {
 	return SampleStdDev(s.Values())
 }
@@ -197,7 +212,10 @@ func (NilSample) Percentiles(ps []float64) []float64 {
 // Size is a no-op.
 func (NilSample) Size() int { return 0 }
 
-// No-op.
+// Sample is a no-op.
+func (NilSample) Snapshot() Sample { return NilSample{} }
+
+// StdDev is a no-op.
 func (NilSample) StdDev() float64 { return 0.0 }
 
 // Sum is a no-op.
@@ -275,6 +293,71 @@ func SamplePercentiles(values int64Slice, ps []float64) []float64 {
 	}
 	return scores
 }
+
+// SampleSnapshot is a read-only copy of another Sample.
+type SampleSnapshot struct {
+	count  int64
+	values []int64
+}
+
+// Clear panics.
+func (*SampleSnapshot) Clear() {
+	panic("Clear called on a SampleSnapshot")
+}
+
+// Count returns the count of inputs at the time the snapshot was taken.
+func (s *SampleSnapshot) Count() int64 { return s.count }
+
+// Max returns the maximal value at the time the snapshot was taken.
+func (s *SampleSnapshot) Max() int64 { return SampleMax(s.values) }
+
+// Mean returns the mean value at the time the snapshot was taken.
+func (s *SampleSnapshot) Mean() float64 { return SampleMean(s.values) }
+
+// Min returns the minimal value at the time the snapshot was taken.
+func (s *SampleSnapshot) Min() int64 { return SampleMin(s.values) }
+
+// Percentile returns an arbitrary percentile of values at the time the
+// snapshot was taken.
+func (s *SampleSnapshot) Percentile(p float64) float64 {
+	return SamplePercentile(s.values, p)
+}
+
+// Percentiles returns a slice of arbitrary percentiles of values at the time
+// the snapshot was taken.
+func (s *SampleSnapshot) Percentiles(ps []float64) []float64 {
+	return SamplePercentiles(s.values, ps)
+}
+
+// Size returns the size of the sample at the time the snapshot was taken.
+func (s *SampleSnapshot) Size() int {
+	return len(s.values)
+}
+
+// Snapshot returns the snapshot.
+func (s *SampleSnapshot) Snapshot() Sample { return s }
+
+// StdDev returns the standard deviation of values at the time the snapshot was
+// taken.
+func (s *SampleSnapshot) StdDev() float64 { return SampleStdDev(s.values) }
+
+// Sum returns the sum of values at the time the snapshot was taken.
+func (s *SampleSnapshot) Sum() int64 { return SampleSum(s.values) }
+
+// Update panics.
+func (*SampleSnapshot) Update(int64) {
+	panic("Update called on a SampleSnapshot")
+}
+
+// Values returns a copy of the values in the sample.
+func (s *SampleSnapshot) Values() []int64 {
+	values := make([]int64, len(s.values))
+	copy(values, s.values)
+	return values
+}
+
+// Variance returns the variance of values at the time the snapshot was taken.
+func (s *SampleSnapshot) Variance() float64 { return SampleVariance(s.values) }
 
 // SampleStdDev returns the standard deviation of the slice of int64.
 func SampleStdDev(values []int64) float64 {

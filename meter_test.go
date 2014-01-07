@@ -24,7 +24,7 @@ func TestGetOrRegisterMeter(t *testing.T) {
 func TestMeterDecay(t *testing.T) {
 	m := &StandardMeter{
 		make(chan int64),
-		make(chan meterV),
+		make(chan *MeterSnapshot),
 		time.NewTicker(1),
 	}
 	go m.arbiter()
@@ -41,6 +41,14 @@ func TestMeterNonzero(t *testing.T) {
 	m.Mark(3)
 	if count := m.Count(); 3 != count {
 		t.Errorf("m.Count(): 3 != %v\n", count)
+	}
+}
+
+func TestMeterSnapshot(t *testing.T) {
+	m := NewMeter()
+	m.Mark(1)
+	if snapshot := m.Snapshot(); m.RateMean() != snapshot.RateMean() {
+		t.Fatal(snapshot)
 	}
 }
 

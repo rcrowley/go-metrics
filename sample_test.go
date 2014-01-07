@@ -169,6 +169,18 @@ func TestExpDecaySampleNanosecondRegression(t *testing.T) {
 	}
 }
 
+func TestExpDecaySampleSnapshot(t *testing.T) {
+	now := time.Now()
+	rand.Seed(1)
+	s := NewExpDecaySample(100, 0.99)
+	for i := 1; i <= 10000; i++ {
+		s.(*ExpDecaySample).update(now.Add(time.Duration(i)), int64(i))
+	}
+	snapshot := s.Snapshot()
+	s.Update(1)
+	testExpDecaySampleStatistics(t, snapshot)
+}
+
 func TestExpDecaySampleStatistics(t *testing.T) {
 	now := time.Now()
 	rand.Seed(1)
@@ -176,6 +188,83 @@ func TestExpDecaySampleStatistics(t *testing.T) {
 	for i := 1; i <= 10000; i++ {
 		s.(*ExpDecaySample).update(now.Add(time.Duration(i)), int64(i))
 	}
+	testExpDecaySampleStatistics(t, s)
+}
+
+func TestUniformSample(t *testing.T) {
+	rand.Seed(1)
+	s := NewUniformSample(100)
+	for i := 0; i < 1000; i++ {
+		s.Update(int64(i))
+	}
+	if size := s.Count(); 1000 != size {
+		t.Errorf("s.Count(): 1000 != %v\n", size)
+	}
+	if size := s.Size(); 100 != size {
+		t.Errorf("s.Size(): 100 != %v\n", size)
+	}
+	if l := len(s.Values()); 100 != l {
+		t.Errorf("len(s.Values()): 100 != %v\n", l)
+	}
+	for _, v := range s.Values() {
+		if v > 1000 || v < 0 {
+			t.Errorf("out of range [0, 100): %v\n", v)
+		}
+	}
+}
+
+func TestUniformSampleIncludesTail(t *testing.T) {
+	rand.Seed(1)
+	s := NewUniformSample(100)
+	max := 100
+	for i := 0; i < max; i++ {
+		s.Update(int64(i))
+	}
+	v := s.Values()
+	sum := 0
+	exp := (max - 1) * max / 2
+	for i := 0; i < len(v); i++ {
+		sum += int(v[i])
+	}
+	if exp != sum {
+		t.Errorf("sum: %v != %v\n", exp, sum)
+	}
+}
+
+func TestUniformSampleSnapshot(t *testing.T) {
+	s := NewUniformSample(100)
+	for i := 1; i <= 10000; i++ {
+		s.Update(int64(i))
+	}
+	snapshot := s.Snapshot()
+	s.Update(1)
+	testUniformSampleStatistics(t, snapshot)
+}
+
+func TestUniformSampleStatistics(t *testing.T) {
+	rand.Seed(1)
+	s := NewUniformSample(100)
+	for i := 1; i <= 10000; i++ {
+		s.Update(int64(i))
+	}
+	testUniformSampleStatistics(t, s)
+}
+
+func benchmarkSample(b *testing.B, s Sample) {
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	pauseTotalNs := memStats.PauseTotalNs
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Update(1)
+	}
+	b.StopTimer()
+	runtime.GC()
+	runtime.ReadMemStats(&memStats)
+	b.Logf("GC cost: %d ns/op", int(memStats.PauseTotalNs-pauseTotalNs)/b.N)
+}
+
+func testExpDecaySampleStatistics(t *testing.T, s Sample) {
 	if count := s.Count(); 10000 != count {
 		t.Errorf("s.Count(): 10000 != %v\n", count)
 	}
@@ -203,66 +292,7 @@ func TestExpDecaySampleStatistics(t *testing.T) {
 	}
 }
 
-func TestUniformSample(t *testing.T) {
-	rand.Seed(1)
-	s := NewUniformSample(100)
-	for i := 0; i < 1000; i++ {
-		s.Update(int64(i))
-	}
-	if size := s.Count(); 1000 != size {
-		t.Errorf("s.Count(): 1000 != %v\n", size)
-	}
-	if size := s.Size(); 100 != size {
-		t.Errorf("s.Size(): 100 != %v\n", size)
-	}
-	if l := len(s.Values()); 100 != l {
-		t.Errorf("len(s.Values()): 100 != %v\n", l)
-	}
-	for _, v := range s.Values() {
-		if v > 1000 || v < 0 {
-			t.Errorf("out of range [0, 100): %v\n", v)
-		}
-	}
-}
-
-func TestUniformSampleDup(t *testing.T) {
-	s1 := NewUniformSample(100)
-	s1.Update(1)
-	s2 := s1.Dup()
-	s1.Update(1)
-	if 1 != s2.Size() {
-		t.Fatal(s2)
-	}
-}
-
-func TestUniformSampleIncludesTail(t *testing.T) {
-	rand.Seed(1)
-	s := NewUniformSample(100)
-	max := 100
-
-	for i := 0; i < max; i++ {
-		s.Update(int64(i))
-	}
-
-	v := s.Values()
-	sum := 0
-	exp := (max - 1) * max / 2
-
-	for i := 0; i < len(v); i++ {
-		sum += int(v[i])
-	}
-
-	if exp != sum {
-		t.Errorf("sum: %v != %v\n", exp, sum)
-	}
-}
-
-func TestUniformSampleStatistics(t *testing.T) {
-	rand.Seed(1)
-	s := NewUniformSample(100)
-	for i := 1; i <= 10000; i++ {
-		s.Update(int64(i))
-	}
+func testUniformSampleStatistics(t *testing.T, s Sample) {
 	if count := s.Count(); 10000 != count {
 		t.Errorf("s.Count(): 10000 != %v\n", count)
 	}
@@ -288,18 +318,4 @@ func TestUniformSampleStatistics(t *testing.T) {
 	if 9999.99 != ps[2] {
 		t.Errorf("99th percentile: 9999.99 != %v\n", ps[2])
 	}
-}
-
-func benchmarkSample(b *testing.B, s Sample) {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-	pauseTotalNs := memStats.PauseTotalNs
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		s.Update(1)
-	}
-	b.StopTimer()
-	runtime.GC()
-	runtime.ReadMemStats(&memStats)
-	b.Logf("GC cost: %d ns/op", int(memStats.PauseTotalNs-pauseTotalNs)/b.N)
 }

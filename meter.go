@@ -11,6 +11,7 @@ type Meter interface {
 	Rate5() float64
 	Rate15() float64
 	RateMean() float64
+	Snapshot() Meter
 }
 
 // GetOrRegisterMeter returns an existing Meter or constructs and registers a
@@ -47,7 +48,40 @@ func NewRegisteredMeter(name string, r Registry) Meter {
 	return c
 }
 
-// No-op Meter.
+// MeterSnapshot is a read-only copy of another Meter.
+type MeterSnapshot struct {
+	count                          int64
+	rate1, rate5, rate15, rateMean float64
+}
+
+// Count returns the count of events at the time the snapshot was taken.
+func (m *MeterSnapshot) Count() int64 { return m.count }
+
+// Mark panics.
+func (*MeterSnapshot) Mark(n int64) {
+	panic("Mark called on a MeterSnapshot")
+}
+
+// Rate1 returns the one-minute moving average rate of events per second at the
+// time the snapshot was taken.
+func (m *MeterSnapshot) Rate1() float64 { return m.rate1 }
+
+// Rate5 returns the five-minute moving average rate of events per second at
+// the time the snapshot was taken.
+func (m *MeterSnapshot) Rate5() float64 { return m.rate5 }
+
+// Rate15 returns the fifteen-minute moving average rate of events per second
+// at the time the snapshot was taken.
+func (m *MeterSnapshot) Rate15() float64 { return m.rate15 }
+
+// RateMean returns the meter's mean rate of events per second at the time the
+// snapshot was taken.
+func (m *MeterSnapshot) RateMean() float64 { return m.rateMean }
+
+// Snapshot returns the snapshot.
+func (m *MeterSnapshot) Snapshot() Meter { return m }
+
+// NilMeter is a no-op Meter.
 type NilMeter struct{}
 
 // Count is a no-op.
@@ -68,12 +102,14 @@ func (NilMeter) Rate15() float64 { return 0.0 }
 // RateMean is a no-op.
 func (NilMeter) RateMean() float64 { return 0.0 }
 
-// The standard implementation of a Meter uses a goroutine to synchronize
-// its calculations and another goroutine (via time.Ticker) to produce
-// clock ticks.
+// Snapshot is a no-op.
+func (NilMeter) Snapshot() Meter { return NilMeter{} }
+
+// StandardMeter is the standard implementation of a Meter and uses a
+// goroutine to synchronize its calculations and a time.Ticker to pass time.
 type StandardMeter struct {
 	in     chan int64
-	out    chan meterV
+	out    chan *MeterSnapshot
 	ticker *time.Ticker
 }
 
@@ -107,11 +143,17 @@ func (m *StandardMeter) RateMean() float64 {
 	return (<-m.out).rateMean
 }
 
-// Receive inputs and send outputs.  Count each input and update the various
-// moving averages and the mean rate of events.  Send a copy of the meterV
-// as output.
+// Snapshot returns a read-only copy of the meter.
+func (m *StandardMeter) Snapshot() Meter {
+	snapshot := *<-m.out
+	return &snapshot
+}
+
+// arbiter receives inputs and sends outputs.  It counts each input and updates
+// the various moving averages and the mean rate of events.  It sends a copy of
+// the meterV as output.
 func (m *StandardMeter) arbiter() {
-	var mv meterV
+	snapshot := &MeterSnapshot{}
 	a1 := NewEWMA1()
 	a5 := NewEWMA5()
 	a15 := NewEWMA15()
@@ -119,30 +161,23 @@ func (m *StandardMeter) arbiter() {
 	for {
 		select {
 		case n := <-m.in:
-			mv.count += n
+			snapshot.count += n
 			a1.Update(n)
 			a5.Update(n)
 			a15.Update(n)
-			mv.rate1 = a1.Rate()
-			mv.rate5 = a5.Rate()
-			mv.rate15 = a15.Rate()
-			mv.rateMean = float64(1e9*mv.count) / float64(time.Since(t))
-		case m.out <- mv:
+			snapshot.rate1 = a1.Rate()
+			snapshot.rate5 = a5.Rate()
+			snapshot.rate15 = a15.Rate()
+			snapshot.rateMean = float64(1e9*snapshot.count) / float64(time.Since(t))
+		case m.out <- snapshot:
 		case <-m.ticker.C:
 			a1.Tick()
 			a5.Tick()
 			a15.Tick()
-			mv.rate1 = a1.Rate()
-			mv.rate5 = a5.Rate()
-			mv.rate15 = a15.Rate()
-			mv.rateMean = float64(1e9*mv.count) / float64(time.Since(t))
+			snapshot.rate1 = a1.Rate()
+			snapshot.rate5 = a5.Rate()
+			snapshot.rate15 = a15.Rate()
+			snapshot.rateMean = float64(1e9*snapshot.count) / float64(time.Since(t))
 		}
 	}
-}
-
-// A meterV contains all the values that would need to be passed back
-// from the synchronizing goroutine.
-type meterV struct {
-	count                          int64
-	rate1, rate5, rate15, rateMean float64
 }

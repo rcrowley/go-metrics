@@ -4,6 +4,7 @@ import "sync/atomic"
 
 // Gauges hold an int64 value that can be set arbitrarily.
 type Gauge interface {
+	Snapshot() Gauge
 	Update(int64)
 	Value() int64
 }
@@ -35,10 +36,27 @@ func NewRegisteredGauge(name string, r Registry) Gauge {
 	return c
 }
 
-// No-op Gauge.
+// GaugeSnapshot is a read-only copy of another Gauge.
+type GaugeSnapshot int64
+
+// Snapshot returns the snapshot.
+func (g GaugeSnapshot) Snapshot() Gauge { return g }
+
+// Update panics.
+func (GaugeSnapshot) Update(int64) {
+	panic("Update called on a GaugeSnapshot")
+}
+
+// Value returns the value at the time the snapshot was taken.
+func (g GaugeSnapshot) Value() int64 { return int64(g) }
+
+// NilGauge is a no-op Gauge.
 type NilGauge struct{}
 
-// No-op.
+// Snapshot is a no-op.
+func (NilGauge) Snapshot() Gauge { return NilGauge{} }
+
+// Update is a no-op.
 func (NilGauge) Update(v int64) {}
 
 // Value is a no-op.
@@ -50,7 +68,12 @@ type StandardGauge struct {
 	value int64
 }
 
-// Update the gauge's value.
+// Snapshot returns a read-only copy of the gauge.
+func (g *StandardGauge) Snapshot() Gauge {
+	return GaugeSnapshot(g.Value())
+}
+
+// Update updates the gauge's value.
 func (g *StandardGauge) Update(v int64) {
 	atomic.StoreInt64(&g.value, v)
 }

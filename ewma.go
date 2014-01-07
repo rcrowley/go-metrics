@@ -38,13 +38,36 @@ func NewEWMA15() EWMA {
 	return NewEWMA(1 - math.Exp(-5.0/60.0/15))
 }
 
-// No-op EWMA.
+// EWMASnapshot is a read-only copy of another EWMA.
+type EWMASnapshot float64
+
+// Rate returns the rate of events per second at the time the snapshot was
+// taken.
+func (a EWMASnapshot) Rate() float64 { return float64(a) }
+
+// Snapshot returns the snapshot.
+func (a EWMASnapshot) Snapshot() EWMA { return a }
+
+// Tick panics.
+func (EWMASnapshot) Tick() {
+	panic("Tick called on an EWMASnapshot")
+}
+
+// Update panics.
+func (EWMASnapshot) Update(int64) {
+	panic("Update called on an EWMASnapshot")
+}
+
+// NilEWMA is a no-op EWMA.
 type NilEWMA struct{}
 
 // Rate is a no-op.
 func (NilEWMA) Rate() float64 { return 0.0 }
 
-// No-op.
+// Snapshot is a no-op.
+func (NilEWMA) Snapshot() EWMA { return NilEWMA{} }
+
+// Tick is a no-op.
 func (NilEWMA) Tick() {}
 
 // Update is a no-op.
@@ -68,7 +91,13 @@ func (a *StandardEWMA) Rate() float64 {
 	return a.rate * float64(1e9)
 }
 
-// Tick the clock to update the moving average.
+// Snapshot returns a read-only copy of the EWMA.
+func (a *StandardEWMA) Snapshot() EWMA {
+	return EWMASnapshot(a.Rate())
+}
+
+// Tick ticks the clock to update the moving average.  It assumes it is called
+// every five seconds.
 func (a *StandardEWMA) Tick() {
 	count := atomic.LoadInt64(&a.uncounted)
 	atomic.AddInt64(&a.uncounted, -count)
