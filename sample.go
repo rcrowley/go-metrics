@@ -14,13 +14,9 @@ const rescaleThreshold = time.Hour
 
 // Samples maintain a statistically-significant selection of values from
 // a stream.
-//
-// This is an interface so as to encourage other structs to implement
-// the Sample API as appropriate.
 type Sample interface {
 	Clear()
 	Count() int64
-	Dup() Sample
 	Max() int64
 	Mean() float64
 	Min() int64
@@ -74,22 +70,6 @@ func (s *ExpDecaySample) Clear() {
 	s.values = make(expDecaySampleHeap, 0, s.reservoirSize)
 }
 
-// Dup returns a copy of the sample.
-func (s *ExpDecaySample) Dup() Sample {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	values := make(expDecaySampleHeap, len(s.values))
-	copy(values, s.values)
-	return &ExpDecaySample{
-		alpha:         s.alpha,
-		count:         s.count,
-		reservoirSize: s.reservoirSize,
-		t0:            s.t0,
-		t1:            s.t1,
-		values:        values,
-	}
-}
-
 // Count returns the number of samples recorded, which may exceed the
 // reservoir size.
 func (s *ExpDecaySample) Count() int64 {
@@ -102,7 +82,7 @@ func (s *ExpDecaySample) Max() int64 {
 	return SampleMax(s.Values())
 }
 
-// Return the mean of all values seen since the histogram was last cleared.
+// Mean returns the mean of the values in the sample.
 func (s *ExpDecaySample) Mean() float64 {
 	return SampleMean(s.Values())
 }
@@ -113,12 +93,13 @@ func (s *ExpDecaySample) Min() int64 {
 	return SampleMin(s.Values())
 }
 
-// Percentile returns an arbitrary percentile of sampled values.
+// Percentile returns an arbitrary percentile of values in the sample.
 func (s *ExpDecaySample) Percentile(p float64) float64 {
 	return SamplePercentile(s.Values(), p)
 }
 
-// Percentiles returns a slice of arbitrary percentiles of sampled values.
+// Percentiles returns a slice of arbitrary percentiles of values in the
+// sample.
 func (s *ExpDecaySample) Percentiles(ps []float64) []float64 {
 	return SamplePercentiles(s.Values(), ps)
 }
@@ -135,7 +116,7 @@ func (s *ExpDecaySample) StdDev() float64 {
 	return SampleStdDev(s.Values())
 }
 
-// Sum returns the sum of the sample.
+// Sum returns the sum of the values in the sample.
 func (s *ExpDecaySample) Sum() int64 {
 	return SampleSum(s.Values())
 }
@@ -156,7 +137,7 @@ func (s *ExpDecaySample) Values() []int64 {
 	return values
 }
 
-// Variance returns the variance of the sample.
+// Variance returns the variance of the values in the sample.
 func (s *ExpDecaySample) Variance() float64 {
 	return SampleVariance(s.Values())
 }
@@ -187,51 +168,48 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 	}
 }
 
-// No-op Sample.
+// NilSample is a no-op Sample.
 type NilSample struct{}
 
-// No-op.
+// Clear is a no-op.
 func (NilSample) Clear() {}
 
-// No-op.
+// Count is a no-op.
 func (NilSample) Count() int64 { return 0 }
 
-// No-op.
-func (NilSample) Dup() Sample { return NilSample{} }
-
-// No-op.
+// Max is a no-op.
 func (NilSample) Max() int64 { return 0 }
 
-// No-op.
+// Mean is a no-op.
 func (NilSample) Mean() float64 { return 0.0 }
 
-// No-op.
+// Min is a no-op.
 func (NilSample) Min() int64 { return 0 }
 
-// No-op.
+// Percentile is a no-op.
 func (NilSample) Percentile(p float64) float64 { return 0.0 }
 
-// No-op.
+// Percentiles is a no-op.
 func (NilSample) Percentiles(ps []float64) []float64 {
 	return make([]float64, len(ps))
 }
 
-// No-op.
+// Size is a no-op.
 func (NilSample) Size() int { return 0 }
 
 // No-op.
 func (NilSample) StdDev() float64 { return 0.0 }
 
-// No-op.
+// Sum is a no-op.
 func (NilSample) Sum() int64 { return 0 }
 
-// No-op.
+// Update is a no-op.
 func (NilSample) Update(v int64) {}
 
-// No-op.
+// Values is a no-op.
 func (NilSample) Values() []int64 { return []int64{} }
 
-// No-op.
+// Variance is a no-op.
 func (NilSample) Variance() float64 { return 0.0 }
 
 // SampleMax returns the maximum value of the slice of int64.
@@ -333,7 +311,8 @@ type UniformSample struct {
 	values        []int64
 }
 
-// Create a new uniform sample with the given reservoir size.
+// NewUniformSample constructs a new uniform sample with the given reservoir
+// size.
 func NewUniformSample(reservoirSize int) Sample {
 	if UseNilMetrics {
 		return NilSample{}
@@ -341,7 +320,7 @@ func NewUniformSample(reservoirSize int) Sample {
 	return &UniformSample{reservoirSize: reservoirSize}
 }
 
-// Clear all samples.
+// Clear clears all samples.
 func (s *UniformSample) Clear() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -355,19 +334,6 @@ func (s *UniformSample) Count() int64 {
 	return atomic.LoadInt64(&s.count)
 }
 
-// Dup returns a copy of the sample.
-func (s *UniformSample) Dup() Sample {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	values := make([]int64, len(s.values))
-	copy(values, s.values)
-	return &UniformSample{
-		count:         s.count,
-		reservoirSize: s.reservoirSize,
-		values:        values,
-	}
-}
-
 // Max returns the maximum value in the sample, which may not be the maximum
 // value ever to be part of the sample.
 func (s *UniformSample) Max() int64 {
@@ -376,7 +342,7 @@ func (s *UniformSample) Max() int64 {
 	return SampleMax(s.values)
 }
 
-// Return the mean of all values seen since the histogram was last cleared.
+// Mean returns the mean of the values in the sample.
 func (s *UniformSample) Mean() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -391,40 +357,53 @@ func (s *UniformSample) Min() int64 {
 	return SampleMin(s.values)
 }
 
-// Percentile returns an arbitrary percentile of sampled values.
+// Percentile returns an arbitrary percentile of values in the sample.
 func (s *UniformSample) Percentile(p float64) float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return SamplePercentile(s.values, p)
 }
 
-// Percentiles returns a slice of arbitrary percentiles of sampled values.
+// Percentiles returns a slice of arbitrary percentiles of values in the
+// sample.
 func (s *UniformSample) Percentiles(ps []float64) []float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return SamplePercentiles(s.values, ps)
 }
 
-// Return the size of the sample, which is at most the reservoir size.
+// Size returns the size of the sample, which is at most the reservoir size.
 func (s *UniformSample) Size() int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return len(s.values)
 }
 
-// StdDev returns the standard deviation of the sample.
+// Snapshot returns a read-only copy of the sample.
+func (s *UniformSample) Snapshot() Sample {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	values := make([]int64, len(s.values))
+	copy(values, s.values)
+	return &SampleSnapshot{
+		count:  s.count,
+		values: values,
+	}
+}
+
+// StdDev returns the standard deviation of the values in the sample.
 func (s *UniformSample) StdDev() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return SampleStdDev(s.values)
 }
 
-// Sum returns the sum of the sample.
+// Sum returns the sum of the values in the sample.
 func (s *UniformSample) Sum() int64 {
 	return SampleSum(s.values)
 }
 
-// Update the sample with a new value.
+// Update samples a new value.
 func (s *UniformSample) Update(v int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -436,7 +415,7 @@ func (s *UniformSample) Update(v int64) {
 	}
 }
 
-// Return all the values in the sample.
+// Values returns a copy of the values in the sample.
 func (s *UniformSample) Values() []int64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -445,7 +424,7 @@ func (s *UniformSample) Values() []int64 {
 	return values
 }
 
-// Variance returns the variance of the sample.
+// Variance returns the variance of the values in the sample.
 func (s *UniformSample) Variance() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

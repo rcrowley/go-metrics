@@ -4,9 +4,6 @@ import "time"
 
 // Meters count events to produce exponentially-weighted moving average rates
 // at one-, five-, and fifteen-minutes and a mean rate.
-//
-// This is an interface so as to encourage other structs to implement
-// the Meter API as appropriate.
 type Meter interface {
 	Count() int64
 	Mark(int64)
@@ -16,7 +13,8 @@ type Meter interface {
 	RateMean() float64
 }
 
-// Get an existing or create and register a new Meter.
+// GetOrRegisterMeter returns an existing Meter or constructs and registers a
+// new StandardMeter.
 func GetOrRegisterMeter(name string, r Registry) Meter {
 	if nil == r {
 		r = DefaultRegistry
@@ -24,22 +22,22 @@ func GetOrRegisterMeter(name string, r Registry) Meter {
 	return r.GetOrRegister(name, NewMeter()).(Meter)
 }
 
-// Create a new Meter.  Create the communication channels and start the
-// synchronizing goroutine.
+// NewMeter constructs a new StandardMeter and launches a goroutine.
 func NewMeter() Meter {
 	if UseNilMetrics {
 		return NilMeter{}
 	}
 	m := &StandardMeter{
 		make(chan int64),
-		make(chan meterV),
+		make(chan *MeterSnapshot),
 		time.NewTicker(5e9),
 	}
 	go m.arbiter()
 	return m
 }
 
-// Create and register a new Meter.
+// NewMeter constructs and registers a new StandardMeter and launches a
+// goroutine.
 func NewRegisteredMeter(name string, r Registry) Meter {
 	c := NewMeter()
 	if nil == r {
@@ -52,22 +50,22 @@ func NewRegisteredMeter(name string, r Registry) Meter {
 // No-op Meter.
 type NilMeter struct{}
 
-// No-op.
+// Count is a no-op.
 func (NilMeter) Count() int64 { return 0 }
 
-// No-op.
+// Mark is a no-op.
 func (NilMeter) Mark(n int64) {}
 
-// No-op.
+// Rate1 is a no-op.
 func (NilMeter) Rate1() float64 { return 0.0 }
 
-// No-op.
+// Rate5 is a no-op.
 func (NilMeter) Rate5() float64 { return 0.0 }
 
-// No-op.
+// Rate15is a no-op.
 func (NilMeter) Rate15() float64 { return 0.0 }
 
-// No-op.
+// RateMean is a no-op.
 func (NilMeter) RateMean() float64 { return 0.0 }
 
 // The standard implementation of a Meter uses a goroutine to synchronize
@@ -79,32 +77,32 @@ type StandardMeter struct {
 	ticker *time.Ticker
 }
 
-// Return the count of events seen.
+// Count returns the number of events recorded.
 func (m *StandardMeter) Count() int64 {
 	return (<-m.out).count
 }
 
-// Mark the occurance of n events.
+// Mark records the occurance of n events.
 func (m *StandardMeter) Mark(n int64) {
 	m.in <- n
 }
 
-// Return the meter's one-minute moving average rate of events.
+// Rate1 returns the one-minute moving average rate of events per second.
 func (m *StandardMeter) Rate1() float64 {
 	return (<-m.out).rate1
 }
 
-// Return the meter's five-minute moving average rate of events.
+// Rate5 returns the five-minute moving average rate of events per second.
 func (m *StandardMeter) Rate5() float64 {
 	return (<-m.out).rate5
 }
 
-// Return the meter's fifteen-minute moving average rate of events.
+// Rate15 returns the fifteen-minute moving average rate of events per second.
 func (m *StandardMeter) Rate15() float64 {
 	return (<-m.out).rate15
 }
 
-// Return the meter's mean rate of events.
+// RateMean returns the meter's mean rate of events per second.
 func (m *StandardMeter) RateMean() float64 {
 	return (<-m.out).rateMean
 }

@@ -144,16 +144,6 @@ func TestExpDecaySample1000(t *testing.T) {
 	}
 }
 
-func TestExpDecaySampleDup(t *testing.T) {
-	s1 := NewExpDecaySample(100, 0.99)
-	s1.Update(1)
-	s2 := s1.Dup()
-	s1.Update(1)
-	if 1 != s2.Size() {
-		t.Fatal(s2)
-	}
-}
-
 // This test makes sure that the sample's priority is not amplified by using
 // nanosecond duration since start rather than second duration since start.
 // The priority becomes +Inf quickly after starting if this is done,
