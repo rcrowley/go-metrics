@@ -3,15 +3,14 @@ package metrics
 import "sync/atomic"
 
 // Gauges hold an int64 value that can be set arbitrarily.
-//
-// This is an interface so as to encourage other structs to implement
-// the Gauge API as appropriate.
 type Gauge interface {
+	Snapshot() Gauge
 	Update(int64)
 	Value() int64
 }
 
-// Get an existing or create and register a new Gauge.
+// GetOrRegisterGauge returns an existing Gauge or constructs and registers a
+// new StandardGauge.
 func GetOrRegisterGauge(name string, r Registry) Gauge {
 	if nil == r {
 		r = DefaultRegistry
@@ -19,7 +18,7 @@ func GetOrRegisterGauge(name string, r Registry) Gauge {
 	return r.GetOrRegister(name, NewGauge()).(Gauge)
 }
 
-// Create a new Gauge.
+// NewGauge constructs a new StandardGauge.
 func NewGauge() Gauge {
 	if UseNilMetrics {
 		return NilGauge{}
@@ -27,7 +26,7 @@ func NewGauge() Gauge {
 	return &StandardGauge{0}
 }
 
-// Create and register a new Gauge.
+// NewRegisteredGauge constructs and registers a new StandardGauge.
 func NewRegisteredGauge(name string, r Registry) Gauge {
 	c := NewGauge()
 	if nil == r {
@@ -37,27 +36,49 @@ func NewRegisteredGauge(name string, r Registry) Gauge {
 	return c
 }
 
-// No-op Gauge.
+// GaugeSnapshot is a read-only copy of another Gauge.
+type GaugeSnapshot int64
+
+// Snapshot returns the snapshot.
+func (g GaugeSnapshot) Snapshot() Gauge { return g }
+
+// Update panics.
+func (GaugeSnapshot) Update(int64) {
+	panic("Update called on a GaugeSnapshot")
+}
+
+// Value returns the value at the time the snapshot was taken.
+func (g GaugeSnapshot) Value() int64 { return int64(g) }
+
+// NilGauge is a no-op Gauge.
 type NilGauge struct{}
 
-// No-op.
-func (g NilGauge) Update(v int64) {}
+// Snapshot is a no-op.
+func (NilGauge) Snapshot() Gauge { return NilGauge{} }
 
-// No-op.
-func (g NilGauge) Value() int64 { return 0 }
+// Update is a no-op.
+func (NilGauge) Update(v int64) {}
 
-// The standard implementation of a Gauge uses the sync/atomic package
-// to manage a single int64 value.
+// Value is a no-op.
+func (NilGauge) Value() int64 { return 0 }
+
+// StandardGauge is the standard implementation of a Gauge and uses the
+// sync/atomic package to manage a single int64 value.
 type StandardGauge struct {
 	value int64
 }
 
-// Update the gauge's value.
+// Snapshot returns a read-only copy of the gauge.
+func (g *StandardGauge) Snapshot() Gauge {
+	return GaugeSnapshot(g.Value())
+}
+
+// Update updates the gauge's value.
 func (g *StandardGauge) Update(v int64) {
 	atomic.StoreInt64(&g.value, v)
 }
 
-// Return the gauge's current value.
+// Value returns the gauge's current value.
 func (g *StandardGauge) Value() int64 {
 	return atomic.LoadInt64(&g.value)
 }
