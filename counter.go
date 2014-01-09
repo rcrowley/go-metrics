@@ -3,17 +3,16 @@ package metrics
 import "sync/atomic"
 
 // Counters hold an int64 value that can be incremented and decremented.
-//
-// This is an interface so as to encourage other structs to implement
-// the Counter API as appropriate.
 type Counter interface {
 	Clear()
 	Count() int64
 	Dec(int64)
 	Inc(int64)
+	Snapshot() Counter
 }
 
-// Get an existing or create and register a new Counter.
+// GetOrRegisterCounter returns an existing Counter or constructs and registers
+// a new StandardCounter.
 func GetOrRegisterCounter(name string, r Registry) Counter {
 	if nil == r {
 		r = DefaultRegistry
@@ -21,7 +20,7 @@ func GetOrRegisterCounter(name string, r Registry) Counter {
 	return r.GetOrRegister(name, NewCounter()).(Counter)
 }
 
-// Create a new Counter.
+// NewCounter constructs a new StandardCounter.
 func NewCounter() Counter {
 	if UseNilMetrics {
 		return NilCounter{}
@@ -29,7 +28,7 @@ func NewCounter() Counter {
 	return &StandardCounter{0}
 }
 
-// Create and register a new Counter.
+// NewRegisteredCounter constructs and registers a new StandardCounter.
 func NewRegisteredCounter(name string, r Registry) Counter {
 	c := NewCounter()
 	if nil == r {
@@ -39,43 +38,75 @@ func NewRegisteredCounter(name string, r Registry) Counter {
 	return c
 }
 
-// No-op Counter.
+// CounterSnapshot is a read-only copy of another Counter.
+type CounterSnapshot int64
+
+// Clear panics.
+func (CounterSnapshot) Clear() {
+	panic("Clear called on a CounterSnapshot")
+}
+
+// Count returns the count at the time the snapshot was taken.
+func (c CounterSnapshot) Count() int64 { return int64(c) }
+
+// Dec panics.
+func (CounterSnapshot) Dec(int64) {
+	panic("Dec called on a CounterSnapshot")
+}
+
+// Inc panics.
+func (CounterSnapshot) Inc(int64) {
+	panic("Inc called on a CounterSnapshot")
+}
+
+// Snapshot returns the snapshot.
+func (c CounterSnapshot) Snapshot() Counter { return c }
+
+// NilCounter is a no-op Counter.
 type NilCounter struct{}
 
-// No-op.
-func (c NilCounter) Clear() {}
+// Clear is a no-op.
+func (NilCounter) Clear() {}
 
-// No-op.
-func (c NilCounter) Count() int64 { return 0 }
+// Count is a no-op.
+func (NilCounter) Count() int64 { return 0 }
 
-// No-op.
-func (c NilCounter) Dec(i int64) {}
+// Dec is a no-op.
+func (NilCounter) Dec(i int64) {}
 
-// No-op.
-func (c NilCounter) Inc(i int64) {}
+// Inc is a no-op.
+func (NilCounter) Inc(i int64) {}
 
-// The standard implementation of a Counter uses the sync/atomic package
-// to manage a single int64 value.
+// Snapshot is a no-op.
+func (NilCounter) Snapshot() Counter { return NilCounter{} }
+
+// StandardCounter is the standard implementation of a Counter and uses the
+// sync/atomic package to manage a single int64 value.
 type StandardCounter struct {
 	count int64
 }
 
-// Clear the counter: set it to zero.
+// Clear sets the counter to zero.
 func (c *StandardCounter) Clear() {
 	atomic.StoreInt64(&c.count, 0)
 }
 
-// Return the current count.
+// Count returns the current count.
 func (c *StandardCounter) Count() int64 {
 	return atomic.LoadInt64(&c.count)
 }
 
-// Decrement the counter by the given amount.
+// Dec decrements the counter by the given amount.
 func (c *StandardCounter) Dec(i int64) {
 	atomic.AddInt64(&c.count, -i)
 }
 
-// Increment the counter by the given amount.
+// Inc increments the counter by the given amount.
 func (c *StandardCounter) Inc(i int64) {
 	atomic.AddInt64(&c.count, i)
+}
+
+// Snapshot returns a read-only copy of the counter.
+func (c *StandardCounter) Snapshot() Counter {
+	return CounterSnapshot(c.Count())
 }

@@ -51,6 +51,16 @@ func TestCounterInc2(t *testing.T) {
 	}
 }
 
+func TestCounterSnapshot(t *testing.T) {
+	c := NewCounter()
+	c.Inc(1)
+	snapshot := c.Snapshot()
+	c.Inc(1)
+	if count := snapshot.Count(); 1 != count {
+		t.Errorf("c.Count(): 1 != %v\n", count)
+	}
+}
+
 func TestCounterZero(t *testing.T) {
 	c := NewCounter()
 	if count := c.Count(); 0 != count {

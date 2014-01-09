@@ -1,16 +1,6 @@
 package metrics
 
-import (
-	"math"
-	"sort"
-	"sync"
-	"sync/atomic"
-)
-
-// Histograms calculate distribution statistics from an int64 value.
-//
-// This is an interface so as to encourage other structs to implement
-// the Histogram API as appropriate.
+// Histograms calculate distribution statistics from a series of int64 values.
 type Histogram interface {
 	Clear()
 	Count() int64
@@ -19,12 +9,15 @@ type Histogram interface {
 	Min() int64
 	Percentile(float64) float64
 	Percentiles([]float64) []float64
+	Sample() Sample
+	Snapshot() Histogram
 	StdDev() float64
 	Update(int64)
 	Variance() float64
 }
 
-// Get an existing or create and register a new Histogram.
+// GetOrRegisterHistogram returns an existing Histogram or constructs and
+// registers a new StandardHistogram.
 func GetOrRegisterHistogram(name string, r Registry, s Sample) Histogram {
 	if nil == r {
 		r = DefaultRegistry
@@ -32,22 +25,16 @@ func GetOrRegisterHistogram(name string, r Registry, s Sample) Histogram {
 	return r.GetOrRegister(name, NewHistogram(s)).(Histogram)
 }
 
-// Create a new Histogram with the given Sample.  The initial values compare
-// so that the first value will be both min and max and the variance is flagged
-// for special treatment on its first iteration.
+// NewHistogram constructs a new StandardHistogram from a Sample.
 func NewHistogram(s Sample) Histogram {
 	if UseNilMetrics {
 		return NilHistogram{}
 	}
-	return &StandardHistogram{
-		max:      math.MinInt64,
-		min:      math.MaxInt64,
-		s:        s,
-		variance: [2]float64{-1.0, 0.0},
-	}
+	return &StandardHistogram{sample: s}
 }
 
-// Create and register a new Histogram.
+// NewRegisteredHistogram constructs and registers a new StandardHistogram from
+// a Sample.
 func NewRegisteredHistogram(name string, r Registry, s Sample) Histogram {
 	c := NewHistogram(s)
 	if nil == r {
@@ -57,171 +44,149 @@ func NewRegisteredHistogram(name string, r Registry, s Sample) Histogram {
 	return c
 }
 
-// No-op Histogram.
+// HistogramSnapshot is a read-only copy of another Histogram.
+type HistogramSnapshot struct {
+	sample *SampleSnapshot
+}
+
+// Clear panics.
+func (*HistogramSnapshot) Clear() {
+	panic("Clear called on a HistogramSnapshot")
+}
+
+// Count returns the number of samples recorded at the time the snapshot was
+// taken.
+func (h *HistogramSnapshot) Count() int64 { return h.sample.Count() }
+
+// Max returns the maximum value in the sample at the time the snapshot was
+// taken.
+func (h *HistogramSnapshot) Max() int64 { return h.sample.Max() }
+
+// Mean returns the mean of the values in the sample at the time the snapshot
+// was taken.
+func (h *HistogramSnapshot) Mean() float64 { return h.sample.Mean() }
+
+// Min returns the minimum value in the sample at the time the snapshot was
+// taken.
+func (h *HistogramSnapshot) Min() int64 { return h.sample.Min() }
+
+// Percentile returns an arbitrary percentile of values in the sample at the
+// time the snapshot was taken.
+func (h *HistogramSnapshot) Percentile(p float64) float64 {
+	return h.sample.Percentile(p)
+}
+
+// Percentiles returns a slice of arbitrary percentiles of values in the sample
+// at the time the snapshot was taken.
+func (h *HistogramSnapshot) Percentiles(ps []float64) []float64 {
+	return h.sample.Percentiles(ps)
+}
+
+// Sample returns the Sample underlying the histogram.
+func (h *HistogramSnapshot) Sample() Sample { return h.sample }
+
+// Snapshot returns the snapshot.
+func (h *HistogramSnapshot) Snapshot() Histogram { return h }
+
+// StdDev returns the standard deviation of the values in the sample at the
+// time the snapshot was taken.
+func (h *HistogramSnapshot) StdDev() float64 { return h.sample.StdDev() }
+
+// Update panics.
+func (*HistogramSnapshot) Update(int64) {
+	panic("Update called on a HistogramSnapshot")
+}
+
+// Variance returns the variance of inputs at the time the snapshot was taken.
+func (h *HistogramSnapshot) Variance() float64 { return h.sample.Variance() }
+
+// NilHistogram is a no-op Histogram.
 type NilHistogram struct{}
 
-// No-op.
-func (h NilHistogram) Clear() {}
+// Clear is a no-op.
+func (NilHistogram) Clear() {}
 
-// No-op.
-func (h NilHistogram) Count() int64 { return 0 }
+// Count is a no-op.
+func (NilHistogram) Count() int64 { return 0 }
 
-// No-op.
-func (h NilHistogram) Max() int64 { return 0 }
+// Max is a no-op.
+func (NilHistogram) Max() int64 { return 0 }
 
-// No-op.
-func (h NilHistogram) Mean() float64 { return 0.0 }
+// Mean is a no-op.
+func (NilHistogram) Mean() float64 { return 0.0 }
 
-// No-op.
-func (h NilHistogram) Min() int64 { return 0 }
+// Min is a no-op.
+func (NilHistogram) Min() int64 { return 0 }
 
-// No-op.
-func (h NilHistogram) Percentile(p float64) float64 { return 0.0 }
+// Percentile is a no-op.
+func (NilHistogram) Percentile(p float64) float64 { return 0.0 }
 
-// No-op.
-func (h NilHistogram) Percentiles(ps []float64) []float64 {
+// Percentiles is a no-op.
+func (NilHistogram) Percentiles(ps []float64) []float64 {
 	return make([]float64, len(ps))
 }
 
-// No-op.
-func (h NilHistogram) StdDev() float64 { return 0.0 }
+// Sample is a no-op.
+func (NilHistogram) Sample() Sample { return NilSample{} }
 
-// No-op.
-func (h NilHistogram) Update(v int64) {}
+// Snapshot is a no-op.
+func (NilHistogram) Snapshot() Histogram { return NilHistogram{} }
 
-// No-op.
-func (h NilHistogram) Variance() float64 { return 0.0 }
+// StdDev is a no-op.
+func (NilHistogram) StdDev() float64 { return 0.0 }
 
-// The standard implementation of a Histogram uses a Sample and a goroutine
-// to synchronize its calculations.
+// Update is a no-op.
+func (NilHistogram) Update(v int64) {}
+
+// Variance is a no-op.
+func (NilHistogram) Variance() float64 { return 0.0 }
+
+// StandardHistogram is the standard implementation of a Histogram and uses a
+// Sample to bound its memory use.
 type StandardHistogram struct {
-	count, sum, min, max int64
-	mutex                sync.Mutex
-	s                    Sample
-	variance             [2]float64
+	sample Sample
 }
 
-// Clear the histogram.
-func (h *StandardHistogram) Clear() {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	h.count = 0
-	h.max = math.MinInt64
-	h.min = math.MaxInt64
-	h.s.Clear()
-	h.sum = 0
-	h.variance = [...]float64{-1.0, 0.0}
-}
+// Clear clears the histogram and its sample.
+func (h *StandardHistogram) Clear() { h.sample.Clear() }
 
-// Return the count of inputs since the histogram was last cleared.
-func (h *StandardHistogram) Count() int64 {
-	return atomic.LoadInt64(&h.count)
-}
+// Count returns the number of samples recorded since the histogram was last
+// cleared.
+func (h *StandardHistogram) Count() int64 { return h.sample.Count() }
 
-// Return the maximal value seen since the histogram was last cleared.
-func (h *StandardHistogram) Max() int64 {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	if 0 == h.count {
-		return 0
-	}
-	return h.max
-}
+// Max returns the maximum value in the sample.
+func (h *StandardHistogram) Max() int64 { return h.sample.Max() }
 
-// Return the mean of all values seen since the histogram was last cleared.
-func (h *StandardHistogram) Mean() float64 {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	if 0 == h.count {
-		return 0
-	}
-	return float64(h.sum) / float64(h.count)
-}
+// Mean returns the mean of the values in the sample.
+func (h *StandardHistogram) Mean() float64 { return h.sample.Mean() }
 
-// Return the minimal value seen since the histogram was last cleared.
-func (h *StandardHistogram) Min() int64 {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	if 0 == h.count {
-		return 0
-	}
-	return h.min
-}
+// Min returns the minimum value in the sample.
+func (h *StandardHistogram) Min() int64 { return h.sample.Min() }
 
-// Return an arbitrary percentile of all values seen since the histogram was
-// last cleared.
+// Percentile returns an arbitrary percentile of the values in the sample.
 func (h *StandardHistogram) Percentile(p float64) float64 {
-	return h.Percentiles([]float64{p})[0]
+	return h.sample.Percentile(p)
 }
 
-// Return a slice of arbitrary percentiles of all values seen since the
-// histogram was last cleared.
+// Percentiles returns a slice of arbitrary percentiles of the values in the
+// sample.
 func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
-	scores := make([]float64, len(ps))
-	values := int64Slice(h.s.Values())
-	size := len(values)
-	if size > 0 {
-		sort.Sort(values)
-		for i, p := range ps {
-			pos := p * float64(size+1)
-			if pos < 1.0 {
-				scores[i] = float64(values[0])
-			} else if pos >= float64(size) {
-				scores[i] = float64(values[size-1])
-			} else {
-				lower := float64(values[int(pos)-1])
-				upper := float64(values[int(pos)])
-				scores[i] = lower + (pos-math.Floor(pos))*(upper-lower)
-			}
-		}
-	}
-	return scores
+	return h.sample.Percentiles(ps)
 }
 
-// Return the standard deviation of all values seen since the histogram was
-// last cleared.
-func (h *StandardHistogram) StdDev() float64 {
-	return math.Sqrt(h.Variance())
+// Sample returns the Sample underlying the histogram.
+func (h *StandardHistogram) Sample() Sample { return h.sample }
+
+// Snapshot returns a read-only copy of the histogram.
+func (h *StandardHistogram) Snapshot() Histogram {
+	return &HistogramSnapshot{sample: h.sample.Snapshot().(*SampleSnapshot)}
 }
 
-// Update the histogram with a new value.
-func (h *StandardHistogram) Update(v int64) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	h.s.Update(v)
-	h.count++
-	if v < h.min {
-		h.min = v
-	}
-	if v > h.max {
-		h.max = v
-	}
-	h.sum += v
-	fv := float64(v)
-	if -1.0 == h.variance[0] {
-		h.variance[0] = fv
-		h.variance[1] = 0.0
-	} else {
-		m := h.variance[0]
-		s := h.variance[1]
-		h.variance[0] = m + (fv-m)/float64(h.count)
-		h.variance[1] = s + (fv-m)*(fv-h.variance[0])
-	}
-}
+// StdDev returns the standard deviation of the values in the sample.
+func (h *StandardHistogram) StdDev() float64 { return h.sample.StdDev() }
 
-// Return the variance of all values seen since the histogram was last cleared.
-func (h *StandardHistogram) Variance() float64 {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	if 1 >= h.count {
-		return 0.0
-	}
-	return h.variance[1] / float64(h.count-1)
-}
+// Update samples a new value.
+func (h *StandardHistogram) Update(v int64) { h.sample.Update(v) }
 
-// Cribbed from the standard library's `sort` package.
-type int64Slice []int64
-
-func (p int64Slice) Len() int           { return len(p) }
-func (p int64Slice) Less(i, j int) bool { return p[i] < p[j] }
-func (p int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+// Variance returns the variance of the values in the sample.
+func (h *StandardHistogram) Variance() float64 { return h.sample.Variance() }

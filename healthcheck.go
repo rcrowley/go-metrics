@@ -1,9 +1,6 @@
 package metrics
 
-// Healthchecks hold an os.Error value describing an arbitrary up/down status.
-//
-// This is an interface so as to encourage other structs to implement
-// the Healthcheck API as appropriate.
+// Healthchecks hold an error value describing an arbitrary up/down status.
 type Healthcheck interface {
 	Check()
 	Error() error
@@ -11,8 +8,8 @@ type Healthcheck interface {
 	Unhealthy(error)
 }
 
-// Create a new Healthcheck, which will use the given function to update
-// its status.
+// NewHealthcheck constructs a new Healthcheck which will use the given
+// function to update its status.
 func NewHealthcheck(f func(Healthcheck)) Healthcheck {
 	if UseNilMetrics {
 		return NilHealthcheck{}
@@ -20,44 +17,45 @@ func NewHealthcheck(f func(Healthcheck)) Healthcheck {
 	return &StandardHealthcheck{nil, f}
 }
 
-// No-op Healthcheck.
+// NilHealthcheck is a no-op.
 type NilHealthcheck struct{}
 
-// No-op.
-func (h NilHealthcheck) Check() {}
+// Check is a no-op.
+func (NilHealthcheck) Check() {}
 
-// No-op.
-func (h NilHealthcheck) Error() error { return nil }
+// Error is a no-op.
+func (NilHealthcheck) Error() error { return nil }
 
-// No-op.
-func (h NilHealthcheck) Healthy() {}
+// Healthy is a no-op.
+func (NilHealthcheck) Healthy() {}
 
-// No-op.
-func (h NilHealthcheck) Unhealthy(err error) {}
+// Unhealthy is a no-op.
+func (NilHealthcheck) Unhealthy(error) {}
 
-// The standard implementation of a Healthcheck stores the status and a
-// function to call to update the status.
+// StandardHealthcheck is the standard implementation of a Healthcheck and
+// stores the status and a function to call to update the status.
 type StandardHealthcheck struct {
 	err error
 	f   func(Healthcheck)
 }
 
-// Update the healthcheck's status.
+// Check runs the healthcheck function to update the healthcheck's status.
 func (h *StandardHealthcheck) Check() {
 	h.f(h)
 }
 
-// Return the healthcheck's status, which will be nil if it is healthy.
+// Error returns the healthcheck's status, which will be nil if it is healthy.
 func (h *StandardHealthcheck) Error() error {
 	return h.err
 }
 
-// Mark the healthcheck as healthy.
+// Healthy marks the healthcheck as healthy.
 func (h *StandardHealthcheck) Healthy() {
 	h.err = nil
 }
 
-// Mark the healthcheck as unhealthy.  The error should provide details.
+// Unhealthy marks the healthcheck as unhealthy.  The error is stored and
+// may be retrieved by the Error method.
 func (h *StandardHealthcheck) Unhealthy(err error) {
 	h.err = err
 }

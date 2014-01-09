@@ -18,6 +18,16 @@ func TestGauge(t *testing.T) {
 	}
 }
 
+func TestGaugeSnapshot(t *testing.T) {
+	g := NewGauge()
+	g.Update(int64(47))
+	snapshot := g.Snapshot()
+	g.Update(int64(0))
+	if v := snapshot.Value(); 47 != v {
+		t.Errorf("g.Value(): 47 != %v\n", v)
+	}
+}
+
 func TestGetOrRegisterGauge(t *testing.T) {
 	r := NewRegistry()
 	NewRegisteredGauge("foo", r).Update(47)

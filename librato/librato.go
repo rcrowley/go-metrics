@@ -54,21 +54,19 @@ func (self *Reporter) Run() {
 
 // calculate sum of squares from data provided by metrics.Histogram
 // see http://en.wikipedia.org/wiki/Standard_deviation#Rapid_calculation_methods
-func sumSquares(m metrics.Histogram) float64 {
-	count := float64(m.Count())
-	sum := m.Mean() * float64(m.Count())
-	sumSquared := math.Pow(float64(sum), 2)
-	sumSquares := math.Pow(count*m.StdDev(), 2) + sumSquared/float64(m.Count())
+func sumSquares(s metrics.Sample) float64 {
+	count := float64(s.Count())
+	sumSquared := math.Pow(count*s.Mean(), 2)
+	sumSquares := math.Pow(count*s.StdDev(), 2) + sumSquared/count
 	if math.IsNaN(sumSquares) {
 		return 0.0
 	}
-	return sumSquared
+	return sumSquares
 }
-func sumSquaresTimer(m metrics.Timer) float64 {
-	count := float64(m.Count())
-	sum := m.Mean() * float64(m.Count())
-	sumSquared := math.Pow(float64(sum), 2)
-	sumSquares := math.Pow(count*m.StdDev(), 2) + sumSquared/float64(m.Count())
+func sumSquaresTimer(t metrics.Timer) float64 {
+	count := float64(t.Count())
+	sumSquared := math.Pow(count*t.Mean(), 2)
+	sumSquares := math.Pow(count*t.StdDev(), 2) + sumSquared/count
 	if math.IsNaN(sumSquares) {
 		return 0.0
 	}
@@ -104,17 +102,18 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 		case metrics.Histogram:
 			if m.Count() > 0 {
 				gauges := make([]Measurement, histogramGaugeCount, histogramGaugeCount)
+				s := m.Sample()
 				measurement[Name] = fmt.Sprintf("%s.%s", name, "hist")
-				measurement[Count] = uint64(m.Count())
-				measurement[Sum] = m.Mean() * float64(m.Count())
-				measurement[Max] = float64(m.Max())
-				measurement[Min] = float64(m.Min())
-				measurement[SumSquares] = sumSquares(m)
+				measurement[Count] = uint64(s.Count())
+				measurement[Sum] = s.Sum()
+				measurement[Max] = float64(s.Max())
+				measurement[Min] = float64(s.Min())
+				measurement[SumSquares] = sumSquares(s)
 				gauges[0] = measurement
 				for i, p := range self.Percentiles {
 					gauges[i+1] = Measurement{
 						Name:   fmt.Sprintf("%s.%.2f", measurement[Name], p),
-						Value:  m.Percentile(p),
+						Value:  s.Percentile(p),
 						Period: measurement[Period],
 					}
 				}
