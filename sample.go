@@ -330,9 +330,7 @@ func (s *SampleSnapshot) Percentiles(ps []float64) []float64 {
 }
 
 // Size returns the size of the sample at the time the snapshot was taken.
-func (s *SampleSnapshot) Size() int {
-	return len(s.values)
-}
+func (s *SampleSnapshot) Size() int { return len(s.values) }
 
 // Snapshot returns the snapshot.
 func (s *SampleSnapshot) Snapshot() Sample { return s }
@@ -375,6 +373,9 @@ func SampleSum(values []int64) int64 {
 
 // SampleVariance returns the variance of the slice of int64.
 func SampleVariance(values []int64) float64 {
+	if 0 == len(values) {
+		return 0.0
+	}
 	m := SampleMean(values)
 	var sum float64
 	for _, v := range values {
@@ -483,6 +484,8 @@ func (s *UniformSample) StdDev() float64 {
 
 // Sum returns the sum of the values in the sample.
 func (s *UniformSample) Sum() int64 {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return SampleSum(s.values)
 }
 
@@ -551,3 +554,9 @@ func (q *expDecaySampleHeap) Push(x interface{}) {
 func (q expDecaySampleHeap) Swap(i, j int) {
 	q[i], q[j] = q[j], q[i]
 }
+
+type int64Slice []int64
+
+func (p int64Slice) Len() int           { return len(p) }
+func (p int64Slice) Less(i, j int) bool { return p[i] < p[j] }
+func (p int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
