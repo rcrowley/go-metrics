@@ -56,17 +56,17 @@ func (self *Reporter) Run() {
 // see http://en.wikipedia.org/wiki/Standard_deviation#Rapid_calculation_methods
 func sumSquares(s metrics.Sample) float64 {
 	count := float64(s.Count())
-	sumSquared := math.Pow(float64(s.Sum()), 2)
-	sumSquares := math.Pow(count*s.StdDev(), 2) + sumSquared/float64(s.Count())
+	sumSquared := math.Pow(count*s.Mean(), 2)
+	sumSquares := math.Pow(count*s.StdDev(), 2) + sumSquared/count
 	if math.IsNaN(sumSquares) {
 		return 0.0
 	}
-	return sumSquared
+	return sumSquares
 }
-func sumSquaresTimer(m metrics.Timer) float64 {
-	count := float64(m.Count())
-	sumSquared := math.Pow(float64(s.Sum()), 2)
-	sumSquares := math.Pow(count*m.StdDev(), 2) + sumSquared/float64(m.Count())
+func sumSquaresTimer(t metrics.Timer) float64 {
+	count := float64(t.Count())
+	sumSquared := math.Pow(count*t.Mean(), 2)
+	sumSquares := math.Pow(count*t.StdDev(), 2) + sumSquared/count
 	if math.IsNaN(sumSquares) {
 		return 0.0
 	}
