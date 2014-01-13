@@ -28,7 +28,7 @@ func Graphite(r Registry, d time.Duration, prefix string, addr *net.TCPAddr) {
 		Registry:      r,
 		FlushInterval: d,
 		DurationUnit:  time.Nanosecond,
-		RateUnit:      time.Nanosecond,
+		RateUnit:      time.Second,
 		Prefix:        prefix,
 	})
 }
@@ -45,7 +45,7 @@ func GraphiteWithConfig(c GraphiteConfig) {
 
 func graphite(c *GraphiteConfig) error {
 	now := time.Now().Unix()
-	du, ru := float64(c.DurationUnit), float64(c.RateUnit)
+	du, ru := float64(c.DurationUnit), c.RateUnit.Seconds()
 	conn, err := net.DialTCP("tcp", nil, c.Addr)
 	if nil != err {
 		return err
