@@ -15,7 +15,6 @@ type GraphiteConfig struct {
 	Registry      Registry      // Registry to be exported
 	FlushInterval time.Duration // Flush interval
 	DurationUnit  time.Duration // Time conversion unit for durations
-	RateUnit      time.Duration // Time conversion unit for rates
 	Prefix        string        // Prefix to be prepended to metric names
 }
 
@@ -28,7 +27,6 @@ func Graphite(r Registry, d time.Duration, prefix string, addr *net.TCPAddr) {
 		Registry:      r,
 		FlushInterval: d,
 		DurationUnit:  time.Nanosecond,
-		RateUnit:      time.Nanosecond,
 		Prefix:        prefix,
 	})
 }
@@ -45,7 +43,7 @@ func GraphiteWithConfig(c GraphiteConfig) {
 
 func graphite(c *GraphiteConfig) error {
 	now := time.Now().Unix()
-	du, ru := float64(c.DurationUnit), float64(c.RateUnit)
+	du := float64(c.DurationUnit)
 	conn, err := net.DialTCP("tcp", nil, c.Addr)
 	if nil != err {
 		return err
@@ -53,6 +51,7 @@ func graphite(c *GraphiteConfig) error {
 	defer conn.Close()
 	w := bufio.NewWriter(conn)
 	c.Registry.Each(func(name string, i interface{}) {
+
 		switch m := i.(type) {
 		case Counter:
 			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, m.Count(), now)
@@ -72,10 +71,10 @@ func graphite(c *GraphiteConfig) error {
 			fmt.Fprintf(w, "%s.%s.999-percentile %.2f %d\n", c.Prefix, name, ps[4], now)
 		case Meter:
 			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, m.Count(), now)
-			fmt.Fprintf(w, "%s.%s.one-minute %.2f %d\n", c.Prefix, name, ru*m.Rate1(), now)
-			fmt.Fprintf(w, "%s.%s.five-minute %.2f %d\n", c.Prefix, name, ru*m.Rate5(), now)
-			fmt.Fprintf(w, "%s.%s.fifteen-minute %.2f %d\n", c.Prefix, name, ru*m.Rate15(), now)
-			fmt.Fprintf(w, "%s.%s.mean %.2f %d\n", c.Prefix, name, ru*m.RateMean(), now)
+			fmt.Fprintf(w, "%s.%s.one-minute %.2f %d\n", c.Prefix, name, m.Rate1(), now)
+			fmt.Fprintf(w, "%s.%s.five-minute %.2f %d\n", c.Prefix, name, m.Rate5(), now)
+			fmt.Fprintf(w, "%s.%s.fifteen-minute %.2f %d\n", c.Prefix, name, m.Rate15(), now)
+			fmt.Fprintf(w, "%s.%s.mean %.2f %d\n", c.Prefix, name, m.RateMean(), now)
 		case Timer:
 			ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, m.Count(), now)
@@ -88,11 +87,12 @@ func graphite(c *GraphiteConfig) error {
 			fmt.Fprintf(w, "%s.%s.95-percentile %.2f %d\n", c.Prefix, name, du*ps[2], now)
 			fmt.Fprintf(w, "%s.%s.99-percentile %.2f %d\n", c.Prefix, name, du*ps[3], now)
 			fmt.Fprintf(w, "%s.%s.999-percentile %.2f %d\n", c.Prefix, name, du*ps[4], now)
-			fmt.Fprintf(w, "%s.%s.one-minute %.2f %d\n", c.Prefix, name, ru*m.Rate1(), now)
-			fmt.Fprintf(w, "%s.%s.five-minute %.2f %d\n", c.Prefix, name, ru*m.Rate5(), now)
-			fmt.Fprintf(w, "%s.%s.fifteen-minute %.2f %d\n", c.Prefix, name, ru*m.Rate15(), now)
-			fmt.Fprintf(w, "%s.%s.mean-rate %.2f %d\n", c.Prefix, name, ru*m.RateMean(), now)
+			fmt.Fprintf(w, "%s.%s.one-minute %.2f %d\n", c.Prefix, name, m.Rate1(), now)
+			fmt.Fprintf(w, "%s.%s.five-minute %.2f %d\n", c.Prefix, name, m.Rate5(), now)
+			fmt.Fprintf(w, "%s.%s.fifteen-minute %.2f %d\n", c.Prefix, name, m.Rate15(), now)
+			fmt.Fprintf(w, "%s.%s.mean-rate %.2f %d\n", c.Prefix, name, m.RateMean(), now)
 		}
+
 		w.Flush()
 	})
 	return nil
