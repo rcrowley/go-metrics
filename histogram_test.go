@@ -79,8 +79,8 @@ func testHistogram10000(t *testing.T, h Histogram) {
 	if mean := h.Mean(); 5000.5 != mean {
 		t.Errorf("h.Mean(): 5000.5 != %v\n", mean)
 	}
-	if stdDev := h.StdDev(); 2886.8956799071675 != stdDev {
-		t.Errorf("h.StdDev(): 2886.8956799071675 != %v\n", stdDev)
+	if stdDev := h.StdDev(); 2886.751331514372 != stdDev {
+		t.Errorf("h.StdDev(): 2886.751331514372 != %v\n", stdDev)
 	}
 	ps := h.Percentiles([]float64{0.5, 0.75, 0.99})
 	if 5000.5 != ps[0] {

@@ -26,8 +26,8 @@ func TestTimerExtremes(t *testing.T) {
 	tm := NewTimer()
 	tm.Update(math.MaxInt64)
 	tm.Update(0)
-	if stdDev := tm.StdDev(); 6.521908912666392e18 != stdDev {
-		t.Errorf("tm.StdDev(): 6.521908912666392e18 != %v\n", stdDev)
+	if stdDev := tm.StdDev(); 4.611686018427388e+18 != stdDev {
+		t.Errorf("tm.StdDev(): 4.611686018427388e+18 != %v\n", stdDev)
 	}
 }
 
