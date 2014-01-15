@@ -35,6 +35,18 @@ func TestRegistry(t *testing.T) {
 	}
 }
 
+func TestRegistryGet(t *testing.T) {
+	r := NewRegistry()
+	r.Register("foo", NewCounter())
+	if count := r.Get("foo").(Counter).Count(); 0 != count {
+		t.Fatal(count)
+	}
+	r.Get("foo").(Counter).Inc(1)
+	if count := r.Get("foo").(Counter).Count(); 1 != count {
+		t.Fatal(count)
+	}
+}
+
 func TestRegistryGetOrRegister(t *testing.T) {
 	r := NewRegistry()
 
