@@ -62,6 +62,19 @@ import "github.com/rcrowley/go-metrics/stathat"
 stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
 ```
 
+Periodically emit every metric into Influxdb:
+
+```go
+import "github.com/rcrowley/go-metrics/influxdb"
+
+go influxdb.Influxdb(metrics.DefaultRegistry, 10e9, &influxdb.Config{
+    Host:     "127.0.0.1:8086",
+    Database: "metrics",
+    Username: "test",
+    Password: "test",
+})
+```
+
 Installation
 ------------
 
