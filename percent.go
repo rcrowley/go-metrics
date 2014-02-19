@@ -11,6 +11,7 @@ type PercentCounter interface {
 	Total() int64
 	Inc(key string, delta int64)
 	Dec(key string, delta int64)
+	Snapshot() PercentCounter
 }
 
 func NewPercentCounter() PercentCounter {
@@ -66,4 +67,9 @@ func (pc *StandardPercentCounter) Dec(key string, delta int64) {
 	pc.mutex.Lock()
 	defer pc.mutex.Unlock()
 	pc.items[key] -= delta
+}
+
+// FIXME
+func (pc *StandardPercentCounter) Snapshot() PercentCounter {
+	return pc
 }
