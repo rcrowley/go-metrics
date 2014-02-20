@@ -72,7 +72,7 @@ func WriteOnce(r Registry, w io.Writer) {
 			pc := metric.Snapshot()
 			fmt.Fprintf(w, "percent %s total %d\n", name, pc.Total())
 			for _, key := range pc.Keys() {
-				fmt.Fprintf(w, "  %16s count: %9d %5.2f%%\n", key,
+				fmt.Fprintf(w, "  %16s count: %9d, %5.2f%%\n", key,
 					pc.Count(key), pc.Percent(key))
 			}
 		}

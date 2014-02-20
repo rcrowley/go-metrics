@@ -78,7 +78,7 @@ func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 					pc.Total()))
 				for _, key := range pc.Keys() {
 					line.WriteString(fmt.
-						Sprintf("  %16s count: %9d %5.2f%%", key,
+						Sprintf("  %16s count: %9d, %5.2f%%", key,
 						pc.Count(key), pc.Percent(key)))
 				}
 				w.Info(line.String())
