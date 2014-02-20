@@ -3,6 +3,7 @@
 package metrics
 
 import (
+	"bytes"
 	"fmt"
 	"log/syslog"
 	"time"
@@ -70,6 +71,17 @@ func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 					t.Rate15(),
 					t.RateMean(),
 				))
+			case PercentCounter:
+				pc := metric.Snapshot()
+				line := new(bytes.Buffer)
+				line.WriteString(fmt.Sprintf("percent %s: total %d:", name,
+					pc.Total()))
+				for _, key := range pc.Keys() {
+					line.WriteString(fmt.
+						Sprintf("  %16s count: %9d %5.2f%%", key,
+						pc.Count(key), pc.Percent(key)))
+				}
+				w.Info(line.String())
 			}
 		})
 		time.Sleep(d)

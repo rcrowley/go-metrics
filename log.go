@@ -63,9 +63,9 @@ func Log(r Registry, d time.Duration, l *log.Logger) {
 				l.Printf("  mean rate:   %12.2f\n", t.RateMean())
 			case PercentCounter:
 				pc := metric.Snapshot()
-				l.Printf("percent %s\n", name)
+				l.Printf("percent %s total %d\n", name, pc.Total())
 				for _, key := range pc.Keys() {
-					l.Printf("  %10s count: %9d percent: %5.2f", key,
+					l.Printf("  %16s count: %9d %5.2f%%\n", key,
 						pc.Count(key), pc.Percent(key))
 				}
 			}

@@ -53,6 +53,13 @@ func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["5m.rate"] = t.Rate5()
 			values["15m.rate"] = t.Rate15()
 			values["mean.rate"] = t.RateMean()
+		case PercentCounter:
+			pc := metric.Snapshot()
+			values["total"] = pc.Total()
+			for _, key := range pc.Keys() {
+				values[key+"_count"] = pc.Count(key)
+				values[key+"_percent"] = pc.Percent(key)
+			}
 		}
 		data[name] = values
 	})
