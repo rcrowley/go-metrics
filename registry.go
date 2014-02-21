@@ -1,6 +1,9 @@
 package metrics
 
-import "sync"
+import (
+	"sort"
+	"sync"
+)
 
 // A Registry holds references to a set of metrics by name and can iterate
 // over them, calling callback functions provided by the user.
@@ -42,8 +45,14 @@ func NewRegistry() Registry {
 
 // Call the given function for each registered metric.
 func (r *StandardRegistry) Each(f func(string, interface{})) {
-	for name, i := range r.registered() {
-		f(name, i)
+	names := make([]string, 0)
+	metrics := r.registered()
+	for name, _ := range metrics {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		f(name, metrics[name])
 	}
 }
 
