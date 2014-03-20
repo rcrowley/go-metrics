@@ -68,6 +68,13 @@ func WriteOnce(r Registry, w io.Writer) {
 			fmt.Fprintf(w, "  5-min rate:  %12.2f\n", t.Rate5())
 			fmt.Fprintf(w, "  15-min rate: %12.2f\n", t.Rate15())
 			fmt.Fprintf(w, "  mean rate:   %12.2f\n", t.RateMean())
+		case PercentCounter:
+			pc := metric.Snapshot()
+			fmt.Fprintf(w, "percent %s total %d\n", name, pc.Total())
+			for _, key := range pc.Keys() {
+				fmt.Fprintf(w, "  %16s count: %9d, %5.2f%%\n", key,
+					pc.Count(key), pc.Percent(key))
+			}
 		}
 	})
 }
