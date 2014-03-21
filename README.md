@@ -59,7 +59,7 @@ Periodically emit every metric to StatHat:
 ```go
 import "github.com/rcrowley/go-metrics/stathat"
 
-stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
+go stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
 ```
 
 Periodically emit every metric into Influxdb:
