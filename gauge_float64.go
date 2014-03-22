@@ -38,19 +38,19 @@ func NewRegisteredGaugeFloat64(name string, r Registry) GaugeFloat64 {
 	return c
 }
 
-// GaugeSnapshotFloat64 is a read-only copy of another GaugeFloat64.
-type GaugeSnapshotFloat64 float64
+// GaugeFloat64Snapshot is a read-only copy of another GaugeFloat64.
+type GaugeFloat64Snapshot float64
 
 // Snapshot returns the snapshot.
-func (g GaugeSnapshotFloat64) Snapshot() GaugeFloat64 { return g }
+func (g GaugeFloat64Snapshot) Snapshot() GaugeFloat64 { return g }
 
 // Update panics.
-func (GaugeSnapshotFloat64) Update(float64) {
-	panic("Update called on a GaugeSnapshotFloat64")
+func (GaugeFloat64Snapshot) Update(float64) {
+	panic("Update called on a GaugeFloat64Snapshot")
 }
 
 // Value returns the value at the time the snapshot was taken.
-func (g GaugeSnapshotFloat64) Value() float64 { return float64(g) }
+func (g GaugeFloat64Snapshot) Value() float64 { return float64(g) }
 
 // NilGauge is a no-op Gauge.
 type NilGaugeFloat64 struct{}
@@ -73,7 +73,7 @@ type StandardGaugeFloat64 struct {
 
 // Snapshot returns a read-only copy of the gauge.
 func (g *StandardGaugeFloat64) Snapshot() GaugeFloat64 {
-	return GaugeSnapshotFloat64(g.Value())
+	return GaugeFloat64Snapshot(g.Value())
 }
 
 // Update updates the gauge's value.
