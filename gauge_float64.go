@@ -67,8 +67,8 @@ func (NilGaugeFloat64) Value() float64 { return 0.0 }
 // StandardGaugeFloat64 is the standard implementation of a GaugeFloat64 and uses
 // sync.Mutex to manage a single float64 value.
 type StandardGaugeFloat64 struct {
+	mutex sync.Mutex
 	value float64
-	sync.Mutex
 }
 
 // Snapshot returns a read-only copy of the gauge.
@@ -78,14 +78,14 @@ func (g *StandardGaugeFloat64) Snapshot() GaugeFloat64 {
 
 // Update updates the gauge's value.
 func (g *StandardGaugeFloat64) Update(v float64) {
-	g.Lock()
-	defer g.Unlock()
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
 	g.value = v
 }
 
 // Value returns the gauge's current value.
 func (g *StandardGaugeFloat64) Value() float64 {
-	g.Lock()
-	defer g.Unlock()
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
 	return g.value
 }
