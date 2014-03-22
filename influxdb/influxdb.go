@@ -56,6 +56,14 @@ func send(r metrics.Registry, client *influxClient.Client) error {
 					{now, metric.Value()},
 				},
 			})
+		case metrics.GaugeFloat64:
+			series = append(series, &influxClient.Series{
+				Name:    fmt.Sprintf("%s.value", name),
+				Columns: []string{"time", "value"},
+				Points: [][]interface{}{
+					{now, metric.Value()},
+				},
+			})
 		case metrics.Histogram:
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
