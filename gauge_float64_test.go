@@ -2,7 +2,6 @@ package metrics
 
 import "testing"
 
-
 func BenchmarkGuageFloat64(b *testing.B) {
 	g := NewGaugeFloat64()
 	b.ResetTimer()
