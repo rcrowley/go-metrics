@@ -93,9 +93,27 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 	runtimeMetrics.MemStats.MSpanSys.Update(int64(memStats.MSpanSys))
 	runtimeMetrics.MemStats.NextGC.Update(int64(memStats.NextGC))
 	runtimeMetrics.MemStats.NumGC.Update(int64(memStats.NumGC))
-	for i := uint32(1); i <= memStats.NumGC-numGC; i++ {
-		runtimeMetrics.MemStats.PauseNs.Update(int64(memStats.PauseNs[(memStats.NumGC%256-i)%256])) // <https://code.google.com/p/go/source/browse/src/pkg/runtime/mgc0.c>
+
+	// <https://code.google.com/p/go/source/browse/src/pkg/runtime/mgc0.c>
+	i := numGC % uint32(len(memStats.PauseNs))
+	ii := memStats.NumGC % uint32(len(memStats.PauseNs))
+	if memStats.NumGC-numGC >= uint32(len(memStats.PauseNs)) {
+		for i = 0; i < uint32(len(memStats.PauseNs)); i++ {
+			runtimeMetrics.MemStats.PauseNs.Update(int64(memStats.PauseNs[i]))
+		}
+	} else {
+		if i > ii {
+			for ; i < uint32(len(memStats.PauseNs)); i++ {
+				runtimeMetrics.MemStats.PauseNs.Update(int64(memStats.PauseNs[i]))
+			}
+			i = 0
+		}
+		for ; i < ii; i++ {
+			runtimeMetrics.MemStats.PauseNs.Update(int64(memStats.PauseNs[i]))
+		}
 	}
+	numGC = memStats.NumGC
+
 	runtimeMetrics.MemStats.PauseTotalNs.Update(int64(memStats.PauseTotalNs))
 	runtimeMetrics.MemStats.StackInuse.Update(int64(memStats.StackInuse))
 	runtimeMetrics.MemStats.StackSys.Update(int64(memStats.StackSys))
