@@ -93,7 +93,7 @@ func (r *StandardRegistry) Unregister(name string) {
 
 func (r *StandardRegistry) register(name string, i interface{}) {
 	switch i.(type) {
-	case Counter, Gauge, Healthcheck, Histogram, Meter, Timer:
+	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer:
 		r.metrics[name] = i
 	}
 }

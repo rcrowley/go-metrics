@@ -13,6 +13,8 @@ func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["count"] = metric.Count()
 		case Gauge:
 			values["value"] = metric.Value()
+		case GaugeFloat64:
+			values["value"] = metric.Value()
 		case Healthcheck:
 			metric.Check()
 			values["error"] = metric.Error().Error()
