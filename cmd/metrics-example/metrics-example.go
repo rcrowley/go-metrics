@@ -51,6 +51,23 @@ func main() {
 		}()
 	}
 
+	gf := metrics.NewGaugeFloat64()
+	r.Register("barfloat64", gf)
+	for i := 0; i < fanout; i++ {
+		go func() {
+			for {
+				g.Update(19.0)
+				time.Sleep(300e6)
+			}
+		}()
+		go func() {
+			for {
+				g.Update(47.0)
+				time.Sleep(400e6)
+			}
+		}()
+	}
+
 	hc := metrics.NewHealthcheck(func(h metrics.Healthcheck) {
 		if 0 < rand.Intn(2) {
 			h.Healthy()

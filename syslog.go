@@ -18,6 +18,8 @@ func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 				w.Info(fmt.Sprintf("counter %s: count: %d", name, metric.Count()))
 			case Gauge:
 				w.Info(fmt.Sprintf("gauge %s: value: %d", name, metric.Value()))
+			case GaugeFloat64:
+				w.Info(fmt.Sprintf("gauge %s: value: %f", name, metric.Value()))
 			case Healthcheck:
 				metric.Check()
 				w.Info(fmt.Sprintf("healthcheck %s: error: %v", name, metric.Error()))

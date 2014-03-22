@@ -24,6 +24,9 @@ func WriteOnce(r Registry, w io.Writer) {
 		case Gauge:
 			fmt.Fprintf(w, "gauge %s\n", name)
 			fmt.Fprintf(w, "  value:       %9d\n", metric.Value())
+		case GaugeFloat64:
+			fmt.Fprintf(w, "gauge %s\n", name)
+			fmt.Fprintf(w, "  value:       %f\n", metric.Value())
 		case Healthcheck:
 			metric.Check()
 			fmt.Fprintf(w, "healthcheck %s\n", name)

@@ -56,6 +56,8 @@ func graphite(c *GraphiteConfig) error {
 			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, metric.Count(), now)
 		case Gauge:
 			fmt.Fprintf(w, "%s.%s.value %d %d\n", c.Prefix, name, metric.Value(), now)
+		case GaugeFloat64:
+			fmt.Fprintf(w, "%s.%s.value %f %d\n", c.Prefix, name, metric.Value(), now)
 		case Histogram:
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})

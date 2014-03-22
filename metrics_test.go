@@ -19,6 +19,7 @@ func BenchmarkMetrics(b *testing.B) {
 	r := NewRegistry()
 	c := NewRegisteredCounter("counter", r)
 	g := NewRegisteredGauge("gauge", r)
+	gf := NewRegisteredGaugeFloat64("gaugefloat64", r)
 	h := NewRegisteredHistogram("histogram", r, NewUniformSample(100))
 	m := NewRegisteredMeter("meter", r)
 	t := NewRegisteredTimer("timer", r)
@@ -90,6 +91,7 @@ func BenchmarkMetrics(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				c.Inc(1)
 				g.Update(int64(i))
+				gf.Update(float64(i))
 				h.Update(int64(i))
 				m.Mark(1)
 				t.Update(1)
