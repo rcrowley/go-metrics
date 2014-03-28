@@ -20,7 +20,7 @@ func GetOrRegisterMeter(name string, r Registry) Meter {
 	if nil == r {
 		r = DefaultRegistry
 	}
-	return r.GetOrRegister(name, NewMeter()).(Meter)
+	return r.GetOrRegister(name, NewMeter).(Meter)
 }
 
 // NewMeter constructs a new StandardMeter and launches a goroutine.
