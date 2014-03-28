@@ -71,3 +71,28 @@ func TestRegistryGetOrRegister(t *testing.T) {
 		t.Fatal(i)
 	}
 }
+
+func TestRegistryGetOrRegisterWithLazyInstantiation(t *testing.T) {
+	r := NewRegistry()
+
+	// First metric wins with GetOrRegister
+	_ = r.GetOrRegister("foo", NewCounter)
+	m := r.GetOrRegister("foo", NewGauge)
+	if _, ok := m.(Counter); !ok {
+		t.Fatal(m)
+	}
+
+	i := 0
+	r.Each(func(name string, iface interface{}) {
+		i++
+		if name != "foo" {
+			t.Fatal(name)
+		}
+		if _, ok := iface.(Counter); !ok {
+			t.Fatal(iface)
+		}
+	})
+	if i != 1 {
+		t.Fatal(i)
+	}
+}

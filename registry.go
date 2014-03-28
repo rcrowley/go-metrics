@@ -1,6 +1,9 @@
 package metrics
 
-import "sync"
+import (
+	"reflect"
+	"sync"
+)
 
 // A Registry holds references to a set of metrics by name and can iterate
 // over them, calling callback functions provided by the user.
@@ -15,7 +18,9 @@ type Registry interface {
 	// Get the metric by the given name or nil if none is registered.
 	Get(string) interface{}
 
-	// Gets an existing metric or creates and registers a new one.
+	// Gets an existing metric or registers the given one.
+	// The interface can be the metric to register if not found in registry,
+	// or a function returning the metric for lazy instantiation.
 	GetOrRegister(string, interface{}) interface{}
 
 	// Register the given metric under the given name.
@@ -56,12 +61,18 @@ func (r *StandardRegistry) Get(name string) interface{} {
 
 // Gets an existing metric or creates and registers a new one. Threadsafe
 // alternative to calling Get and Register on failure.
+// The interface can be the metric to register if not found in registry,
+// or a function returning the metric for lazy instantiation.
 func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{} {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if metric, ok := r.metrics[name]; ok {
 		return metric
 	}
+	if refVal := reflect.ValueOf(i); refVal.Kind() == reflect.Func {
+		i = refVal.Call(nil)[0].Interface()
+	}
+
 	r.register(name, i)
 	return i
 }

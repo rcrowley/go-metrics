@@ -17,7 +17,7 @@ func GetOrRegisterCounter(name string, r Registry) Counter {
 	if nil == r {
 		r = DefaultRegistry
 	}
-	return r.GetOrRegister(name, NewCounter()).(Counter)
+	return r.GetOrRegister(name, NewCounter).(Counter)
 }
 
 // NewCounter constructs a new StandardCounter.
