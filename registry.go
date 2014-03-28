@@ -69,10 +69,9 @@ func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{}
 	if metric, ok := r.metrics[name]; ok {
 		return metric
 	}
-	if refVal := reflect.ValueOf(i); refVal.Kind() == reflect.Func {
-		i = refVal.Call(nil)[0].Interface()
+	if v := reflect.ValueOf(i); v.Kind() == reflect.Func {
+		i = v.Call(nil)[0].Interface()
 	}
-
 	r.register(name, i)
 	return i
 }
