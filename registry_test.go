@@ -35,6 +35,26 @@ func TestRegistry(t *testing.T) {
 	}
 }
 
+func TestRegistryDuplicate(t *testing.T) {
+	r := NewRegistry()
+	if err := r.Register("foo", NewCounter()); nil != err {
+		t.Fatal(err)
+	}
+	if err := r.Register("foo", NewGauge()); nil == err {
+		t.Fatal(err)
+	}
+	i := 0
+	r.Each(func(name string, iface interface{}) {
+		i++
+		if _, ok := iface.(Counter); !ok {
+			t.Fatal(iface)
+		}
+	})
+	if 1 != i {
+		t.Fatal(i)
+	}
+}
+
 func TestRegistryGet(t *testing.T) {
 	r := NewRegistry()
 	r.Register("foo", NewCounter())

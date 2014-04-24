@@ -1,9 +1,19 @@
 package metrics
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
+
+// DuplicateMetric is the error returned by Registry.Register when a metric
+// already exists.  If you mean to Register that metric you must first
+// Unregister the existing metric.
+type DuplicateMetric string
+
+func (err DuplicateMetric) Error() string {
+	return fmt.Sprintf("duplicate metric: %s", err)
+}
 
 // A Registry holds references to a set of metrics by name and can iterate
 // over them, calling callback functions provided by the user.
@@ -24,7 +34,7 @@ type Registry interface {
 	GetOrRegister(string, interface{}) interface{}
 
 	// Register the given metric under the given name.
-	Register(string, interface{})
+	Register(string, interface{}) error
 
 	// Run all registered healthchecks.
 	RunHealthchecks()
@@ -76,11 +86,12 @@ func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{}
 	return i
 }
 
-// Register the given metric under the given name.
-func (r *StandardRegistry) Register(name string, i interface{}) {
+// Register the given metric under the given name.  Returns a DuplicateMetric
+// if a metric by the given name is already registered.
+func (r *StandardRegistry) Register(name string, i interface{}) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.register(name, i)
+	return r.register(name, i)
 }
 
 // Run all registered healthchecks.
@@ -101,11 +112,15 @@ func (r *StandardRegistry) Unregister(name string) {
 	delete(r.metrics, name)
 }
 
-func (r *StandardRegistry) register(name string, i interface{}) {
+func (r *StandardRegistry) register(name string, i interface{}) error {
+	if _, ok := r.metrics[name]; ok {
+		return DuplicateMetric(name)
+	}
 	switch i.(type) {
 	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer:
 		r.metrics[name] = i
 	}
+	return nil
 }
 
 func (r *StandardRegistry) registered() map[string]interface{} {
@@ -136,9 +151,10 @@ func GetOrRegister(name string, i interface{}) interface{} {
 	return DefaultRegistry.GetOrRegister(name, i)
 }
 
-// Register the given metric under the given name.
-func Register(name string, i interface{}) {
-	DefaultRegistry.Register(name, i)
+// Register the given metric under the given name.  Returns a DuplicateMetric
+// if a metric by the given name is already registered.
+func Register(name string, i interface{}) error {
+	return DefaultRegistry.Register(name, i)
 }
 
 // Run all registered healthchecks.
