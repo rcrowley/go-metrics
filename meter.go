@@ -53,17 +53,6 @@ func NewRegisteredMeter(name string, r Registry) Meter {
 	return c
 }
 
-type meterArbiter struct {
-	sync.RWMutex
-	started bool
-	meters  []*StandardMeter
-	ticker  *time.Ticker
-}
-
-var arbiter = meterArbiter{
-	ticker: time.NewTicker(5e9),
-}
-
 // MeterSnapshot is a read-only copy of another Meter.
 type MeterSnapshot struct {
 	count                          int64
@@ -216,13 +205,14 @@ func (m *StandardMeter) tick() {
 	m.updateSnapshot()
 }
 
-func (ma *meterArbiter) tickMeters() {
-	ma.RLock()
-	defer ma.RUnlock()
-	for _, meter := range ma.meters {
-		meter.tick()
-	}
+type meterArbiter struct {
+	sync.RWMutex
+	started bool
+	meters  []*StandardMeter
+	ticker  *time.Ticker
 }
+
+var arbiter = meterArbiter{ticker: time.NewTicker(5e9)}
 
 // Ticks meters on the scheduled interval
 func (ma *meterArbiter) tick() {
@@ -231,5 +221,13 @@ func (ma *meterArbiter) tick() {
 		case <-ma.ticker.C:
 			ma.tickMeters()
 		}
+	}
+}
+
+func (ma *meterArbiter) tickMeters() {
+	ma.RLock()
+	defer ma.RUnlock()
+	for _, meter := range ma.meters {
+		meter.tick()
 	}
 }
