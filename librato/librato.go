@@ -2,11 +2,12 @@ package librato
 
 import (
 	"fmt"
-	"github.com/rcrowley/go-metrics"
 	"log"
 	"math"
 	"regexp"
 	"time"
+
+	"github.com/rcrowley/go-metrics"
 )
 
 // a regexp for extracting the unit from time.Duration.String
@@ -22,6 +23,7 @@ func translateTimerAttributes(d time.Duration) (attrs map[string]interface{}) {
 
 type Reporter struct {
 	Email, Token    string
+	Namespace       string
 	Source          string
 	Interval        time.Duration
 	Registry        metrics.Registry
@@ -29,12 +31,10 @@ type Reporter struct {
 	TimerAttributes map[string]interface{} // units in which timers will be displayed
 }
 
-func NewReporter(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64, u time.Duration) *Reporter {
-	return &Reporter{e, t, s, d, r, p, translateTimerAttributes(u)}
-}
-
-func Librato(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64, u time.Duration) {
-	NewReporter(r, d, e, t, s, p, u).Run()
+func Librato(r metrics.Registry, d time.Duration, email string, token string,
+	namespace string, source string, percentiles []float64, unit time.Duration) {
+	reporter := &Reporter{email, token, namespace, source, d, r, percentiles, translateTimerAttributes(unit)}
+	reporter.Run()
 }
 
 func (self *Reporter) Run() {
@@ -77,14 +77,19 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 	snapshot = Batch{
 		MeasureTime: now.Unix(),
 		Source:      self.Source,
+		Gauges:      make([]Measurement, 0),
+		Counters:    make([]Measurement, 0),
 	}
-	snapshot.MeasureTime = now.Unix()
-	snapshot.Gauges = make([]Measurement, 0)
-	snapshot.Counters = make([]Measurement, 0)
 	histogramGaugeCount := 1 + len(self.Percentiles)
+
 	r.Each(func(name string, metric interface{}) {
+		if self.Namespace != "" {
+			name = fmt.Sprintf("%s.%s", self.Namespace, name)
+		}
+
 		measurement := Measurement{}
 		measurement[Period] = self.Interval.Seconds()
+
 		switch m := metric.(type) {
 		case metrics.Counter:
 			measurement[Name] = fmt.Sprintf("%s.%s", name, "count")
@@ -95,14 +100,17 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				DisplayMin:        "0",
 			}
 			snapshot.Counters = append(snapshot.Counters, measurement)
+
 		case metrics.Gauge:
 			measurement[Name] = name
 			measurement[Value] = float64(m.Value())
 			snapshot.Gauges = append(snapshot.Gauges, measurement)
+
 		case metrics.GaugeFloat64:
 			measurement[Name] = name
 			measurement[Value] = float64(m.Value())
 			snapshot.Gauges = append(snapshot.Gauges, measurement)
+
 		case metrics.Histogram:
 			if m.Count() > 0 {
 				gauges := make([]Measurement, histogramGaugeCount, histogramGaugeCount)
@@ -123,6 +131,7 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				}
 				snapshot.Gauges = append(snapshot.Gauges, gauges...)
 			}
+
 		case metrics.Meter:
 			measurement[Name] = name
 			measurement[Value] = float64(m.Count())
@@ -159,6 +168,7 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 					},
 				},
 			)
+
 		case metrics.Timer:
 			measurement[Name] = name
 			measurement[Value] = float64(m.Count())
