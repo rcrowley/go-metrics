@@ -75,6 +75,21 @@ go influxdb.Influxdb(metrics.DefaultRegistry, 10e9, &influxdb.Config{
 })
 ```
 
+Periodically upload metrics to librato.
+
+```go
+import "github.com/rcrowley/go-metrics/librato"
+
+go librato.Librato(metrics.DefaultRegistry,
+    10e9,          // interval
+    "me@here.com", // account email addres
+    "1231231231",  // auth token
+    "server1",     // source
+    []float64{95}, // precentiles to send
+    time.Millisecond) // time units
+  
+```
+
 Installation
 ------------
 
