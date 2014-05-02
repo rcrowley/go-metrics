@@ -12,7 +12,7 @@ import (
 type DuplicateMetric string
 
 func (err DuplicateMetric) Error() string {
-	return fmt.Sprintf("duplicate metric: %s", err)
+	return fmt.Sprintf("duplicate metric: %s", string(err))
 }
 
 // A Registry holds references to a set of metrics by name and can iterate
