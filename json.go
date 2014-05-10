@@ -16,8 +16,11 @@ func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 		case GaugeFloat64:
 			values["value"] = metric.Value()
 		case Healthcheck:
+			values["error"] = nil
 			metric.Check()
-			values["error"] = metric.Error().Error()
+			if err := metric.Error(); nil != err {
+				values["error"] = metric.Error().Error()
+			}
 		case Histogram:
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
