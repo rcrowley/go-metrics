@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -74,7 +73,9 @@ func (s *ExpDecaySample) Clear() {
 // Count returns the number of samples recorded, which may exceed the
 // reservoir size.
 func (s *ExpDecaySample) Count() int64 {
-	return atomic.LoadInt64(&s.count)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.count
 }
 
 // Max returns the maximum value in the sample, which may not be the maximum
@@ -415,7 +416,9 @@ func (s *UniformSample) Clear() {
 // Count returns the number of samples recorded, which may exceed the
 // reservoir size.
 func (s *UniformSample) Count() int64 {
-	return atomic.LoadInt64(&s.count)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.count
 }
 
 // Max returns the maximum value in the sample, which may not be the maximum
