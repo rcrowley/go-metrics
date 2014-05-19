@@ -402,7 +402,10 @@ func NewUniformSample(reservoirSize int) Sample {
 	if UseNilMetrics {
 		return NilSample{}
 	}
-	return &UniformSample{reservoirSize: reservoirSize}
+	return &UniformSample{
+		reservoirSize: reservoirSize,
+		values:        make([]int64, 0, reservoirSize),
+	}
 }
 
 // Clear clears all samples.
