@@ -319,3 +319,34 @@ func testUniformSampleStatistics(t *testing.T, s Sample) {
 		t.Errorf("99th percentile: 9999.99 != %v\n", ps[2])
 	}
 }
+
+// TestUniformSampleConcurrentUpdateCount would expose data race problems with
+// concurrent Update and Count calls on Sample when test is called with -race
+// argument
+func TestUniformSampleConcurrentUpdateCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode")
+	}
+	s := NewUniformSample(100)
+	for i := 0; i < 100; i++ {
+		s.Update(int64(i))
+	}
+	quit := make(chan struct{})
+	go func() {
+		t := time.NewTicker(10 * time.Millisecond)
+		for {
+			select {
+			case <-t.C:
+				s.Update(rand.Int63())
+			case <-quit:
+				t.Stop()
+				return
+			}
+		}
+	}()
+	for i := 0; i < 1000; i++ {
+		s.Count()
+		time.Sleep(5 * time.Millisecond)
+	}
+	quit <- struct{}{}
+}
