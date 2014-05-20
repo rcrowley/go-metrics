@@ -394,6 +394,7 @@ type UniformSample struct {
 	count         int64
 	mutex         sync.Mutex
 	reservoirSize int
+	count         int64
 	values        []int64
 }
 
@@ -504,7 +505,10 @@ func (s *UniformSample) Update(v int64) {
 	if len(s.values) < s.reservoirSize {
 		s.values = append(s.values, v)
 	} else {
-		s.values[rand.Intn(s.reservoirSize)] = v
+		r := rand.Int63n(s.count)
+		if r < int64(len(s.values)) {
+			s.values[int(r)] = v
+		}
 	}
 }
 
