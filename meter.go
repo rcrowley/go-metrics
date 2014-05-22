@@ -193,7 +193,7 @@ func (m *StandardMeter) updateSnapshot() {
 	snapshot.rate1 = m.a1.Rate()
 	snapshot.rate5 = m.a5.Rate()
 	snapshot.rate15 = m.a15.Rate()
-	snapshot.rateMean = float64(1e9*snapshot.count) / float64(time.Since(m.startTime))
+	snapshot.rateMean = float64(snapshot.count) / time.Since(m.startTime).Seconds()
 }
 
 func (m *StandardMeter) tick() {
