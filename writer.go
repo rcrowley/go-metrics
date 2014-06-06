@@ -3,8 +3,8 @@ package metrics
 import (
 	"fmt"
 	"io"
-	"time"
 	"sort"
+	"time"
 )
 
 // Output each metric in the given registry periodically using the given

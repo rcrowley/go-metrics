@@ -3,9 +3,9 @@ package metrics
 import (
 	"io/ioutil"
 	"log"
+	"sort"
 	"sync"
 	"testing"
-	"sort"
 )
 
 const FANOUT = 128
@@ -109,14 +109,14 @@ func BenchmarkMetrics(b *testing.B) {
 
 func TestMetricsSorting(t *testing.T) {
 	var data = metrics{
-		{name:"zzz"},
-		{name:"bbb"},
-		{name:"fff"},
-		{name:"ggg"},
+		{name: "zzz"},
+		{name: "bbb"},
+		{name: "fff"},
+		{name: "ggg"},
 	}
 
 	sort.Sort(data)
-	for i, d := range []string{"bbb","fff","ggg","zzz"} {
+	for i, d := range []string{"bbb", "fff", "ggg", "zzz"} {
 		if data[i].name != d {
 			t.Fail()
 		}
