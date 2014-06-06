@@ -16,3 +16,13 @@ func TestRegistryMarshallJSON(t *testing.T) {
 		t.Fatalf(s)
 	}
 }
+
+func TestRegistryWriteJSONOnce(t *testing.T) {
+	r := NewRegistry()
+	r.Register("counter", NewCounter())
+	b := &bytes.Buffer{}
+	WriteJSONOnce(r, b)
+	if s := b.String(); s != "{\"counter\":{\"count\":0}}\n" {
+		t.Fail()
+	}
+}

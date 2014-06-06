@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 	"testing"
+	"sort"
 )
 
 const FANOUT = 128
@@ -104,4 +105,20 @@ func BenchmarkMetrics(b *testing.B) {
 	wgD.Wait()
 	wgR.Wait()
 	wgW.Wait()
+}
+
+func TestMetricsSorting(t *testing.T) {
+	var data = metrics{
+		{name:"zzz"},
+		{name:"bbb"},
+		{name:"fff"},
+		{name:"ggg"},
+	}
+
+	sort.Sort(data)
+	for i, d := range []string{"bbb","fff","ggg","zzz"} {
+		if data[i].name != d {
+			t.Fail()
+		}
+	}
 }

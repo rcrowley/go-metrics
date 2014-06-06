@@ -11,3 +11,19 @@ package metrics
 // This global kill-switch helps quantify the observer effect and makes
 // for less cluttered pprof profiles.
 var UseNilMetrics bool = false
+
+type metric struct {
+	name string
+	m    interface{}
+}
+
+// metrics is a slice of metrics that implements sort.Interface
+type metrics []metric
+
+func (m metrics) Len() int { return len(m) }
+
+func (m metrics) Swap(i, j int) { m[i], m[j] = m[j], m[i] }
+
+func (m metrics) Less(i, j int) bool {
+	return m[i].name < m[j].name
+}
