@@ -102,10 +102,10 @@ func send(r metrics.Registry, client *influxClient.Client) error {
 				},
 			})
 		}
-		if err := client.WriteSeries(series); err != nil {
-			log.Println(err)
-		}
 	})
+	if err := client.WriteSeries(series); err != nil {
+		log.Println(err)
+	}
 	return nil
 }
 
