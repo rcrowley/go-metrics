@@ -93,7 +93,6 @@ func (self *LibratoClient) PostMetrics(batch Batch) (err error) {
 
 	if resp.StatusCode != http.StatusOK {
 		var body []byte
-		var err error
 		if body, err = ioutil.ReadAll(resp.Body); err != nil {
 			body = []byte(fmt.Sprintf("(could not fetch response body for error: %s)", err))
 		}

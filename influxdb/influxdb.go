@@ -2,7 +2,7 @@ package influxdb
 
 import (
 	"fmt"
-	influxClient "github.com/influxdb/influxdb-go"
+	influxClient "github.com/influxdb/influxdb/client"
 	"github.com/rcrowley/go-metrics"
 	"log"
 	"time"
@@ -102,10 +102,10 @@ func send(r metrics.Registry, client *influxClient.Client) error {
 				},
 			})
 		}
-		if err := client.WriteSeries(series); err != nil {
-			log.Println(err)
-		}
 	})
+	if err := client.WriteSeries(series); err != nil {
+		log.Println(err)
+	}
 	return nil
 }
 
