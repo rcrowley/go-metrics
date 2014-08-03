@@ -119,7 +119,7 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 	runtimeMetrics.MemStats.StackSys.Update(int64(memStats.StackSys))
 	runtimeMetrics.MemStats.Sys.Update(int64(memStats.Sys))
 	runtimeMetrics.MemStats.TotalAlloc.Update(int64(memStats.TotalAlloc))
-	runtimeMetrics.NumCgoCall.Update(int64(runtime.NumCgoCall()))
+	runtimeMetrics.NumCgoCall.Update(numCgoCall())
 	runtimeMetrics.NumGoroutine.Update(int64(runtime.NumGoroutine()))
 }
 
