@@ -71,9 +71,8 @@ func (r StandardRegistry) MarshalJSON() ([]byte, error) {
 // WriteJSON writes metrics from the given registry  periodically to the
 // specified io.Writer as JSON.
 func WriteJSON(r Registry, d time.Duration, w io.Writer) {
-	for {
+	for _ = range time.Tick(d) {
 		WriteJSONOnce(r, w)
-		time.Sleep(d)
 	}
 }
 
