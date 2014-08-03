@@ -40,10 +40,10 @@ var (
 		NumGoroutine Gauge
 		ReadMemStats Timer
 	}
-	numGC      uint32
-	numMallocs uint64
-	numFrees   uint64
-	numLookups uint64
+	frees   uint64
+	lookups uint64
+	mallocs uint64
+	numGC   uint32
 )
 
 // Capture new values for the Go runtime statistics exported in
@@ -81,7 +81,7 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 		runtimeMetrics.MemStats.EnableGC.Update(0)
 	}
 
-	runtimeMetrics.MemStats.Frees.Update(int64(memStats.Frees - numFrees))
+	runtimeMetrics.MemStats.Frees.Update(int64(memStats.Frees - frees))
 	runtimeMetrics.MemStats.HeapAlloc.Update(int64(memStats.HeapAlloc))
 	runtimeMetrics.MemStats.HeapIdle.Update(int64(memStats.HeapIdle))
 	runtimeMetrics.MemStats.HeapInuse.Update(int64(memStats.HeapInuse))
@@ -89,8 +89,8 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 	runtimeMetrics.MemStats.HeapReleased.Update(int64(memStats.HeapReleased))
 	runtimeMetrics.MemStats.HeapSys.Update(int64(memStats.HeapSys))
 	runtimeMetrics.MemStats.LastGC.Update(int64(memStats.LastGC))
-	runtimeMetrics.MemStats.Lookups.Update(int64(memStats.Lookups - numLookups))
-	runtimeMetrics.MemStats.Mallocs.Update(int64(memStats.Mallocs - numMallocs))
+	runtimeMetrics.MemStats.Lookups.Update(int64(memStats.Lookups - lookups))
+	runtimeMetrics.MemStats.Mallocs.Update(int64(memStats.Mallocs - mallocs))
 	runtimeMetrics.MemStats.MCacheInuse.Update(int64(memStats.MCacheInuse))
 	runtimeMetrics.MemStats.MCacheSys.Update(int64(memStats.MCacheSys))
 	runtimeMetrics.MemStats.MSpanInuse.Update(int64(memStats.MSpanInuse))
@@ -116,10 +116,10 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 			runtimeMetrics.MemStats.PauseNs.Update(int64(memStats.PauseNs[i]))
 		}
 	}
+	frees = memStats.Frees
+	lookups = memStats.Lookups
+	mallocs = memStats.Mallocs
 	numGC = memStats.NumGC
-	numMallocs = memStats.Mallocs
-	numFrees = memStats.Frees
-	numLookups = memStats.Lookups
 
 	runtimeMetrics.MemStats.PauseTotalNs.Update(int64(memStats.PauseTotalNs))
 	runtimeMetrics.MemStats.StackInuse.Update(int64(memStats.StackInuse))
