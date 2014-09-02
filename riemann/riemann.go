@@ -3,8 +3,8 @@ package riemann
 import (
 	"fmt"
 	"github.com/amir/raidman"
-	"github.com/pingles/backoff"
-	"github.com/pingles/go-metrics"
+	"github.com/cenkalti/backoff"
+	"github.com/rcrowley/go-metrics"
 	"log"
 	"os"
 	"path"
@@ -109,7 +109,7 @@ func establishRiemannClient(host string) chan *raidman.Client {
 			}
 		}
 
-		policy := &backoff.ConstantBackoff{time.Second * 5}
+		policy := &backoff.ConstantBackOff{time.Second * 5}
 		backoff.Retry(connect, policy)
 	}()
 
