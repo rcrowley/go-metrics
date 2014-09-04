@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/amir/raidman"
 	"github.com/cenkalti/backoff"
-	"github.com/rcrowley/go-metrics"
+	"github.com/pingles/go-metrics"
 	"log"
 	"os"
 	"path"
