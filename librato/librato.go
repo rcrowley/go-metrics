@@ -46,9 +46,11 @@ func (self *Reporter) Run() {
 		var err error
 		if metrics, err = self.BuildRequest(now, self.Registry); err != nil {
 			log.Printf("ERROR constructing librato request body %s", err)
+			continue
 		}
 		if err := metricsApi.PostMetrics(metrics); err != nil {
 			log.Printf("ERROR sending metrics to librato %s", err)
+			continue
 		}
 	}
 }
