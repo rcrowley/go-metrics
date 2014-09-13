@@ -8,6 +8,7 @@ import (
 // Timers capture the duration and rate of events.
 type Timer interface {
 	Count() int64
+	Sum() int64
 	Max() int64
 	Mean() float64
 	Min() int64
@@ -76,6 +77,9 @@ type NilTimer struct {
 // Count is a no-op.
 func (NilTimer) Count() int64 { return 0 }
 
+// Sum is a no-op.
+func (NilTimer) Sum() int64 { return 0 }
+
 // Max is a no-op.
 func (NilTimer) Max() int64 { return 0 }
 
@@ -134,6 +138,11 @@ type StandardTimer struct {
 // Count returns the number of events recorded.
 func (t *StandardTimer) Count() int64 {
 	return t.histogram.Count()
+}
+
+// Sum returns the sum in the sample.
+func (t *StandardTimer) Sum() int64 {
+	return t.histogram.Sum()
 }
 
 // Max returns the maximum value in the sample.
@@ -234,6 +243,9 @@ type TimerSnapshot struct {
 // Count returns the number of events recorded at the time the snapshot was
 // taken.
 func (t *TimerSnapshot) Count() int64 { return t.histogram.Count() }
+
+// Sum returns the sum at the time the snapshot was taken.
+func (t *TimerSnapshot) Sum() int64 { return t.histogram.Sum() }
 
 // Max returns the maximum value at the time the snapshot was taken.
 func (t *TimerSnapshot) Max() int64 { return t.histogram.Max() }
