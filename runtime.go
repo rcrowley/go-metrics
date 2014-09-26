@@ -40,10 +40,11 @@ var (
 		NumGoroutine Gauge
 		ReadMemStats Timer
 	}
-	frees   uint64
-	lookups uint64
-	mallocs uint64
-	numGC   uint32
+	frees       uint64
+	lookups     uint64
+	mallocs     uint64
+	numGC       uint32
+	numCgoCalls int64
 )
 
 // Capture new values for the Go runtime statistics exported in
@@ -125,7 +126,11 @@ func CaptureRuntimeMemStatsOnce(r Registry) {
 	runtimeMetrics.MemStats.StackSys.Update(int64(memStats.StackSys))
 	runtimeMetrics.MemStats.Sys.Update(int64(memStats.Sys))
 	runtimeMetrics.MemStats.TotalAlloc.Update(int64(memStats.TotalAlloc))
-	runtimeMetrics.NumCgoCall.Update(numCgoCall())
+
+	currentNumCgoCalls := numCgoCall()
+	runtimeMetrics.NumCgoCall.Update(currentNumCgoCalls - numCgoCalls)
+	numCgoCalls = currentNumCgoCalls
+
 	runtimeMetrics.NumGoroutine.Update(int64(runtime.NumGoroutine()))
 }
 
