@@ -68,3 +68,34 @@ func Log(r Registry, d time.Duration, l *log.Logger) {
 		})
 	}
 }
+
+// Output each metric in the given registry periodically using the given
+// logger, using a more compact display of 1 line per metric, and all times in ms.
+func LogCompact(r Registry, d time.Duration, l *log.Logger) {
+	for _ = range time.Tick(d) {
+		r.Each(func(name string, i interface{}) {
+			switch metric := i.(type) {
+			case Counter:
+				l.Printf("counter %s -- count: %d\n", name, metric.Count())
+			case Gauge:
+				l.Printf("gauge %s -- value: %d\n", name, metric.Value())
+			case GaugeFloat64:
+				l.Printf("gauge %s -- value: %f\n", name, metric.Value())
+			case Healthcheck:
+				metric.Check()
+				l.Printf("healthcheck %s -- error : %v\n", name, metric.Error())
+			case Histogram:
+				h := metric.Snapshot()
+				ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+				l.Printf("histogram %s -- count:%d   min:%4d  -  mean:%4d  -  95:%4d  -  99:%5d  -  max:%5d\n", name, h.Count(), int(h.Min()/10e6), int(h.Mean()/10e6), int(ps[2]/10e6), int(ps[3]/10e6), int(h.Max()/10e6))
+			case Meter:
+				m := metric.Snapshot()
+				l.Printf("meter %s -- count: %d  1mrate:%12.2f  -  5mrate:%12.2f  -  meanrate:  %12.2f\n", name, m.Count(), m.Rate1(), m.Rate5(), m.RateMean())
+			case Timer:
+				t := metric.Snapshot()
+				ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+				l.Printf("timer %s -- count:%d   min:%4d  -  mean:%4d  -  95:%4d  -  99:%5d  -  max:%5d\n", name, t.Count(), int(t.Min()/10e6), int(t.Mean()/10e6), int(ps[2]/10e6), int(ps[3]/10e6), int(t.Max()/10e6))
+			}
+		})
+	}
+}
