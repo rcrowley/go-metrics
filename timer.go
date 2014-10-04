@@ -8,7 +8,6 @@ import (
 // Timers capture the duration and rate of events.
 type Timer interface {
 	Count() int64
-	Sum() int64
 	Max() int64
 	Mean() float64
 	Min() int64
@@ -20,6 +19,7 @@ type Timer interface {
 	RateMean() float64
 	Snapshot() Timer
 	StdDev() float64
+	Sum() int64
 	Time(func())
 	Update(time.Duration)
 	UpdateSince(time.Time)
@@ -77,9 +77,6 @@ type NilTimer struct {
 // Count is a no-op.
 func (NilTimer) Count() int64 { return 0 }
 
-// Sum is a no-op.
-func (NilTimer) Sum() int64 { return 0 }
-
 // Max is a no-op.
 func (NilTimer) Max() int64 { return 0 }
 
@@ -115,6 +112,9 @@ func (NilTimer) Snapshot() Timer { return NilTimer{} }
 // StdDev is a no-op.
 func (NilTimer) StdDev() float64 { return 0.0 }
 
+// Sum is a no-op.
+func (NilTimer) Sum() int64 { return 0 }
+
 // Time is a no-op.
 func (NilTimer) Time(func()) {}
 
@@ -138,11 +138,6 @@ type StandardTimer struct {
 // Count returns the number of events recorded.
 func (t *StandardTimer) Count() int64 {
 	return t.histogram.Count()
-}
-
-// Sum returns the sum in the sample.
-func (t *StandardTimer) Sum() int64 {
-	return t.histogram.Sum()
 }
 
 // Max returns the maximum value in the sample.
@@ -206,6 +201,11 @@ func (t *StandardTimer) StdDev() float64 {
 	return t.histogram.StdDev()
 }
 
+// Sum returns the sum in the sample.
+func (t *StandardTimer) Sum() int64 {
+	return t.histogram.Sum()
+}
+
 // Record the duration of the execution of the given function.
 func (t *StandardTimer) Time(f func()) {
 	ts := time.Now()
@@ -243,9 +243,6 @@ type TimerSnapshot struct {
 // Count returns the number of events recorded at the time the snapshot was
 // taken.
 func (t *TimerSnapshot) Count() int64 { return t.histogram.Count() }
-
-// Sum returns the sum at the time the snapshot was taken.
-func (t *TimerSnapshot) Sum() int64 { return t.histogram.Sum() }
 
 // Max returns the maximum value at the time the snapshot was taken.
 func (t *TimerSnapshot) Max() int64 { return t.histogram.Max() }
@@ -290,6 +287,9 @@ func (t *TimerSnapshot) Snapshot() Timer { return t }
 // StdDev returns the standard deviation of the values at the time the snapshot
 // was taken.
 func (t *TimerSnapshot) StdDev() float64 { return t.histogram.StdDev() }
+
+// Sum returns the sum at the time the snapshot was taken.
+func (t *TimerSnapshot) Sum() int64 { return t.histogram.Sum() }
 
 // Time panics.
 func (*TimerSnapshot) Time(func()) {

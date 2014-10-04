@@ -114,7 +114,6 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				s := m.Sample()
 				measurement[Name] = fmt.Sprintf("%s.%s", name, "hist")
 				measurement[Count] = uint64(s.Count())
-				measurement[Sum] = s.Sum()
 				measurement[Max] = float64(s.Max())
 				measurement[Min] = float64(s.Min())
 				measurement[SumSquares] = sumSquares(s)
@@ -174,7 +173,6 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				gauges[0] = Measurement{
 					Name:       libratoName,
 					Count:      uint64(m.Count()),
-					Sum:        m.Mean() * float64(m.Count()),
 					Max:        float64(m.Max()),
 					Min:        float64(m.Min()),
 					SumSquares: sumSquaresTimer(m),

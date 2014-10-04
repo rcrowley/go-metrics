@@ -4,7 +4,6 @@ package metrics
 type Histogram interface {
 	Clear()
 	Count() int64
-	Sum() int64
 	Max() int64
 	Mean() float64
 	Min() int64
@@ -13,6 +12,7 @@ type Histogram interface {
 	Sample() Sample
 	Snapshot() Histogram
 	StdDev() float64
+	Sum() int64
 	Update(int64)
 	Variance() float64
 }
@@ -59,10 +59,6 @@ func (*HistogramSnapshot) Clear() {
 // taken.
 func (h *HistogramSnapshot) Count() int64 { return h.sample.Count() }
 
-// Sum returns the sum in the sample at the time the snapshot was
-// taken.
-func (h *HistogramSnapshot) Sum() int64 { return h.sample.Sum() }
-
 // Max returns the maximum value in the sample at the time the snapshot was
 // taken.
 func (h *HistogramSnapshot) Max() int64 { return h.sample.Max() }
@@ -97,6 +93,9 @@ func (h *HistogramSnapshot) Snapshot() Histogram { return h }
 // time the snapshot was taken.
 func (h *HistogramSnapshot) StdDev() float64 { return h.sample.StdDev() }
 
+// Sum returns the sum in the sample at the time the snapshot was taken.
+func (h *HistogramSnapshot) Sum() int64 { return h.sample.Sum() }
+
 // Update panics.
 func (*HistogramSnapshot) Update(int64) {
 	panic("Update called on a HistogramSnapshot")
@@ -113,9 +112,6 @@ func (NilHistogram) Clear() {}
 
 // Count is a no-op.
 func (NilHistogram) Count() int64 { return 0 }
-
-// Sum is a no-op.
-func (NilHistogram) Sum() int64 { return 0 }
 
 // Max is a no-op.
 func (NilHistogram) Max() int64 { return 0 }
@@ -143,6 +139,9 @@ func (NilHistogram) Snapshot() Histogram { return NilHistogram{} }
 // StdDev is a no-op.
 func (NilHistogram) StdDev() float64 { return 0.0 }
 
+// Sum is a no-op.
+func (NilHistogram) Sum() int64 { return 0 }
+
 // Update is a no-op.
 func (NilHistogram) Update(v int64) {}
 
@@ -161,9 +160,6 @@ func (h *StandardHistogram) Clear() { h.sample.Clear() }
 // Count returns the number of samples recorded since the histogram was last
 // cleared.
 func (h *StandardHistogram) Count() int64 { return h.sample.Count() }
-
-// Sum returns the sum in the sample.
-func (h *StandardHistogram) Sum() int64 { return h.sample.Sum() }
 
 // Max returns the maximum value in the sample.
 func (h *StandardHistogram) Max() int64 { return h.sample.Max() }
@@ -195,6 +191,9 @@ func (h *StandardHistogram) Snapshot() Histogram {
 
 // StdDev returns the standard deviation of the values in the sample.
 func (h *StandardHistogram) StdDev() float64 { return h.sample.StdDev() }
+
+// Sum returns the sum in the sample.
+func (h *StandardHistogram) Sum() int64 { return h.sample.Sum() }
 
 // Update samples a new value.
 func (h *StandardHistogram) Update(v int64) { h.sample.Update(v) }
