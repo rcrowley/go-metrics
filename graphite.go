@@ -45,6 +45,13 @@ func GraphiteWithConfig(c GraphiteConfig) {
 	}
 }
 
+// GraphiteOnce performs a single submission to Graphite, returning a
+// non-nil error on failed connections. This can be used in a loop
+// similar to GraphiteWithConfig for custom error handling.
+func GraphiteOnce(c GraphiteConfig) error {
+	return graphite(&c)
+}
+
 func graphite(c *GraphiteConfig) error {
 	now := time.Now().Unix()
 	du := float64(c.DurationUnit)
