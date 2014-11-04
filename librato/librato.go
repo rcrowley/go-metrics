@@ -116,6 +116,7 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				measurement[Count] = uint64(s.Count())
 				measurement[Max] = float64(s.Max())
 				measurement[Min] = float64(s.Min())
+				measurement[Sum] = float64(s.Sum())
 				measurement[SumSquares] = sumSquares(s)
 				gauges[0] = measurement
 				for i, p := range self.Percentiles {
