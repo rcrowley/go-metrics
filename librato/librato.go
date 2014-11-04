@@ -174,6 +174,7 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 				gauges[0] = Measurement{
 					Name:       libratoName,
 					Count:      uint64(m.Count()),
+					Sum:        m.Mean() * float64(m.Count()),
 					Max:        float64(m.Max()),
 					Min:        float64(m.Min()),
 					SumSquares: sumSquaresTimer(m),
