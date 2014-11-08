@@ -41,6 +41,9 @@ type Registry interface {
 
 	// Unregister the metric with the given name.
 	Unregister(string)
+
+	// Unregister all metrics.  (Mostly for testing.)
+	UnregisterAll()
 }
 
 // The standard implementation of a Registry is a mutex-protected map
@@ -110,6 +113,15 @@ func (r *StandardRegistry) Unregister(name string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	delete(r.metrics, name)
+}
+
+// Unregister all metrics.  (Mostly for testing.)
+func (r *StandardRegistry) UnregisterAll() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	for name, _ := range r.metrics {
+		delete(r.metrics, name)
+	}
 }
 
 func (r *StandardRegistry) register(name string, i interface{}) error {
