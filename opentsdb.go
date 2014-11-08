@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"strings"
 	"time"
-    "os"
-    "strings"
 )
 
 var shortHostName string = ""
@@ -46,19 +46,19 @@ func OpenTSDBWithConfig(c OpenTSDBConfig) {
 }
 
 func getShortHostname() string {
-    if shortHostName == "" {
-        host, _ := os.Hostname()
-        if index := strings.Index(host, "."); index > 0 {
-            shortHostName = host[:index]
-        } else {
-            shortHostName = host
-        }
-    }
-    return shortHostName
+	if shortHostName == "" {
+		host, _ := os.Hostname()
+		if index := strings.Index(host, "."); index > 0 {
+			shortHostName = host[:index]
+		} else {
+			shortHostName = host
+		}
+	}
+	return shortHostName
 }
 
 func openTSDB(c *OpenTSDBConfig) error {
-    shortHostname := getShortHostname()
+	shortHostname := getShortHostname()
 	now := time.Now().Unix()
 	du := float64(c.DurationUnit)
 	conn, err := net.DialTCP("tcp", nil, c.Addr)
@@ -99,15 +99,15 @@ func openTSDB(c *OpenTSDBConfig) error {
 			t := metric.Snapshot()
 			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 			fmt.Fprintf(w, "put %s.%s.count %d %d host=%s\n", c.Prefix, name, now, t.Count(), shortHostname)
-			fmt.Fprintf(w, "put %s.%s.min %d %d host=%s\n", c.Prefix, name, now, int64(du)*t.Min(), shortHostname)
-			fmt.Fprintf(w, "put %s.%s.max %d %d host=%s\n", c.Prefix, name, now, int64(du)*t.Max(), shortHostname)
-			fmt.Fprintf(w, "put %s.%s.mean %d %.2f host=%s\n", c.Prefix, name, now, du*t.Mean(), shortHostname)
-			fmt.Fprintf(w, "put %s.%s.std-dev %d %.2f host=%s\n", c.Prefix, name, now, du*t.StdDev(), shortHostname)
-			fmt.Fprintf(w, "put %s.%s.50-percentile %d %.2f host=%s\n", c.Prefix, name, now, du*ps[0], shortHostname)
-			fmt.Fprintf(w, "put %s.%s.75-percentile %d %.2f host=%s\n", c.Prefix, name, now, du*ps[1], shortHostname)
-			fmt.Fprintf(w, "put %s.%s.95-percentile %d %.2f host=%s\n", c.Prefix, name, now, du*ps[2], shortHostname)
-			fmt.Fprintf(w, "put %s.%s.99-percentile %d %.2f host=%s\n", c.Prefix, name, now, du*ps[3], shortHostname)
-			fmt.Fprintf(w, "put %s.%s.999-percentile %d %.2f host=%s\n", c.Prefix, name, now, du*ps[4], shortHostname)
+			fmt.Fprintf(w, "put %s.%s.min %d %d host=%s\n", c.Prefix, name, now, t.Min()/int64(du), shortHostname)
+			fmt.Fprintf(w, "put %s.%s.max %d %d host=%s\n", c.Prefix, name, now, t.Max()/int64(du), shortHostname)
+			fmt.Fprintf(w, "put %s.%s.mean %d %.2f host=%s\n", c.Prefix, name, now, t.Mean()/du, shortHostname)
+			fmt.Fprintf(w, "put %s.%s.std-dev %d %.2f host=%s\n", c.Prefix, name, now, t.StdDev()/du, shortHostname)
+			fmt.Fprintf(w, "put %s.%s.50-percentile %d %.2f host=%s\n", c.Prefix, name, now, ps[0]/du, shortHostname)
+			fmt.Fprintf(w, "put %s.%s.75-percentile %d %.2f host=%s\n", c.Prefix, name, now, ps[1]/du, shortHostname)
+			fmt.Fprintf(w, "put %s.%s.95-percentile %d %.2f host=%s\n", c.Prefix, name, now, ps[2]/du, shortHostname)
+			fmt.Fprintf(w, "put %s.%s.99-percentile %d %.2f host=%s\n", c.Prefix, name, now, ps[3]/du, shortHostname)
+			fmt.Fprintf(w, "put %s.%s.999-percentile %d %.2f host=%s\n", c.Prefix, name, now, ps[4]/du, shortHostname)
 			fmt.Fprintf(w, "put %s.%s.one-minute %d %.2f host=%s\n", c.Prefix, name, now, t.Rate1(), shortHostname)
 			fmt.Fprintf(w, "put %s.%s.five-minute %d %.2f host=%s\n", c.Prefix, name, now, t.Rate5(), shortHostname)
 			fmt.Fprintf(w, "put %s.%s.fifteen-minute %d %.2f host=%s\n", c.Prefix, name, now, t.Rate15(), shortHostname)
