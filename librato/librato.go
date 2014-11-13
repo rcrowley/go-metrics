@@ -29,6 +29,7 @@ type Reporter struct {
 	Percentiles     []float64              // percentiles to report on histogram metrics
 	TimerAttributes map[string]interface{} // units in which timers will be displayed
 	intervalSec     int64
+	MetricPrefix    string
 }
 
 func NewReporter(r metrics.Registry, d time.Duration, e string, t string, s string, p []float64, u time.Duration) *Reporter {
@@ -87,6 +88,9 @@ func (self *Reporter) BuildRequest(now time.Time, r metrics.Registry) (snapshot 
 	snapshot.Counters = make([]Measurement, 0)
 	histogramGaugeCount := 1 + len(self.Percentiles)
 	r.Each(func(name string, metric interface{}) {
+		if self.MetricPrefix != "" {
+			name = self.MetricPrefix + name
+		}
 		measurement := Measurement{}
 		measurement[Period] = self.Interval.Seconds()
 		switch m := metric.(type) {
