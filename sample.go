@@ -33,7 +33,7 @@ type Sample interface {
 // priority reservoir.  See Cormode et al's "Forward Decay: A Practical Time
 // Decay Model for Streaming Systems".
 //
-// <http://www.research.att.com/people/Cormode_Graham/library/publications/CormodeShkapenyukSrivastavaXu09.pdf>
+// <http://dimacs.rutgers.edu/~graham/pubs/papers/fwddecay.pdf>
 type ExpDecaySample struct {
 	alpha         float64
 	count         int64
