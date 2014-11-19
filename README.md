@@ -90,6 +90,19 @@ import "github.com/rcrowley/go-metrics/stathat"
 go stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
 ```
 
+Maintain all metrics along with expvars at `/debug/vars2`:
+
+This uses the same mechanism as [the official expvar](http://golang.org/pkg/expvar/)
+but exposed under `/debug/vars2`, which shows a json representation of all your usual expvars
+as well as all your go-metrics.
+
+
+```go
+import "github.com/rcrowley/go-metrics/exp"
+
+exp.Exp(metrics.DefaultRegistry)
+```
+
 Installation
 ------------
 
