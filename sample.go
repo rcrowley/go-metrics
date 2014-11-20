@@ -595,6 +595,119 @@ func (h *expDecaySampleHeap) down(i, n int) {
 	}
 }
 
+// WindowSample, every snapshot returns the data since the last snapshot.
+// do not use multiple reporters that each do their own snapshots, or you'll see misleading data!
+type WindowSample struct {
+	mutex  sync.Mutex
+	values []int64
+}
+
+func NewWindowSample() Sample {
+	// later we could get fancy with preallocating an array of a suggested size, looking at previous snapshots and seeing how big they got, etc.
+	if UseNilMetrics {
+		return NilSample{}
+	}
+	w := &WindowSample{
+		values: make([]int64, 0, 0),
+	}
+	return w
+}
+
+// Clear clears all samples.
+func (w *WindowSample) Clear() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.values = make([]int64, 0, 0)
+}
+
+// Count returns the number of samples recorded in current session
+func (w *WindowSample) Count() int64 {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	return int64(len(w.values))
+}
+
+// Max returns the maximum value in the sample, which may not be the maximum
+// value ever to be part of the sample.
+func (w *WindowSample) Max() int64 {
+	return SampleMax(w.Values())
+}
+
+// Mean returns the mean of the values in the sample.
+func (w *WindowSample) Mean() float64 {
+	return SampleMean(w.Values())
+}
+
+// Min returns the minimum value in the sample, which may not be the minimum
+// value ever to be part of the sample.
+func (w *WindowSample) Min() int64 {
+	return SampleMin(w.Values())
+}
+
+// Percentile returns an arbitrary percentile of values in the sample.
+func (w *WindowSample) Percentile(p float64) float64 {
+	return SamplePercentile(w.Values(), p)
+}
+
+// Percentiles returns a slice of arbitrary percentiles of values in the
+// sample.
+func (w *WindowSample) Percentiles(ps []float64) []float64 {
+	return SamplePercentiles(w.Values(), ps)
+}
+
+// Size returns the size of the sample, which is at most the reservoir size.
+func (w *WindowSample) Size() int {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	return len(w.values)
+}
+
+// Snapshot returns a read-only copy of the sample.
+// Also resets the values seen!
+func (w *WindowSample) Snapshot() Sample {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	values := w.Values()
+	vals := make([]int64, len(values))
+	copy(vals, values)
+	w.values = make([]int64, 0)
+	return &SampleSnapshot{
+		count:  int64(len(values)),
+		values: values,
+	}
+}
+
+// StdDev returns the standard deviation of the values in the sample.
+func (w *WindowSample) StdDev() float64 {
+	return SampleStdDev(w.Values())
+}
+
+// Sum returns the sum of the values in the sample.
+func (w *WindowSample) Sum() int64 {
+	return SampleSum(w.Values())
+}
+
+// Update samples a new value.
+func (w *WindowSample) Update(v int64) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.values = append(w.values, v)
+}
+
+// Values returns a copy of the values in the sample.
+func (w *WindowSample) Values() []int64 {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	val := make([]int64, len(w.values))
+	copy(val, w.values)
+	return val
+}
+
+// Variance returns the variance of the values in the sample.
+func (w *WindowSample) Variance() float64 {
+	return SampleVariance(w.Values())
+}
+
 type int64Slice []int64
 
 func (p int64Slice) Len() int           { return len(p) }
