@@ -667,9 +667,8 @@ func (w *WindowSample) Size() int {
 func (w *WindowSample) Snapshot() Sample {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
-	values := w.Values()
-	vals := make([]int64, len(values))
-	copy(vals, values)
+	values := make([]int64, len(w.values))
+	copy(values, w.values)
 	w.values = make([]int64, 0)
 	return &SampleSnapshot{
 		count:  int64(len(values)),
@@ -698,9 +697,9 @@ func (w *WindowSample) Update(v int64) {
 func (w *WindowSample) Values() []int64 {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
-	val := make([]int64, len(w.values))
-	copy(val, w.values)
-	return val
+	values := make([]int64, len(w.values))
+	copy(values, w.values)
+	return values
 }
 
 // Variance returns the variance of the values in the sample.
