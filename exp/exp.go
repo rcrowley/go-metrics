@@ -142,7 +142,7 @@ func (exp *exp) syncToExpvar() {
 		case metrics.Timer:
 			exp.publishTimer(name, i.(metrics.Timer))
 		default:
-			panic("unsupported type for " + name)
+			panic(fmt.Sprintf("unsupported type for '%s': %T", name, i))
 		}
 	})
 }
