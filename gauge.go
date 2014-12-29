@@ -6,6 +6,7 @@ import "sync/atomic"
 type Gauge interface {
 	Snapshot() Gauge
 	Update(int64)
+	Add(int64)
 	Value() int64
 }
 
@@ -47,6 +48,11 @@ func (GaugeSnapshot) Update(int64) {
 	panic("Update called on a GaugeSnapshot")
 }
 
+// Add panics.
+func (GaugeSnapshot) Add(int64) {
+	panic("Add called on a GaugeSnapshot")
+}
+
 // Value returns the value at the time the snapshot was taken.
 func (g GaugeSnapshot) Value() int64 { return int64(g) }
 
@@ -58,6 +64,9 @@ func (NilGauge) Snapshot() Gauge { return NilGauge{} }
 
 // Update is a no-op.
 func (NilGauge) Update(v int64) {}
+
+// Add is a no-op.
+func (NilGauge) Add(v int64) {}
 
 // Value is a no-op.
 func (NilGauge) Value() int64 { return 0 }
@@ -76,6 +85,17 @@ func (g *StandardGauge) Snapshot() Gauge {
 // Update updates the gauge's value.
 func (g *StandardGauge) Update(v int64) {
 	atomic.StoreInt64(&g.value, v)
+}
+
+// Add increments/decrements the gauge's value by amount.
+func (g *StandardGauge) Add(amount int64) {
+	for {
+		old := atomic.LoadInt64(&g.value)
+		changed := old + amount
+		if atomic.CompareAndSwapInt64(&g.value, old, changed) {
+			break
+		}
+	}
 }
 
 // Value returns the gauge's current value.
