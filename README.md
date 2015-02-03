@@ -37,7 +37,7 @@ t.Update(47)
 Periodically log every metric in human-readable form to standard error:
 
 ```go
-go metrics.Log(metrics.DefaultRegistry, 60e9, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+go metrics.Log(metrics.DefaultRegistry, 5 * time.Second, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 ```
 
 Periodically log every metric in slightly-more-parseable form to syslog:
