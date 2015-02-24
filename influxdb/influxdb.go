@@ -52,7 +52,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			series = append(series, influxClient.Point{
 				Name:      fmt.Sprintf("%s.count", name),
 				Timestamp: now,
-				Values: map[string]interface{}{
+				Fields: map[string]interface{}{
 					"count": metric.Count(),
 				},
 			})
@@ -60,7 +60,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			series = append(series, influxClient.Point{
 				Name:      fmt.Sprintf("%s.value", name),
 				Timestamp: now,
-				Values: map[string]interface{}{
+				Fields: map[string]interface{}{
 					"value": metric.Value(),
 				},
 			})
@@ -68,7 +68,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			series = append(series, influxClient.Point{
 				Name:      fmt.Sprintf("%s.value", name),
 				Timestamp: now,
-				Values: map[string]interface{}{
+				Fields: map[string]interface{}{
 					"value": metric.Value(),
 				},
 			})
@@ -78,7 +78,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			series = append(series, influxClient.Point{
 				Name:      fmt.Sprintf("%s.histogram", name),
 				Timestamp: now,
-				Values: map[string]interface{}{
+				Fields: map[string]interface{}{
 					"count":          h.Count(),
 					"min":            h.Min(),
 					"max":            h.Max(),
@@ -95,7 +95,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			m := metric.Snapshot()
 			series = append(series, influxClient.Point{
 				Name: fmt.Sprintf("%s.meter", name),
-				Values: map[string]interface{}{
+				Fields: map[string]interface{}{
 					"count":          m.Count(),
 					"one-minute":     m.Rate1(),
 					"five-minute":    m.Rate5(),
@@ -108,7 +108,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 			series = append(series, influxClient.Point{
 				Name: fmt.Sprintf("%s.timer", name),
-				Values: map[string]interface{}{
+				Fields: map[string]interface{}{
 					"count":          h.Count(),
 					"min":            h.Min(),
 					"max":            h.Max(),
