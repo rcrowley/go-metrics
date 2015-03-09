@@ -46,7 +46,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 	series := []influxClient.Point{}
 
 	r.Each(func(name string, i interface{}) {
-		now := influxClient.Timestamp(time.Now()) // getCurrentTime()
+		now := time.Now() // getCurrentTime()
 		switch metric := i.(type) {
 		case metrics.Counter:
 			series = append(series, influxClient.Point{
@@ -127,7 +127,7 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			})
 		}
 	})
-	if _, err := client.Write(influxClient.Write{
+	if _, err := client.Write(influxClient.BatchPoints{
 		Database: database,
 		Points:   series,
 	}); err != nil {
