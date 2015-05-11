@@ -50,24 +50,24 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 		switch metric := i.(type) {
 		case metrics.Counter:
 			series = append(series, influxClient.Point{
-				Name:      fmt.Sprintf("%s.count", name),
-				Timestamp: now,
+				Name: fmt.Sprintf("%s.count", name),
+				Time: now,
 				Fields: map[string]interface{}{
 					"count": metric.Count(),
 				},
 			})
 		case metrics.Gauge:
 			series = append(series, influxClient.Point{
-				Name:      fmt.Sprintf("%s.value", name),
-				Timestamp: now,
+				Name: fmt.Sprintf("%s.value", name),
+				Time: now,
 				Fields: map[string]interface{}{
 					"value": metric.Value(),
 				},
 			})
 		case metrics.GaugeFloat64:
 			series = append(series, influxClient.Point{
-				Name:      fmt.Sprintf("%s.value", name),
-				Timestamp: now,
+				Name: fmt.Sprintf("%s.value", name),
+				Time: now,
 				Fields: map[string]interface{}{
 					"value": metric.Value(),
 				},
@@ -76,8 +76,8 @@ func Send(r metrics.Registry, client *influxClient.Client, database string) erro
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 			series = append(series, influxClient.Point{
-				Name:      fmt.Sprintf("%s.histogram", name),
-				Timestamp: now,
+				Name: fmt.Sprintf("%s.histogram", name),
+				Time: now,
 				Fields: map[string]interface{}{
 					"count":          h.Count(),
 					"min":            h.Min(),
