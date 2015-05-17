@@ -296,27 +296,27 @@ func testUniformSampleStatistics(t *testing.T, s Sample) {
 	if count := s.Count(); 10000 != count {
 		t.Errorf("s.Count(): 10000 != %v\n", count)
 	}
-	if min := s.Min(); 9412 != min {
-		t.Errorf("s.Min(): 9412 != %v\n", min)
+	if min := s.Min(); 37 != min {
+		t.Errorf("s.Min(): 37 != %v\n", min)
 	}
-	if max := s.Max(); 10000 != max {
-		t.Errorf("s.Max(): 10000 != %v\n", max)
+	if max := s.Max(); 9989 != max {
+		t.Errorf("s.Max(): 9989 != %v\n", max)
 	}
-	if mean := s.Mean(); 9902.26 != mean {
-		t.Errorf("s.Mean(): 9902.26 != %v\n", mean)
+	if mean := s.Mean(); 4748.14 != mean {
+		t.Errorf("s.Mean(): 4748.14 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 101.8667384380201 != stdDev {
-		t.Errorf("s.StdDev(): 101.8667384380201 != %v\n", stdDev)
+	if stdDev := s.StdDev(); 2826.684117548333 != stdDev {
+		t.Errorf("s.StdDev(): 2826.684117548333 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 9930.5 != ps[0] {
-		t.Errorf("median: 9930.5 != %v\n", ps[0])
+	if 4599 != ps[0] {
+		t.Errorf("median: 4599 != %v\n", ps[0])
 	}
-	if 9973.75 != ps[1] {
-		t.Errorf("75th percentile: 9973.75 != %v\n", ps[1])
+	if 7380.5 != ps[1] {
+		t.Errorf("75th percentile: 7380.5 != %v\n", ps[1])
 	}
-	if 9999.99 != ps[2] {
-		t.Errorf("99th percentile: 9999.99 != %v\n", ps[2])
+	if 9986.429999999998 != ps[2] {
+		t.Errorf("99th percentile: 9986.429999999998 != %v\n", ps[2])
 	}
 }
 

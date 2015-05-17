@@ -394,7 +394,6 @@ type UniformSample struct {
 	count         int64
 	mutex         sync.Mutex
 	reservoirSize int
-	count         int64
 	values        []int64
 }
 
