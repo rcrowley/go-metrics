@@ -55,7 +55,7 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 		t0:            time.Now(),
 		values:        newExpDecaySampleHeap(reservoirSize),
 	}
-	s.t1 = time.Now().Add(rescaleThreshold)
+	s.t1 = s.t0.Add(rescaleThreshold)
 	return s
 }
 
