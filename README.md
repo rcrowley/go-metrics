@@ -77,7 +77,7 @@ go librato.Librato(metrics.DefaultRegistry,
     "example@example.com", // account owner email address
     "token",               // Librato API token
     "hostname",            // source
-    []float64{0.95},       // precentiles to send
+    []float64{0.95},       // percentiles to send
     time.Millisecond,      // time unit
 )
 ```
