@@ -1,7 +1,7 @@
 go-metrics
 ==========
 
-Go port of Coda Hale's Metrics library: <https://github.com/codahale/metrics>.
+Go port of Coda Hale's Metrics library: <https://github.com/dropwizard/metrics>.
 
 Documentation: <http://godoc.org/github.com/rcrowley/go-metrics>.
 
