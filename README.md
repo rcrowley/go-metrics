@@ -51,7 +51,7 @@ Periodically emit every metric to Graphite:
 
 ```go
 addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
-go metrics.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+go metrics.Graphite(metrics.DefaultRegistry, 10e9, "metrics.", addr)
 ```
 
 Periodically emit every metric into InfluxDB:
