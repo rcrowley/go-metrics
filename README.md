@@ -47,11 +47,14 @@ w, _ := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")
 go metrics.Syslog(metrics.DefaultRegistry, 60e9, w)
 ```
 
-Periodically emit every metric to Graphite:
+Periodically emit every metric to Graphite using the [Graphite client](https://github.com/cyberdelia/go-metrics-graphite):
 
 ```go
+
+import "github.com/cyberdelia/go-metrics-graphite"
+
 addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
-go metrics.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 ```
 
 Periodically emit every metric into InfluxDB:
@@ -112,3 +115,4 @@ Publishing Metrics
 Clients are available for the following destinations:
 
 * Librato - [https://github.com/mihasya/go-metrics-librato](https://github.com/mihasya/go-metrics-librato)
+* Graphite - [https://github.com/cyberdelia/go-metrics-graphite](https://github.com/cyberdelia/go-metrics-graphite)
