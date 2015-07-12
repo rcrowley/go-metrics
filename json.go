@@ -62,6 +62,9 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["5m.rate"] = t.Rate5()
 			values["15m.rate"] = t.Rate15()
 			values["mean.rate"] = t.RateMean()
+		case EWMA:
+			t := metric.Snapshot()
+			values["rate"] = t.Rate()
 		}
 		data[name] = values
 	})
