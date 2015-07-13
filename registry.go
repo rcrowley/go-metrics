@@ -169,6 +169,14 @@ func Register(name string, i interface{}) error {
 	return DefaultRegistry.Register(name, i)
 }
 
+// Register the given metric under the given name.  Panics if a metric by the
+// given name is already registered.
+func MustRegister(name string, i interface{}) {
+	if err := Register(name, i); err != nil {
+		panic(err)
+	}
+}
+
 // Run all registered healthchecks.
 func RunHealthchecks() {
 	DefaultRegistry.RunHealthchecks()
