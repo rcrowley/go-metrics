@@ -116,3 +116,50 @@ func TestRegistryGetOrRegisterWithLazyInstantiation(t *testing.T) {
 		t.Fatal(i)
 	}
 }
+
+func TestPrefixedRegistryGetOrRegister(t *testing.T) {
+	r := NewPrefixedRegistry("prefix.")
+
+	_ = r.GetOrRegister("foo", NewCounter)
+
+	r.Each(func(name string, m interface{}) {
+		if name != "prefix.foo" {
+			t.Fatal(name)
+		}
+	})
+}
+
+func TestPrefixedRegistryRegister(t *testing.T) {
+	r := NewPrefixedRegistry("prefix.")
+
+	_ = r.Register("foo", NewCounter)
+
+	r.Each(func(name string, m interface{}) {
+		if name != "prefix.foo" {
+			t.Fatal(name)
+		}
+	})
+}
+
+func TestPrefixedRegistryUnregister(t *testing.T) {
+	r := NewPrefixedRegistry("prefix.")
+
+	_ = r.Register("foo", NewCounter)
+
+	r.Each(func(name string, m interface{}) {
+		if name != "prefix.foo" {
+			t.Fatal(name)
+		}
+	})
+
+	r.Unregister("foo")
+
+	i := 0
+	r.Each(func(name string, m interface{}) {
+		i++
+	})
+
+	if i != 0 {
+		t.Fatal(i)
+	}
+}
