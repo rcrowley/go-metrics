@@ -59,6 +59,11 @@ go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 Periodically emit every metric into InfluxDB:
 
+**NOTE:** this has been pulled out of the library due to constant fluctuations
+in the InfluxDB API. In fact, all client libraries are on their way out. see
+issues [#121](https://github.com/rcrowley/go-metrics/issues/121) and
+[#124](https://github.com/rcrowley/go-metrics/issues/124) for progress and details.
+
 ```go
 import "github.com/rcrowley/go-metrics/influxdb"
 
