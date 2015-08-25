@@ -5,10 +5,16 @@ import (
 	"time"
 )
 
+func Log(r Registry, freq time.Duration, l *log.Logger) {
+	LogScaled(r, freq, time.Nanosecond, l)
+}
+
 // Output each metric in the given registry periodically using the given
-// logger.
-func Log(r Registry, d time.Duration, l *log.Logger) {
-	for _ = range time.Tick(d) {
+// logger. Print timings in `scale` units (eg time.Millisecond) rather than nanos.
+func LogScaled(r Registry, freq time.Duration, scale time.Duration, l *log.Logger) {
+	du := float64(scale)
+
+	for _ = range time.Tick(freq) {
 		r.Each(func(name string, i interface{}) {
 			switch metric := i.(type) {
 			case Counter:
@@ -51,15 +57,15 @@ func Log(r Registry, d time.Duration, l *log.Logger) {
 				ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 				l.Printf("timer %s\n", name)
 				l.Printf("  count:       %9d\n", t.Count())
-				l.Printf("  min:         %9d\n", t.Min())
-				l.Printf("  max:         %9d\n", t.Max())
-				l.Printf("  mean:        %12.2f\n", t.Mean())
-				l.Printf("  stddev:      %12.2f\n", t.StdDev())
-				l.Printf("  median:      %12.2f\n", ps[0])
-				l.Printf("  75%%:         %12.2f\n", ps[1])
-				l.Printf("  95%%:         %12.2f\n", ps[2])
-				l.Printf("  99%%:         %12.2f\n", ps[3])
-				l.Printf("  99.9%%:       %12.2f\n", ps[4])
+				l.Printf("  min:         %12.2f\n", float64(t.Min())/du)
+				l.Printf("  max:         %12.2f\n", float64(t.Max())/du)
+				l.Printf("  mean:        %12.2f\n", t.Mean()/du)
+				l.Printf("  stddev:      %12.2f\n", t.StdDev()/du)
+				l.Printf("  median:      %12.2f\n", ps[0]/du)
+				l.Printf("  75%%:         %12.2f\n", ps[1]/du)
+				l.Printf("  95%%:         %12.2f\n", ps[2]/du)
+				l.Printf("  99%%:         %12.2f\n", ps[3]/du)
+				l.Printf("  99.9%%:       %12.2f\n", ps[4]/du)
 				l.Printf("  1-min rate:  %12.2f\n", t.Rate1())
 				l.Printf("  5-min rate:  %12.2f\n", t.Rate5())
 				l.Printf("  15-min rate: %12.2f\n", t.Rate15())
