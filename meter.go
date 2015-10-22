@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -112,97 +113,65 @@ func (NilMeter) Snapshot() Meter { return NilMeter{} }
 
 // StandardMeter is the standard implementation of a Meter.
 type StandardMeter struct {
-	lock        sync.RWMutex
-	snapshot    *MeterSnapshot
-	a1, a5, a15 EWMA
-	startTime   time.Time
+	count     int64
+	a         MultiEWMA
+	startTime time.Time
 }
 
 func newStandardMeter() *StandardMeter {
 	return &StandardMeter{
-		snapshot:  &MeterSnapshot{},
-		a1:        NewEWMA1(),
-		a5:        NewEWMA5(),
-		a15:       NewEWMA15(),
+		a:         NewMultiEWMA(),
 		startTime: time.Now(),
 	}
 }
 
 // Count returns the number of events recorded.
 func (m *StandardMeter) Count() int64 {
-	m.lock.RLock()
-	count := m.snapshot.count
-	m.lock.RUnlock()
-	return count
+	return atomic.LoadInt64(&m.count)
 }
 
 // Mark records the occurance of n events.
 func (m *StandardMeter) Mark(n int64) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	m.snapshot.count += n
-	m.a1.Update(n)
-	m.a5.Update(n)
-	m.a15.Update(n)
-	m.updateSnapshot()
+	atomic.AddInt64(&m.count, n)
+	m.a.Update(n)
 }
 
 // Rate1 returns the one-minute moving average rate of events per second.
 func (m *StandardMeter) Rate1() float64 {
-	m.lock.RLock()
-	rate1 := m.snapshot.rate1
-	m.lock.RUnlock()
-	return rate1
+	return m.a.Rate1()
 }
 
 // Rate5 returns the five-minute moving average rate of events per second.
 func (m *StandardMeter) Rate5() float64 {
-	m.lock.RLock()
-	rate5 := m.snapshot.rate5
-	m.lock.RUnlock()
-	return rate5
+	return m.a.Rate5()
 }
 
 // Rate15 returns the fifteen-minute moving average rate of events per second.
 func (m *StandardMeter) Rate15() float64 {
-	m.lock.RLock()
-	rate15 := m.snapshot.rate15
-	m.lock.RUnlock()
-	return rate15
+	return m.a.Rate15()
 }
 
 // RateMean returns the meter's mean rate of events per second.
 func (m *StandardMeter) RateMean() float64 {
-	m.lock.RLock()
-	rateMean := m.snapshot.rateMean
-	m.lock.RUnlock()
-	return rateMean
+	return float64(m.Count()) / time.Since(m.startTime).Seconds()
 }
 
 // Snapshot returns a read-only copy of the meter.
 func (m *StandardMeter) Snapshot() Meter {
-	m.lock.RLock()
-	snapshot := *m.snapshot
-	m.lock.RUnlock()
-	return &snapshot
-}
-
-func (m *StandardMeter) updateSnapshot() {
-	// should run with write lock held on m.lock
-	snapshot := m.snapshot
-	snapshot.rate1 = m.a1.Rate()
-	snapshot.rate5 = m.a5.Rate()
-	snapshot.rate15 = m.a15.Rate()
-	snapshot.rateMean = float64(snapshot.count) / time.Since(m.startTime).Seconds()
+	rates := m.a.Rates()
+	count := atomic.LoadInt64(&m.count)
+	snapshot := &MeterSnapshot{
+		count:    count,
+		rate1:    rates[0],
+		rate5:    rates[1],
+		rate15:   rates[2],
+		rateMean: float64(count) / time.Since(m.startTime).Seconds(),
+	}
+	return snapshot
 }
 
 func (m *StandardMeter) tick() {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	m.a1.Tick()
-	m.a5.Tick()
-	m.a15.Tick()
-	m.updateSnapshot()
+	m.a.Tick()
 }
 
 type meterArbiter struct {
