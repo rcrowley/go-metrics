@@ -1,5 +1,5 @@
 // Hook go-metrics into expvar
-// on any /debug/vars2 request, load all vars from the registry into expvar, and execute regular expvar handler
+// on any /debug/metrics request, load all vars from the registry into expvar, and execute regular expvar handler
 package exp
 
 import (
@@ -39,7 +39,7 @@ func Exp(r metrics.Registry) {
 	// panic: http: multiple registrations for /debug/vars
 	// http.HandleFunc("/debug/vars", e.expHandler)
 	// haven't found an elegant way, so just use a different endpoint
-	http.HandleFunc("/debug/vars2", e.expHandler)
+	http.HandleFunc("/debug/metrics", e.expHandler)
 }
 
 func (exp *exp) getInt(name string) *expvar.Int {
