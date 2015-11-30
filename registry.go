@@ -157,6 +157,13 @@ func NewPrefixedRegistry(prefix string) Registry {
 	}
 }
 
+func NewPrefixedChildRegistry(parent Registry, prefix string) Registry {
+	return &PrefixedRegistry{
+		underlying: parent,
+		prefix:     prefix,
+	}
+}
+
 // Call the given function for each registered metric.
 func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
 	r.underlying.Each(fn)

@@ -117,6 +117,19 @@ func TestRegistryGetOrRegisterWithLazyInstantiation(t *testing.T) {
 	}
 }
 
+func TestPrefixedChildRegistryGetOrRegister(t *testing.T) {
+	r := NewRegistry()
+	pr := NewPrefixedChildRegistry(r, "prefix.")
+
+	_ = pr.GetOrRegister("foo", NewCounter)
+
+	r.Each(func(name string, m interface{}) {
+		if name != "prefix.foo" {
+			t.Fatal(name)
+		}
+	})
+}
+
 func TestPrefixedRegistryGetOrRegister(t *testing.T) {
 	r := NewPrefixedRegistry("prefix.")
 
