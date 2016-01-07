@@ -67,7 +67,7 @@ issues [#121](https://github.com/rcrowley/go-metrics/issues/121) and
 [#124](https://github.com/rcrowley/go-metrics/issues/124) for progress and details.
 
 ```go
-import "github.com/rcrowley/go-metrics/influxdb"
+import "github.com/vrischmann/go-metrics-influxdb"
 
 go influxdb.Influxdb(metrics.DefaultRegistry, 10e9, &influxdb.Config{
     Host:     "127.0.0.1:8086",
