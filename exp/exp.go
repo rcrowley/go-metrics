@@ -5,10 +5,55 @@ package exp
 import (
 	"expvar"
 	"fmt"
-	"github.com/rcrowley/go-metrics"
+	"github.com/aalpern/go-metrics"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 )
+
+type config struct {
+	// If StructuredMetrics is true, each metric type will be exposed
+	// as a map with the fields (rates, percentiles, etc...), rather
+	// than as individual variables.
+	StructuredMetrics bool
+
+	// If RootKey is set to a non-empty string, all metrics will be
+	// grouped until a root Map, rather than exposed as top-level
+	// metrics. This can make it easier to separate go-metrics from
+	// other expvars when processing the output.
+	RootKey string
+
+	// Percentiles determines the set of percentile metrics to be
+	// exported for each histogram or timer.
+	Percentiles []float64
+
+	percentileLabels []string
+}
+
+var (
+	Config = newConfig(false, "", []float64{0.5, 0.75, 0.95, 0.99, 0.999})
+)
+
+func newConfig(structured bool, root string, ps []float64) *config {
+	c := &config{
+		StructuredMetrics: structured,
+		RootKey:           root,
+		Percentiles:       ps,
+	}
+	c.SetPercentiles(ps)
+	return c
+}
+
+func (c *config) SetPercentiles(ps []float64) {
+	labels := make([]string, len(ps), len(ps))
+	for i, p := range ps {
+		// Stolen from https://github.com/cyberdelia/go-metrics-graphite/blob/master/graphite.go
+		labels[i] = fmt.Sprintf("%s-percentile",
+			strings.Replace(strconv.FormatFloat(p*100.0, 'f', -1, 64), ".", "", 1))
+	}
+	c.percentileLabels = labels
+}
 
 type exp struct {
 	expvarLock sync.Mutex // expvar panics if you try to register the same var twice, so we must probe it safely
@@ -43,6 +88,12 @@ func Exp(r metrics.Registry) {
 }
 
 func (exp *exp) getInt(name string) *expvar.Int {
+	if Config.RootKey != "" {
+		m := exp.getMap(Config.RootKey)
+		i := newInt(0)
+		m.Set(name, i)
+		return i
+	}
 	var v *expvar.Int
 	exp.expvarLock.Lock()
 	p := expvar.Get(name)
@@ -57,6 +108,12 @@ func (exp *exp) getInt(name string) *expvar.Int {
 }
 
 func (exp *exp) getFloat(name string) *expvar.Float {
+	if Config.RootKey != "" {
+		m := exp.getMap(Config.RootKey)
+		f := newFloat(0)
+		m.Set(name, f)
+		return f
+	}
 	var v *expvar.Float
 	exp.expvarLock.Lock()
 	p := expvar.Get(name)
@@ -70,60 +127,186 @@ func (exp *exp) getFloat(name string) *expvar.Float {
 	return v
 }
 
+func (exp *exp) getMap(name string) *expvar.Map {
+	var v *expvar.Map
+	exp.expvarLock.Lock()
+	p := expvar.Get(name)
+	if p != nil {
+		v = p.(*expvar.Map)
+	} else {
+		v = new(expvar.Map).Init()
+		expvar.Publish(name, v)
+	}
+	exp.expvarLock.Unlock()
+	return v
+}
+
+func newMap() *expvar.Map {
+	return new(expvar.Map).Init()
+}
+
+func newInt(value int64) *expvar.Int {
+	i := new(expvar.Int)
+	i.Set(value)
+	return i
+}
+
+func newFloat(value float64) *expvar.Float {
+	i := new(expvar.Float)
+	i.Set(value)
+	return i
+}
+
+func (exp *exp) publish(name string, v expvar.Var) {
+	exp.expvarLock.Lock()
+	p := expvar.Get(name)
+	if p == nil {
+		expvar.Publish(name, v)
+	}
+	exp.expvarLock.Unlock()
+}
+
+func (exp *exp) publishStructured(name string, value expvar.Var) {
+	if Config.RootKey != "" {
+		exp.getMap(Config.RootKey).Set(name, value)
+	} else {
+		exp.publish(name, value)
+	}
+}
+
 func (exp *exp) publishCounter(name string, metric metrics.Counter) {
-	v := exp.getInt(name)
-	v.Set(metric.Count())
+	if Config.StructuredMetrics {
+		exp.publishStructured(name, convertCounter(metric))
+	} else {
+		v := exp.getInt(name)
+		v.Set(metric.Count())
+	}
+}
+
+func convertCounter(metric metrics.Counter) *expvar.Map {
+	m := newMap()
+	m.Set("count", newInt(metric.Count()))
+	return m
 }
 
 func (exp *exp) publishGauge(name string, metric metrics.Gauge) {
-	v := exp.getInt(name)
-	v.Set(metric.Value())
+	if Config.StructuredMetrics {
+		exp.publishStructured(name, convertGauge(metric))
+	} else {
+		v := exp.getInt(name)
+		v.Set(metric.Value())
+	}
 }
+
+func convertGauge(metric metrics.Gauge) *expvar.Map {
+	m := newMap()
+	m.Set("value", newInt(metric.Value()))
+	return m
+}
+
 func (exp *exp) publishGaugeFloat64(name string, metric metrics.GaugeFloat64) {
-	exp.getFloat(name).Set(metric.Value())
+	if Config.StructuredMetrics {
+		exp.publishStructured(name, convertGaugeFloat64(metric))
+	} else {
+		exp.getFloat(name).Set(metric.Value())
+	}
+}
+
+func convertGaugeFloat64(metric metrics.GaugeFloat64) *expvar.Map {
+	m := newMap()
+	m.Set("value", newFloat(metric.Value()))
+	return m
 }
 
 func (exp *exp) publishHistogram(name string, metric metrics.Histogram) {
+	if Config.StructuredMetrics {
+		exp.publishStructured(name, convertHistogram(metric))
+	} else {
+		h := metric.Snapshot()
+		exp.getInt(name + ".count").Set(h.Count())
+		exp.getFloat(name + ".min").Set(float64(h.Min()))
+		exp.getFloat(name + ".max").Set(float64(h.Max()))
+		exp.getFloat(name + ".mean").Set(float64(h.Mean()))
+		exp.getFloat(name + ".std-dev").Set(float64(h.StdDev()))
+		for i, p := range h.Percentiles(Config.Percentiles) {
+			exp.getFloat(fmt.Sprintf("%s.%s", name, Config.percentileLabels[i])).Set(float64(p))
+		}
+	}
+}
+
+func convertHistogram(metric metrics.Histogram) *expvar.Map {
 	h := metric.Snapshot()
-	ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
-	exp.getInt(name + ".count").Set(h.Count())
-	exp.getFloat(name + ".min").Set(float64(h.Min()))
-	exp.getFloat(name + ".max").Set(float64(h.Max()))
-	exp.getFloat(name + ".mean").Set(float64(h.Mean()))
-	exp.getFloat(name + ".std-dev").Set(float64(h.StdDev()))
-	exp.getFloat(name + ".50-percentile").Set(float64(ps[0]))
-	exp.getFloat(name + ".75-percentile").Set(float64(ps[1]))
-	exp.getFloat(name + ".95-percentile").Set(float64(ps[2]))
-	exp.getFloat(name + ".99-percentile").Set(float64(ps[3]))
-	exp.getFloat(name + ".999-percentile").Set(float64(ps[4]))
+	m := newMap()
+	m.Set("count", newInt(h.Count()))
+	m.Set("min", newFloat(float64(h.Min())))
+	m.Set("max", newFloat(float64(h.Max())))
+	m.Set("std-dev", newFloat(h.StdDev()))
+	for i, p := range h.Percentiles(Config.Percentiles) {
+		m.Set(Config.percentileLabels[i], newFloat(p))
+	}
+	return m
 }
 
 func (exp *exp) publishMeter(name string, metric metrics.Meter) {
-	m := metric.Snapshot()
-	exp.getInt(name + ".count").Set(m.Count())
-	exp.getFloat(name + ".one-minute").Set(float64(m.Rate1()))
-	exp.getFloat(name + ".five-minute").Set(float64(m.Rate5()))
-	exp.getFloat(name + ".fifteen-minute").Set(float64((m.Rate15())))
-	exp.getFloat(name + ".mean").Set(float64(m.RateMean()))
+	if Config.StructuredMetrics {
+		exp.publishStructured(name, convertMeter(metric))
+	} else {
+		m := metric.Snapshot()
+		exp.getInt(name + ".count").Set(m.Count())
+		exp.getFloat(name + ".one-minute").Set(float64(m.Rate1()))
+		exp.getFloat(name + ".five-minute").Set(float64(m.Rate5()))
+		exp.getFloat(name + ".fifteen-minute").Set(float64((m.Rate15())))
+		exp.getFloat(name + ".mean").Set(float64(m.RateMean()))
+	}
+}
+
+func convertMeter(metric metrics.Meter) *expvar.Map {
+	t := metric.Snapshot()
+	m := newMap()
+	m.Set("count", newInt(t.Count()))
+	m.Set("one-minute", newFloat(t.Rate1()))
+	m.Set("five-minute", newFloat(t.Rate5()))
+	m.Set("fifteen-minute", newFloat(t.Rate15()))
+	m.Set("mean", newFloat(t.RateMean()))
+	return m
 }
 
 func (exp *exp) publishTimer(name string, metric metrics.Timer) {
+	if Config.StructuredMetrics {
+		exp.publishStructured(name, convertTimer(metric))
+	} else {
+		t := metric.Snapshot()
+
+		exp.getInt(name + ".count").Set(t.Count())
+		exp.getFloat(name + ".min").Set(float64(t.Min()))
+		exp.getFloat(name + ".max").Set(float64(t.Max()))
+		exp.getFloat(name + ".mean").Set(float64(t.Mean()))
+		exp.getFloat(name + ".std-dev").Set(float64(t.StdDev()))
+		for i, p := range t.Percentiles(Config.Percentiles) {
+			exp.getFloat(fmt.Sprintf("%s.%s", name, Config.percentileLabels[i])).Set(float64(p))
+		}
+		exp.getFloat(name + ".one-minute").Set(float64(t.Rate1()))
+		exp.getFloat(name + ".five-minute").Set(float64(t.Rate5()))
+		exp.getFloat(name + ".fifteen-minute").Set(float64((t.Rate15())))
+		exp.getFloat(name + ".mean-rate").Set(float64(t.RateMean()))
+	}
+}
+
+func convertTimer(metric metrics.Timer) *expvar.Map {
 	t := metric.Snapshot()
-	ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
-	exp.getInt(name + ".count").Set(t.Count())
-	exp.getFloat(name + ".min").Set(float64(t.Min()))
-	exp.getFloat(name + ".max").Set(float64(t.Max()))
-	exp.getFloat(name + ".mean").Set(float64(t.Mean()))
-	exp.getFloat(name + ".std-dev").Set(float64(t.StdDev()))
-	exp.getFloat(name + ".50-percentile").Set(float64(ps[0]))
-	exp.getFloat(name + ".75-percentile").Set(float64(ps[1]))
-	exp.getFloat(name + ".95-percentile").Set(float64(ps[2]))
-	exp.getFloat(name + ".99-percentile").Set(float64(ps[3]))
-	exp.getFloat(name + ".999-percentile").Set(float64(ps[4]))
-	exp.getFloat(name + ".one-minute").Set(float64(t.Rate1()))
-	exp.getFloat(name + ".five-minute").Set(float64(t.Rate5()))
-	exp.getFloat(name + ".fifteen-minute").Set(float64((t.Rate15())))
-	exp.getFloat(name + ".mean-rate").Set(float64(t.RateMean()))
+	m := newMap()
+	m.Set("count", newInt(t.Count()))
+	m.Set("min", newFloat(float64(t.Min())))
+	m.Set("max", newFloat(float64(t.Max())))
+	m.Set("std-dev", newFloat(t.StdDev()))
+	for i, p := range t.Percentiles(Config.Percentiles) {
+		m.Set(Config.percentileLabels[i], newFloat(p))
+	}
+	m.Set("one-minute", newFloat(t.Rate1()))
+	m.Set("five-minute", newFloat(t.Rate5()))
+	m.Set("fifteen-minute", newFloat(t.Rate15()))
+	m.Set("mean-rate", newFloat(t.RateMean()))
+	return m
 }
 
 func (exp *exp) syncToExpvar() {
