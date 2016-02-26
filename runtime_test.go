@@ -47,6 +47,16 @@ func TestRuntimeMemStats(t *testing.T) {
 	}
 }
 
+func TestRuntimeMemStatsNumThread(t *testing.T) {
+	r := NewRegistry()
+	RegisterRuntimeMemStats(r)
+	CaptureRuntimeMemStatsOnce(r)
+
+	if value := runtimeMetrics.NumThread.Value(); value < 1 {
+		t.Fatalf("got NumThread: %d, wanted at least 1", value)
+	}
+}
+
 func TestRuntimeMemStatsBlocking(t *testing.T) {
 	if g := runtime.GOMAXPROCS(0); g < 2 {
 		t.Skipf("skipping TestRuntimeMemStatsBlocking with GOMAXPROCS=%d\n", g)
