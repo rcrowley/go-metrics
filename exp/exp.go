@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type config struct {
@@ -27,6 +28,12 @@ type config struct {
 	// Percentiles determines the set of percentile metrics to be
 	// exported for each histogram or timer.
 	Percentiles []float64
+
+	// TimerScale can be used to scale time-based metrics into
+	// different resolutions (i.e time.Milliseconds, etc...). If
+	// TimerScale is nil (the default), timer metrics will be reported
+	// in their native (nanosecond) resolution.
+	TimerScale time.Duration
 
 	percentileLabels []string
 }
@@ -85,6 +92,20 @@ func Exp(r metrics.Registry) {
 	// http.HandleFunc("/debug/vars", e.expHandler)
 	// haven't found an elegant way, so just use a different endpoint
 	http.HandleFunc("/debug/metrics", e.expHandler)
+}
+
+func scaleFloat(value float64) float64 {
+	if Config.TimerScale == nil {
+		return value
+	}
+	return value / float64(Config.TimerScale)
+}
+
+func scaleInt(value int64) float64 {
+	if Config.TimerScale == nil {
+		return float64(value)
+	}
+	return float64(valufe) / float64(Config.TimerScale)
 }
 
 func (exp *exp) getInt(name string) *expvar.Int {
@@ -278,12 +299,12 @@ func (exp *exp) publishTimer(name string, metric metrics.Timer) {
 		t := metric.Snapshot()
 
 		exp.getInt(name + ".count").Set(t.Count())
-		exp.getFloat(name + ".min").Set(float64(t.Min()))
-		exp.getFloat(name + ".max").Set(float64(t.Max()))
-		exp.getFloat(name + ".mean").Set(float64(t.Mean()))
-		exp.getFloat(name + ".std-dev").Set(float64(t.StdDev()))
+		exp.getFloat(name + ".min").Set(scaleInt(t.Min()))
+		exp.getFloat(name + ".max").Set(scaleInt(t.Max()))
+		exp.getFloat(name + ".mean").Set(scaleFloat(t.Mean()))
+		exp.getFloat(name + ".std-dev").Set(scaleFloat(t.StdDev()))
 		for i, p := range t.Percentiles(Config.Percentiles) {
-			exp.getFloat(fmt.Sprintf("%s.%s", name, Config.percentileLabels[i])).Set(float64(p))
+			exp.getFloat(fmt.Sprintf("%s.%s", name, Config.percentileLabels[i])).Set(scaleFloat(p))
 		}
 		exp.getFloat(name + ".one-minute").Set(float64(t.Rate1()))
 		exp.getFloat(name + ".five-minute").Set(float64(t.Rate5()))
@@ -296,11 +317,11 @@ func convertTimer(metric metrics.Timer) *expvar.Map {
 	t := metric.Snapshot()
 	m := newMap()
 	m.Set("count", newInt(t.Count()))
-	m.Set("min", newFloat(float64(t.Min())))
-	m.Set("max", newFloat(float64(t.Max())))
-	m.Set("std-dev", newFloat(t.StdDev()))
+	m.Set("min", newFloat(scaleFloat(t.Min())))
+	m.Set("max", newFloat(scaleFloat(t.Max())))
+	m.Set("std-dev", newFloat(scaleFloat(t.StdDev())))
 	for i, p := range t.Percentiles(Config.Percentiles) {
-		m.Set(Config.percentileLabels[i], newFloat(p))
+		m.Set(Config.percentileLabels[i], scaleFloat(newFloat(p)))
 	}
 	m.Set("one-minute", newFloat(t.Rate1()))
 	m.Set("five-minute", newFloat(t.Rate5()))
