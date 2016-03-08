@@ -5,7 +5,7 @@ package exp
 import (
 	"expvar"
 	"fmt"
-	"github.com/aalpern/go-metrics"
+	"github.com/rcrowley/go-metrics"
 	"net/http"
 	"strconv"
 	"strings"
