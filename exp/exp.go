@@ -5,7 +5,7 @@ package exp
 import (
 	"expvar"
 	"fmt"
-	"github.com/rcrowley/go-metrics"
+	"github.com/assistly/go-metrics"
 	"net/http"
 	"sync"
 )
@@ -17,7 +17,7 @@ type exp struct {
 
 func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 	// load our variables into expvar
-	exp.syncToExpvar()
+	exp.SyncToExpvar()
 
 	// now just run the official expvar handler code (which is not publicly callable, so pasted inline)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -31,6 +31,10 @@ func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
 	})
 	fmt.Fprintf(w, "\n}\n")
+}
+
+func NewExp(r metrics.Registry) *exp {
+	return &exp{sync.Mutex{}, r}
 }
 
 func Exp(r metrics.Registry) {
@@ -126,7 +130,7 @@ func (exp *exp) publishTimer(name string, metric metrics.Timer) {
 	exp.getFloat(name + ".mean-rate").Set(float64(t.RateMean()))
 }
 
-func (exp *exp) syncToExpvar() {
+func (exp *exp) SyncToExpvar() {
 	exp.registry.Each(func(name string, i interface{}) {
 		switch i.(type) {
 		case metrics.Counter:

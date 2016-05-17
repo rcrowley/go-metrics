@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"github.com/rcrowley/go-metrics"
+	"github.com/assistly/go-metrics"
 	// "github.com/rcrowley/go-metrics/stathat"
 	"log"
 	"math/rand"
