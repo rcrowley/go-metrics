@@ -1,11 +1,11 @@
 go-metrics
 ==========
 
-![travis build status](https://travis-ci.org/rcrowley/go-metrics.svg?branch=master)
+![travis build status](https://travis-ci.org/assistly/go-metrics.svg?branch=master)
 
 Go port of Coda Hale's Metrics library: <https://github.com/dropwizard/metrics>.
 
-Documentation: <http://godoc.org/github.com/rcrowley/go-metrics>.
+Documentation: <http://godoc.org/github.com/assistly/go-metrics>.
 
 Usage
 -----
@@ -63,11 +63,11 @@ Periodically emit every metric into InfluxDB:
 
 **NOTE:** this has been pulled out of the library due to constant fluctuations
 in the InfluxDB API. In fact, all client libraries are on their way out. see
-issues [#121](https://github.com/rcrowley/go-metrics/issues/121) and
-[#124](https://github.com/rcrowley/go-metrics/issues/124) for progress and details.
+issues [#121](https://github.com/assistly/go-metrics/issues/121) and
+[#124](https://github.com/assistly/go-metrics/issues/124) for progress and details.
 
 ```go
-import "github.com/rcrowley/go-metrics/influxdb"
+import "github.com/assistly/go-metrics/influxdb"
 
 go influxdb.Influxdb(metrics.DefaultRegistry, 10e9, &influxdb.Config{
     Host:     "127.0.0.1:8086",
@@ -98,7 +98,7 @@ go librato.Librato(metrics.DefaultRegistry,
 Periodically emit every metric to StatHat:
 
 ```go
-import "github.com/rcrowley/go-metrics/stathat"
+import "github.com/assistly/go-metrics/stathat"
 
 go stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
 ```
@@ -111,7 +111,7 @@ as well as all your go-metrics.
 
 
 ```go
-import "github.com/rcrowley/go-metrics/exp"
+import "github.com/assistly/go-metrics/exp"
 
 exp.Exp(metrics.DefaultRegistry)
 ```
@@ -120,7 +120,7 @@ Installation
 ------------
 
 ```sh
-go get github.com/rcrowley/go-metrics
+go get github.com/assistly/go-metrics
 ```
 
 StatHat support additionally requires their Go client:

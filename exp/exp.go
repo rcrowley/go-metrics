@@ -5,7 +5,7 @@ package exp
 import (
 	"expvar"
 	"fmt"
-	"github.com/rcrowley/go-metrics"
+	"github.com/assistly/go-metrics"
 	"net/http"
 	"sync"
 )
