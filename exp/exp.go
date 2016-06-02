@@ -33,13 +33,13 @@ func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "\n}\n")
 }
 
-func Exp(r metrics.Registry) {
+func Exp(r metrics.Registry, rt *router) {
 	e := exp{sync.Mutex{}, r}
 	// this would cause a panic:
 	// panic: http: multiple registrations for /debug/vars
 	// http.HandleFunc("/debug/vars", e.expHandler)
 	// haven't found an elegant way, so just use a different endpoint
-	http.HandleFunc("/debug/metrics", e.expHandler)
+	rt.GET("/debug/metrics", e.expHandler)
 }
 
 func (exp *exp) getInt(name string) *expvar.Int {
