@@ -6,10 +6,24 @@ import (
 	"expvar"
 	"fmt"
 	"net/http"
+	"runtime"
 	"sync"
+	"time"
 
 	"github.com/rcrowley/go-metrics"
 )
+
+var startTime = time.Now().UTC()
+
+func goroutines() interface{} {
+	return runtime.NumGoroutine()
+}
+
+// uptime is an expvar.Func compliant wrapper for uptime info.
+func uptime() interface{} {
+	uptime := time.Since(startTime)
+	return int64(uptime)
+}
 
 type exp struct {
 	expvarLock sync.Mutex // expvar panics if you try to register the same var twice, so we must probe it safely
@@ -17,6 +31,7 @@ type exp struct {
 }
 
 func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
+
 	// load our variables into expvar
 	exp.syncToExpvar()
 
@@ -35,10 +50,14 @@ func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func AddExpVars() {
+	expvar.Publish("Goroutines", expvar.Func(goroutines))
+	expvar.Publish("Uptime", expvar.Func(uptime))
+}
+
 //Handler returns the Handler function for use in different routers.
 func Handler(r metrics.Registry) func(http.ResponseWriter, *http.Request) {
 	e := exp{sync.Mutex{}, r}
-
 	return e.expHandler
 }
 
