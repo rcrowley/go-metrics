@@ -15,6 +15,7 @@ import (
 
 var startTime = time.Now().UTC()
 
+// returns the number of goroutines for use in metrics output
 func goroutines() interface{} {
 	return runtime.NumGoroutine()
 }
@@ -23,6 +24,12 @@ func goroutines() interface{} {
 func uptime() interface{} {
 	uptime := time.Since(startTime)
 	return int64(uptime)
+}
+
+// publishes the goroutines and uptime to expvar for debug/metrics output
+func AddExpVars() {
+	expvar.Publish("Goroutines", expvar.Func(goroutines))
+	expvar.Publish("Uptime", expvar.Func(uptime))
 }
 
 type exp struct {
@@ -50,12 +57,8 @@ func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AddExpVars() {
-	expvar.Publish("Goroutines", expvar.Func(goroutines))
-	expvar.Publish("Uptime", expvar.Func(uptime))
-}
-
-//Handler returns the Handler function for use in different routers.
+//Handler returns the expHandler function for use in different routers,
+//rather than handling the function here
 func Handler(r metrics.Registry) func(http.ResponseWriter, *http.Request) {
 	e := exp{sync.Mutex{}, r}
 	return e.expHandler
