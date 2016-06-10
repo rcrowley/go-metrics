@@ -5,10 +5,32 @@ package exp
 import (
 	"expvar"
 	"fmt"
-	"github.com/rcrowley/go-metrics"
 	"net/http"
+	"runtime"
 	"sync"
+	"time"
+
+	"github.com/rcrowley/go-metrics"
 )
+
+var startTime = time.Now().UTC()
+
+// returns the number of goroutines for use in metrics output
+func goroutines() interface{} {
+	return runtime.NumGoroutine()
+}
+
+// uptime is an expvar.Func compliant wrapper for uptime info.
+func uptime() interface{} {
+	uptime := time.Since(startTime)
+	return int64(uptime)
+}
+
+// publishes the goroutines and uptime to expvar for debug/metrics output
+func AddExpVars() {
+	expvar.Publish("Goroutines", expvar.Func(goroutines))
+	expvar.Publish("Uptime", expvar.Func(uptime))
+}
 
 type exp struct {
 	expvarLock sync.Mutex // expvar panics if you try to register the same var twice, so we must probe it safely
@@ -16,6 +38,7 @@ type exp struct {
 }
 
 func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
+
 	// load our variables into expvar
 	exp.syncToExpvar()
 
@@ -31,6 +54,14 @@ func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
 	})
 	fmt.Fprintf(w, "\n}\n")
+
+}
+
+//Handler returns the expHandler function for use in different routers,
+//rather than handling the function here
+func Handler(r metrics.Registry) func(http.ResponseWriter, *http.Request) {
+	e := exp{sync.Mutex{}, r}
+	return e.expHandler
 }
 
 func Exp(r metrics.Registry) {
