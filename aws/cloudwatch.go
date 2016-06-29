@@ -1,4 +1,4 @@
-// Metrics emitter for AWS Cloudwatch
+//Package cloudwatch add a metrics emitter to AWS Cloudwatch
 package cloudwatch
 
 import (
@@ -12,9 +12,6 @@ import (
 )
 
 //EmitMetrics emits the metrics in a metrics registry to cloudwatch
-//Param type *metrics.Registry (metrics registry from which to extract metrics)
-//Param type time.Duration (how often to emit metrics)
-//Param type string (Cloudwatch namespace under which metrics will be stored)
 func EmitMetrics(r *metrics.Registry, d time.Duration, namespace string) {
 	svc := cloudwatch.New(session.New())
 	for {
