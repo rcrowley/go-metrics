@@ -26,11 +26,9 @@ func emit(svc *cloudwatch.CloudWatch, r metrics.Registry, s string) []string {
 	awsErr := []string{}
 	metricData := []*cloudwatch.MetricDatum{}
 	now := aws.Time(time.Now())
-	params := &cloudwatch.PutMetricDataInput{}
 
 	r.Each(func(name string, i interface{}) {
 		metricData = nil
-		params = nil
 
 		switch metric := i.(type) {
 		case metrics.Counter:
@@ -245,12 +243,10 @@ func emit(svc *cloudwatch.CloudWatch, r metrics.Registry, s string) []string {
 		}
 
 		if len(metricData) > 0 {
-			params = &cloudwatch.PutMetricDataInput{
+			_, err := svc.PutMetricData(&cloudwatch.PutMetricDataInput{
 				MetricData: metricData,
 				Namespace:  aws.String(s),
-			}
-
-			_, err := svc.PutMetricData(params)
+			})
 
 			if err != nil {
 				awsErr = append(awsErr, err.Error())
