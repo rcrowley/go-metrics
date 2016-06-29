@@ -11,24 +11,25 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
+//EmitMetrics emits the metrics in a metrics registry to cloudwatch
+//Param type *metrics.Registry (metrics registry from which to extract metrics)
+//Param type time.Duration (how often to emit metrics)
+//Param type string (Cloudwatch namespace under which metrics will be stored)
 func EmitMetrics(r *metrics.Registry, d time.Duration, namespace string) {
-
+	svc := cloudwatch.New(session.New())
 	for {
-		if errs := emit(*r, namespace); 0 != len(errs) {
+		if errs := emit(svc, *r, namespace); 0 != len(errs) {
 			log.Println(errs)
 		}
 		time.Sleep(d)
 	}
 }
 
-func emit(r metrics.Registry, s string) []string {
-	svc := cloudwatch.New(session.New(), aws.NewConfig().WithRegion("us-east-1"))
+func emit(svc *cloudwatch.CloudWatch, r metrics.Registry, s string) []string {
 	awsErr := []string{}
-	svc.AddDebugHandlers()
-
 	metricData := []*cloudwatch.MetricDatum{}
-	params := &cloudwatch.PutMetricDataInput{}
 	now := aws.Time(time.Now())
+	params := &cloudwatch.PutMetricDataInput{}
 
 	r.Each(func(name string, i interface{}) {
 		metricData = nil
@@ -39,14 +40,14 @@ func emit(r metrics.Registry, s string) []string {
 			metricData = append(metricData, &cloudwatch.MetricDatum{
 				MetricName: aws.String(name),
 				Timestamp:  now,
-				Unit:       aws.String("StandardUnit"),
+				Unit:       aws.String("Count"),
 				Value:      aws.Float64(float64(metric.Count())),
 			})
 		case metrics.Gauge:
 			metricData = append(metricData, &cloudwatch.MetricDatum{
 				MetricName: aws.String(name),
 				Timestamp:  now,
-				Unit:       aws.String("StandardUnit"),
+				Unit:       aws.String("None"),
 				Value:      aws.Float64(float64(metric.Value())),
 			})
 		case metrics.GaugeFloat64:
@@ -54,25 +55,74 @@ func emit(r metrics.Registry, s string) []string {
 				&cloudwatch.MetricDatum{
 					MetricName: aws.String(name),
 					Timestamp:  now,
-					Unit:       aws.String("StandardUnit"),
+					Unit:       aws.String("None"),
 					Value:      aws.Float64(metric.Value()),
 				})
 		case metrics.Histogram:
-			h := metric.Snapshot()
-			// ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+			m := metric.Snapshot()
+			ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 			metricData = append(metricData,
 				&cloudwatch.MetricDatum{
 					MetricName: aws.String(name + ".count"),
 					Timestamp:  now,
-					Unit:       aws.String("StandardUnit"),
-					Value:      aws.Float64(float64(h.Count())),
+					Unit:       aws.String("Count"),
+					Value:      aws.Float64(float64(m.Count())),
 				},
 				&cloudwatch.MetricDatum{
 					MetricName: aws.String(name + ".min"),
 					Timestamp:  now,
-					Unit:       aws.String("StandardUnit"),
-					Value:      aws.Float64(float64(h.Count())),
-				})
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(m.Min())),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".max"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(m.Max())),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".mean"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(m.Mean())),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".std-dev"),
+					Timestamp:  now,
+					Unit:       aws.String("None"),
+					Value:      aws.Float64(float64(m.StdDev())),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".50-percentile"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(ps[0])),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".75-percentile"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(ps[1])),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".95-percentile"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(ps[2])),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".99-percentile"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(ps[3])),
+				},
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(name + ".999-percentile"),
+					Timestamp:  now,
+					Unit:       aws.String("Microseconds"),
+					Value:      aws.Float64(float64(ps[4])),
+				},
+			)
 		case metrics.Meter:
 			m := metric.Snapshot()
 			metricData = append(metricData,
