@@ -1,4 +1,4 @@
-// Metrics output to StatHat.
+// Metrics emitter for AWS Cloudwatch
 package cloudwatch
 
 import (
