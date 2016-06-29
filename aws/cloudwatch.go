@@ -1,6 +1,11 @@
 //Package cloudwatch add a metrics emitter to AWS Cloudwatch
 package cloudwatch
 
+/*
+	Per https://github.com/aws/aws-sdk-go/issues/489 this package expects that
+	you have exported environment variable AWS_REGION
+*/
+
 import (
 	"log"
 	"time"
