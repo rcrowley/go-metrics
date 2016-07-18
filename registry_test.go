@@ -1,6 +1,8 @@
 package metrics
 
-import "testing"
+import (
+	"testing"
+)
 
 func BenchmarkRegistry(b *testing.B) {
 	r := NewRegistry()
@@ -121,58 +123,103 @@ func TestPrefixedChildRegistryGetOrRegister(t *testing.T) {
 	r := NewRegistry()
 	pr := NewPrefixedChildRegistry(r, "prefix.")
 
-	_ = pr.GetOrRegister("foo", NewCounter)
+	_ = pr.GetOrRegister("foo", NewCounter())
 
+	i := 0
 	r.Each(func(name string, m interface{}) {
+		i++
 		if name != "prefix.foo" {
 			t.Fatal(name)
 		}
 	})
+	if i != 1 {
+		t.Fatal(i)
+	}
 }
 
 func TestPrefixedRegistryGetOrRegister(t *testing.T) {
 	r := NewPrefixedRegistry("prefix.")
 
-	_ = r.GetOrRegister("foo", NewCounter)
+	_ = r.GetOrRegister("foo", NewCounter())
 
+	i := 0
 	r.Each(func(name string, m interface{}) {
+		i++
 		if name != "prefix.foo" {
 			t.Fatal(name)
 		}
 	})
+	if i != 1 {
+		t.Fatal(i)
+	}
 }
 
 func TestPrefixedRegistryRegister(t *testing.T) {
 	r := NewPrefixedRegistry("prefix.")
 
-	_ = r.Register("foo", NewCounter)
+	err := r.Register("foo", NewCounter())
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 
+	i := 0
 	r.Each(func(name string, m interface{}) {
+		i++
 		if name != "prefix.foo" {
 			t.Fatal(name)
 		}
 	})
+	if i != 1 {
+		t.Fatal(i)
+	}
 }
 
 func TestPrefixedRegistryUnregister(t *testing.T) {
 	r := NewPrefixedRegistry("prefix.")
 
-	_ = r.Register("foo", NewCounter)
+	_ = r.Register("foo", NewCounter())
 
+	i := 0
 	r.Each(func(name string, m interface{}) {
+		i++
 		if name != "prefix.foo" {
 			t.Fatal(name)
 		}
 	})
+	if i != 1 {
+		t.Fatal(i)
+	}
 
 	r.Unregister("foo")
 
-	i := 0
+	i = 0
 	r.Each(func(name string, m interface{}) {
 		i++
 	})
 
 	if i != 0 {
 		t.Fatal(i)
+	}
+}
+
+func TestPrefixedRegistryGet(t *testing.T) {
+	pr := NewPrefixedRegistry("prefix.")
+	name := "foo"
+	pr.Register(name, NewCounter())
+
+	fooCounter := pr.Get(name)
+	if fooCounter == nil {
+		t.Fatal(name)
+	}
+}
+
+func TestPrefixedChildRegistryGet(t *testing.T) {
+	r := NewRegistry()
+	pr := NewPrefixedChildRegistry(r, "prefix.")
+	name := "foo"
+	pr.Register(name, NewCounter())
+	fooCounter := pr.Get(name)
+	if fooCounter == nil {
+		t.Fatal(name)
 	}
 }
