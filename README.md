@@ -36,6 +36,15 @@ t.Time(func() {})
 t.Update(47)
 ```
 
+Register() is not threadsafe. For threadsafe metric registration use
+GetOrRegister:
+
+```
+t := metrics.GetOrRegisterTimer("account.create.latency", nil)
+t.Time(func() {})
+t.Update(47)
+```
+
 Periodically log every metric in human-readable form to standard error:
 
 ```go

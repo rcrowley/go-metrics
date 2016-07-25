@@ -1,6 +1,9 @@
 package metrics
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func BenchmarkGuage(b *testing.B) {
 	g := NewGauge()
@@ -34,4 +37,11 @@ func TestGetOrRegisterGauge(t *testing.T) {
 	if g := GetOrRegisterGauge("foo", r); 47 != g.Value() {
 		t.Fatal(g)
 	}
+}
+
+func ExampleGetOrRegisterGauge() {
+	m := "server.bytes_sent"
+	g := GetOrRegisterGauge(m, nil)
+	g.Update(47)
+	fmt.Println(g.Value()) // Output: 47
 }
