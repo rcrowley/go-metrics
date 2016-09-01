@@ -3,6 +3,7 @@ package metrics
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -166,7 +167,14 @@ func NewPrefixedChildRegistry(parent Registry, prefix string) Registry {
 
 // Call the given function for each registered metric.
 func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
-	r.underlying.Each(fn)
+	wrappedFn := func(name string, iface interface{}) {
+		if strings.HasPrefix(name, r.prefix) {
+			fn(name, iface)
+		} else {
+			return
+		}
+	}
+	r.underlying.Each(wrappedFn)
 }
 
 // Get the metric by the given name or nil if none is registered.
