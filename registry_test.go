@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkRegistry(b *testing.B) {
@@ -244,4 +245,43 @@ func TestChildPrefixedRegistryRegister(t *testing.T) {
 	if i != 1 {
 		t.Fatal(i)
 	}
+}
+
+func TestChildPrefixedRegistryOfChildRegister(t *testing.T) {
+	r := NewPrefixedChildRegistry(NewRegistry(), "prefix.")
+	r2 := NewPrefixedChildRegistry(r, "prefix2.")
+	err := r.Register("foo2", NewCounter())
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = r2.Register("baz", NewCounter())
+	c := NewCounter()
+	Register("bars", c)
+
+	i := 0
+	r2.Each(func(name string, m interface{}) {
+		i++
+		if name != "prefix.prefix2.baz" {
+			//t.Fatal(name)
+		}
+	})
+	if i != 1 {
+		t.Fatal(i)
+	}
+}
+
+func TestWalkRegistries(t *testing.T) {
+	r := NewPrefixedChildRegistry(NewRegistry(), "prefix.")
+	r2 := NewPrefixedChildRegistry(r, "prefix2.")
+	err := r.Register("foo2", NewCounter())
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = r2.Register("baz", NewCounter())
+	c := NewCounter()
+	Register("bars", c)
+
+	_, prefix := walkRegistries(r2, "")
+	assert.Equal(t, "prefix.prefix2.", prefix)
+
 }
