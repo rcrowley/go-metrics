@@ -45,7 +45,7 @@ func (c *PrometheusConfig) gaugeFromNameAndValue(name string, val float64) {
 	gauge.Set(val)
 }
 
-func update_prometheus_metrics(c *PrometheusConfig) error {
+func (c *PrometheusConfig) update_prometheus_metrics() error {
 	c.Registry.Each(func(name string, i interface{}) {
 		switch metric := i.(type) {
 		case Counter:
