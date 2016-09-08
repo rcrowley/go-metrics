@@ -53,14 +53,7 @@ func (c *PrometheusConfig) UpdatePrometheusMetrics() error {
 	c.Registry.Each(func(name string, i interface{}) {
 		switch metric := i.(type) {
 		case Counter:
-			cntr := prometheus.NewCounter(prometheus.CounterOpts{
-				Namespace: c.flattenKey(c.namespace),
-				Subsystem: c.flattenKey(c.subsystem),
-				Name:      c.flattenKey(name),
-				Help:      name,
-			})
-			prometheus.RegisterOrGet(cntr)
-			cntr.Set(float64(metric.Count()))
+			c.gaugeFromNameAndValue(name, float64(metric.Count()))
 		case Gauge:
 		case GaugeFloat64:
 			 c.gaugeFromNameAndValue(name, float64(metric.Value()))
