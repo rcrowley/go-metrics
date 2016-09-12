@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkRegistry(b *testing.B) {
@@ -281,7 +280,10 @@ func TestWalkRegistries(t *testing.T) {
 	c := NewCounter()
 	Register("bars", c)
 
-	_, prefix := walkRegistries(r2, "")
-	assert.Equal(t, "prefix.prefix2.", prefix)
+	_, prefix := findPrefix(r2, "")
+	if "prefix.prefix2." !=  prefix {
+		t.Fatal(prefix)
+	}
+
 
 }

@@ -177,14 +177,14 @@ func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
 		}
 	}
 
-	baseRegistry, prefix := walkRegistries(r, "")
+	baseRegistry, prefix := findPrefix(r, "")
 	baseRegistry.Each(wrappedFn(prefix))
 }
 
-func walkRegistries(registry Registry, prefix string) (Registry, string) {
+func findPrefix(registry Registry, prefix string) (Registry, string) {
 	switch r := registry.(type) {
 	case *PrefixedRegistry:
-		return walkRegistries(r.underlying, r.prefix + prefix)
+		return findPrefix(r.underlying, r.prefix + prefix)
 	case *StandardRegistry:
 		return r, prefix
 	}
