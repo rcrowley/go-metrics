@@ -38,6 +38,33 @@ func NewRegisteredGaugeFloat64(name string, r Registry) GaugeFloat64 {
 	return c
 }
 
+// GetOrRegisterFuncGaugeFloat64 returns an existing Gauge or constructs and registers a
+// new FuncGaugeFloat64.
+func GetOrRegisterFuncGaugeFloat64(name string, r Registry, f func() float64) GaugeFloat64 {
+	if nil == r {
+		r = DefaultRegistry
+	}
+	return r.GetOrRegister(name, NewFuncGaugeFloat64(f)).(GaugeFloat64)
+}
+
+// NewFuncGaugeFloat64 constructs a new FuncGaugeFloat64.
+func NewFuncGaugeFloat64(f func() float64) GaugeFloat64 {
+	if UseNilMetrics {
+		return NilGaugeFloat64{}
+	}
+	return &FuncGaugeFloat64{f}
+}
+
+// NewRegisteredFuncGaugeFloat64 constructs and registers a new FuncGaugeFloat64.
+func NewRegisteredFuncGaugeFloat64(name string, r Registry, f func() float64) GaugeFloat64 {
+	c := NewFuncGaugeFloat64(f)
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
+}
+
 // GaugeFloat64Snapshot is a read-only copy of another GaugeFloat64.
 type GaugeFloat64Snapshot float64
 
@@ -88,4 +115,25 @@ func (g *StandardGaugeFloat64) Value() float64 {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 	return g.value
+}
+
+// FuncGaugeFloat64 is the dynamic implementation of a Gauge and uses a
+// function to compute the current float64 value.
+type FuncGaugeFloat64 struct {
+	f func() float64
+}
+
+// Snapshot returns a read-only copy of the gauge.
+func (g *FuncGaugeFloat64) Snapshot() GaugeFloat64 {
+	return GaugeFloat64Snapshot(g.Value())
+}
+
+// Update panics.
+func (g *FuncGaugeFloat64) Update(v float64) {
+	panic("Update called on a FuncGaugeFloat64")
+}
+
+// Invokes the underyling function to get the current value.
+func (g *FuncGaugeFloat64) Value() float64 {
+	return g.f()
 }
