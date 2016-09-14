@@ -35,3 +35,24 @@ func TestGetOrRegisterGauge(t *testing.T) {
 		t.Fatal(g)
 	}
 }
+
+func TestFunctionalGauge(t *testing.T) {
+	var counter int64
+	fg := NewFunctionalGauge(func() int64 {
+		counter++
+		return counter
+	})
+	fg.Value()
+	fg.Value()
+	if counter != 2 {
+		t.Error("counter != 2")
+	}
+}
+
+func TestGetOrRegisterFunctionalGauge(t *testing.T) {
+	r := NewRegistry()
+	NewRegisteredFunctionalGauge("foo", r, func() int64 { return 47})
+	if g := GetOrRegisterGauge("foo", r); 47 != g.Value() {
+		t.Fatal(g)
+	}
+}
