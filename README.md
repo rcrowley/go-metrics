@@ -149,5 +149,5 @@ Clients are available for the following destinations:
 * Librato - [https://github.com/mihasya/go-metrics-librato](https://github.com/mihasya/go-metrics-librato)
 * Graphite - [https://github.com/cyberdelia/go-metrics-graphite](https://github.com/cyberdelia/go-metrics-graphite)
 * InfluxDB - [https://github.com/vrischmann/go-metrics-influxdb](https://github.com/vrischmann/go-metrics-influxdb)
-* Ganglia - [https://github.com/appscode/metlia](https://github.com/appscode/metlia
+* Ganglia - [https://github.com/appscode/metlia](https://github.com/appscode/metlia)
 * Prometheus - [https://github.com/deathowl/go-metrics-prometheus](https://github.com/deathowl/go-metrics-prometheus)
