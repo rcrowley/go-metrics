@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -120,7 +121,7 @@ func (r *StandardRegistry) Unregister(name string) {
 func (r *StandardRegistry) UnregisterAll() {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	for name, _ := range r.metrics {
+	for name := range r.metrics {
 		delete(r.metrics, name)
 	}
 }
@@ -167,9 +168,9 @@ func NewPrefixedChildRegistry(parent Registry, prefix string) Registry {
 
 // Call the given function for each registered metric.
 func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
-	wrappedFn := func (prefix string) func(string, interface{}) {
+	wrappedFn := func(prefix string) func(string, interface{}) {
 		return func(name string, iface interface{}) {
-			if strings.HasPrefix(name,prefix) {
+			if strings.HasPrefix(name, prefix) {
 				fn(name, iface)
 			} else {
 				return
@@ -184,7 +185,7 @@ func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
 func findPrefix(registry Registry, prefix string) (Registry, string) {
 	switch r := registry.(type) {
 	case *PrefixedRegistry:
-		return findPrefix(r.underlying, r.prefix + prefix)
+		return findPrefix(r.underlying, r.prefix+prefix)
 	case *StandardRegistry:
 		return r, prefix
 	}
@@ -267,4 +268,139 @@ func RunHealthchecks() {
 // Unregister the metric with the given name.
 func Unregister(name string) {
 	DefaultRegistry.Unregister(name)
+}
+
+// Stores metric along with tags
+type TagMetric struct {
+	Name string            `json:"name"`
+	Tags map[string]string `json:"tags"`
+}
+
+// The standard implementation of a Registry with tag support. It is a
+// mutex-protected map of names to metrics.
+// Note: It behaves exactlt same as StandardRegistry with an additional
+// support for tags
+type TagRegistry struct {
+	metrics map[string]interface{}
+	mutex   sync.Mutex
+}
+
+// Create a new registry.
+func NewTagRegistry() *TagRegistry {
+	return &TagRegistry{metrics: make(map[string]interface{})}
+}
+
+// Get metric key name
+// If name is already a marshalled data, return name
+func (r *TagRegistry) metricKeyName(name string) string {
+	tagMetric := TagMetric{}
+	err := json.Unmarshal([]byte(name), &tagMetric)
+	if err == nil {
+		return name
+	} else {
+		byteJson, _ := json.Marshal(TagMetric{Name: name})
+		return string(byteJson)
+	}
+}
+
+// Call the given function for each registered metric.
+func (r *TagRegistry) Each(f func(string, interface{})) {
+	for tagMetricJson, i := range r.registered() {
+		tagMetric := TagMetric{}
+		json.Unmarshal([]byte(tagMetricJson), &tagMetric)
+		f(tagMetric.Name, i)
+	}
+}
+
+// Call the given function for each registered metric along with tags.
+func (r *TagRegistry) EachWithTag(f func(string, map[string]string, interface{})) {
+	for tagMetricJson, i := range r.registered() {
+		tagMetric := TagMetric{}
+		json.Unmarshal([]byte(tagMetricJson), &tagMetric)
+		f(tagMetric.Name, tagMetric.Tags, i)
+	}
+}
+
+// Get the metric by the given name or nil if none is registered.
+func (r *TagRegistry) Get(name string) interface{} {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	metricKey := r.metricKeyName(name)
+	return r.metrics[metricKey]
+}
+
+// Gets an existing metric or creates and registers a new one. Threadsafe
+// alternative to calling Get and Register on failure.
+// The interface can be the metric to register if not found in registry,
+// or a function returning the metric for lazy instantiation.
+func (r *TagRegistry) GetOrRegister(name string, i interface{}) interface{} {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	metricKey := r.metricKeyName(name)
+	if metric, ok := r.metrics[metricKey]; ok {
+		return metric
+	}
+	if v := reflect.ValueOf(i); v.Kind() == reflect.Func {
+		i = v.Call(nil)[0].Interface()
+	}
+	r.register(metricKey, i)
+	return i
+}
+
+// Register the given metric under the given name.  Returns a DuplicateMetric
+// if a metric by the given name is already registered.
+func (r *TagRegistry) Register(name string, i interface{}) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	metricKey := r.metricKeyName(name)
+	return r.register(metricKey, i)
+}
+
+// Run all registered healthchecks.
+func (r *TagRegistry) RunHealthchecks() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	for _, i := range r.metrics {
+		if h, ok := i.(Healthcheck); ok {
+			h.Check()
+		}
+	}
+}
+
+// Unregister the metric with the given name.
+func (r *TagRegistry) Unregister(name string) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	metricKey := r.metricKeyName(name)
+	delete(r.metrics, metricKey)
+}
+
+// Unregister all metrics.  (Mostly for testing.)
+func (r *TagRegistry) UnregisterAll() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	for name := range r.metrics {
+		delete(r.metrics, name)
+	}
+}
+
+func (r *TagRegistry) register(name string, i interface{}) error {
+	if _, ok := r.metrics[name]; ok {
+		return DuplicateMetric(name)
+	}
+	switch i.(type) {
+	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer:
+		r.metrics[name] = i
+	}
+	return nil
+}
+
+func (r *TagRegistry) registered() map[string]interface{} {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	metrics := make(map[string]interface{}, len(r.metrics))
+	for name, i := range r.metrics {
+		metrics[name] = i
+	}
+	return metrics
 }
