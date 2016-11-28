@@ -7,6 +7,7 @@ import (
 
 // Timers capture the duration and rate of events.
 type Timer interface {
+	Clear()
 	Count() int64
 	Max() int64
 	Mean() float64
@@ -74,6 +75,9 @@ type NilTimer struct {
 	m Meter
 }
 
+// Clear is a no-op.
+func (NilTimer) Clear() {}
+
 // Count is a no-op.
 func (NilTimer) Count() int64 { return 0 }
 
@@ -133,6 +137,14 @@ type StandardTimer struct {
 	histogram Histogram
 	meter     Meter
 	mutex     sync.Mutex
+}
+
+// Clear resets the timer.
+func (t *StandardTimer) Clear() {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	t.histogram.Clear()
+	t.meter.Clear()
 }
 
 // Count returns the number of events recorded.
@@ -238,6 +250,11 @@ func (t *StandardTimer) Variance() float64 {
 type TimerSnapshot struct {
 	histogram *HistogramSnapshot
 	meter     *MeterSnapshot
+}
+
+// Clear panics.
+func (*TimerSnapshot) Clear() {
+	panic("Clear called on a TimerSnapshot")
 }
 
 // Count returns the number of events recorded at the time the snapshot was

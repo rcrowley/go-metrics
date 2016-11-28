@@ -8,6 +8,7 @@ import (
 // Meters count events to produce exponentially-weighted moving average rates
 // at one-, five-, and fifteen-minutes and a mean rate.
 type Meter interface {
+	Clear()
 	Count() int64
 	Mark(int64)
 	Rate1() float64
@@ -59,6 +60,11 @@ type MeterSnapshot struct {
 	rate1, rate5, rate15, rateMean float64
 }
 
+// Clear panics.
+func (m *MeterSnapshot) Clear() {
+	panic("Clear called on a MeterSnapshot")
+}
+
 // Count returns the count of events at the time the snapshot was taken.
 func (m *MeterSnapshot) Count() int64 { return m.count }
 
@@ -88,6 +94,9 @@ func (m *MeterSnapshot) Snapshot() Meter { return m }
 
 // NilMeter is a no-op Meter.
 type NilMeter struct{}
+
+// Clear is a no-op.
+func (NilMeter) Clear() {}
 
 // Count is a no-op.
 func (NilMeter) Count() int64 { return 0 }
@@ -126,6 +135,18 @@ func newStandardMeter() *StandardMeter {
 		a15:       NewEWMA15(),
 		startTime: time.Now(),
 	}
+}
+
+// Clear resets the meter.
+func (m *StandardMeter) Clear() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	
+	m.snapshot = &MeterSnapshot{}
+	m.a1 = NewEWMA1()
+	m.a5 = NewEWMA5()
+	m.a15 = NewEWMA15()
+	m.startTime = time.Now()
 }
 
 // Count returns the number of events recorded.
