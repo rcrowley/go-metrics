@@ -281,9 +281,8 @@ func TestWalkRegistries(t *testing.T) {
 	Register("bars", c)
 
 	_, prefix := findPrefix(r2, "")
-	if "prefix.prefix2." !=  prefix {
+	if "prefix.prefix2." != prefix {
 		t.Fatal(prefix)
 	}
-
 
 }
