@@ -302,6 +302,13 @@ type SampleSnapshot struct {
 	values []int64
 }
 
+func NewSampleSnapshot(count int64, values []int64) *SampleSnapshot {
+	return &SampleSnapshot{
+		count:  count,
+		values: values,
+	}
+}
+
 // Clear panics.
 func (*SampleSnapshot) Clear() {
 	panic("Clear called on a SampleSnapshot")
