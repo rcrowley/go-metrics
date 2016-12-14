@@ -6,6 +6,8 @@ import "sync/atomic"
 type Gauge interface {
 	Snapshot() Gauge
 	Update(int64)
+	Inc(int64)
+	Dec(int64)
 	Value() int64
 }
 
@@ -44,7 +46,6 @@ func NewFunctionalGauge(f func() int64) Gauge {
 	return &FunctionalGauge{value: f}
 }
 
-
 // NewRegisteredFunctionalGauge constructs and registers a new StandardGauge.
 func NewRegisteredFunctionalGauge(name string, r Registry, f func() int64) Gauge {
 	c := NewFunctionalGauge(f)
@@ -66,6 +67,16 @@ func (GaugeSnapshot) Update(int64) {
 	panic("Update called on a GaugeSnapshot")
 }
 
+// Inc panics.
+func (GaugeSnapshot) Inc(int64) {
+	panic("Inc called on a GaugeSnapshot")
+}
+
+// Dec panics.
+func (GaugeSnapshot) Dec(int64) {
+	panic("Dec called on a GaugeSnapshot")
+}
+
 // Value returns the value at the time the snapshot was taken.
 func (g GaugeSnapshot) Value() int64 { return int64(g) }
 
@@ -77,6 +88,12 @@ func (NilGauge) Snapshot() Gauge { return NilGauge{} }
 
 // Update is a no-op.
 func (NilGauge) Update(v int64) {}
+
+// Inc is a no-op.
+func (NilGauge) Inc(v int64) {}
+
+// Dec is a no-op.
+func (NilGauge) Dec(v int64) {}
 
 // Value is a no-op.
 func (NilGauge) Value() int64 { return 0 }
@@ -97,10 +114,21 @@ func (g *StandardGauge) Update(v int64) {
 	atomic.StoreInt64(&g.value, v)
 }
 
+// Inc increments the gauge's value.
+func (g *StandardGauge) Inc(v int64) {
+	atomic.AddInt64(&g.value, v)
+}
+
+// Dec updates the gauge's value.
+func (g *StandardGauge) Dec(v int64) {
+	atomic.AddInt64(&g.value, -v)
+}
+
 // Value returns the gauge's current value.
 func (g *StandardGauge) Value() int64 {
 	return atomic.LoadInt64(&g.value)
 }
+
 // FunctionalGauge returns value from given function
 type FunctionalGauge struct {
 	value func() int64
@@ -117,4 +145,14 @@ func (g FunctionalGauge) Snapshot() Gauge { return GaugeSnapshot(g.Value()) }
 // Update panics.
 func (FunctionalGauge) Update(int64) {
 	panic("Update called on a FunctionalGauge")
+}
+
+// Inc panics.
+func (FunctionalGauge) Inc(int64) {
+	panic("Inc called on a FunctionalGauge")
+}
+
+// Dec panics.
+func (FunctionalGauge) Dec(int64) {
+	panic("Dec called on a FunctionalGauge")
 }

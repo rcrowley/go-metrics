@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -16,6 +17,28 @@ func BenchmarkGuage(b *testing.B) {
 func TestGauge(t *testing.T) {
 	g := NewGauge()
 	g.Update(int64(47))
+	if v := g.Value(); 47 != v {
+		t.Errorf("g.Value(): 47 != %v\n", v)
+	}
+}
+
+func TestGaugeIncDec(t *testing.T) {
+	g := NewGauge()
+	g.Update(int64(0))
+	g.Inc(int64(47))
+	if v := g.Value(); 47 != v {
+		t.Fatalf("g.Value(): 47 != %v\n", v)
+	}
+
+	// Increment and decrement a bunch of times in parallel in a manner that
+	// should end up with the value back where it started.
+	var wg sync.WaitGroup
+	for i := int64(0); i < 10; i++ {
+		wg.Add(2)
+		go func(i int64) { g.Inc(i); wg.Done() }(i)
+		go func(i int64) { g.Dec(i); wg.Done() }(i)
+	}
+	wg.Wait()
 	if v := g.Value(); 47 != v {
 		t.Errorf("g.Value(): 47 != %v\n", v)
 	}
