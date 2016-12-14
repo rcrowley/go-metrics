@@ -155,13 +155,14 @@ func (t *StandardTimer) Min() int64 {
 	return t.histogram.Min()
 }
 
-// Percentile returns an arbitrary percentile of the values in the sample.
+// Percentile returns an arbitrary percentile of the values in the
+// sample. To get the 75th percentile, use 0.75.
 func (t *StandardTimer) Percentile(p float64) float64 {
 	return t.histogram.Percentile(p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of the values in the
-// sample.
+// sample. To get the 75th percentile, use 0.75.
 func (t *StandardTimer) Percentiles(ps []float64) []float64 {
 	return t.histogram.Percentiles(ps)
 }
@@ -254,13 +255,13 @@ func (t *TimerSnapshot) Mean() float64 { return t.histogram.Mean() }
 func (t *TimerSnapshot) Min() int64 { return t.histogram.Min() }
 
 // Percentile returns an arbitrary percentile of sampled values at the time the
-// snapshot was taken.
+// snapshot was taken. To get the 75th percentile, use 0.75.
 func (t *TimerSnapshot) Percentile(p float64) float64 {
 	return t.histogram.Percentile(p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of sampled values at
-// the time the snapshot was taken.
+// the time the snapshot was taken. To get the 75th percentile, use 0.75.
 func (t *TimerSnapshot) Percentiles(ps []float64) []float64 {
 	return t.histogram.Percentiles(ps)
 }
