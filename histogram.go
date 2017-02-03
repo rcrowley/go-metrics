@@ -4,6 +4,7 @@ package metrics
 type Histogram interface {
 	Clear()
 	Count() int64
+	Sum() int64
 	Max() int64
 	Mean() float64
 	Min() int64
@@ -59,6 +60,10 @@ func (*HistogramSnapshot) Clear() {
 // taken.
 func (h *HistogramSnapshot) Count() int64 { return h.sample.Count() }
 
+// Sum returns the sum in the sample at the time the snapshot was
+// taken.
+func (h *HistogramSnapshot) Sum() int64 { return h.sample.Sum() }
+
 // Max returns the maximum value in the sample at the time the snapshot was
 // taken.
 func (h *HistogramSnapshot) Max() int64 { return h.sample.Max() }
@@ -113,6 +118,9 @@ func (NilHistogram) Clear() {}
 // Count is a no-op.
 func (NilHistogram) Count() int64 { return 0 }
 
+// Sum is a no-op.
+func (NilHistogram) Sum() int64 { return 0 }
+
 // Max is a no-op.
 func (NilHistogram) Max() int64 { return 0 }
 
@@ -160,6 +168,9 @@ func (h *StandardHistogram) Clear() { h.sample.Clear() }
 // Count returns the number of samples recorded since the histogram was last
 // cleared.
 func (h *StandardHistogram) Count() int64 { return h.sample.Count() }
+
+// Sum returns the sum in the sample.
+func (h *StandardHistogram) Sum() int64 { return h.sample.Sum() }
 
 // Max returns the maximum value in the sample.
 func (h *StandardHistogram) Max() int64 { return h.sample.Max() }
