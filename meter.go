@@ -15,6 +15,7 @@ type Meter interface {
 	Rate15() float64
 	RateMean() float64
 	Snapshot() Meter
+	Stop()
 }
 
 // GetOrRegisterMeter returns an existing Meter or constructs and registers a
@@ -34,7 +35,8 @@ func NewMeter() Meter {
 	m := newStandardMeter()
 	arbiter.Lock()
 	defer arbiter.Unlock()
-	arbiter.meters = append(arbiter.meters, m)
+	m.id = arbiter.newID()
+	arbiter.meters[m.id] = m
 	if !arbiter.started {
 		arbiter.started = true
 		go arbiter.tick()
@@ -86,6 +88,9 @@ func (m *MeterSnapshot) RateMean() float64 { return m.rateMean }
 // Snapshot returns the snapshot.
 func (m *MeterSnapshot) Snapshot() Meter { return m }
 
+// Stop is a no-op.
+func (m *MeterSnapshot) Stop() {}
+
 // NilMeter is a no-op Meter.
 type NilMeter struct{}
 
@@ -110,12 +115,17 @@ func (NilMeter) RateMean() float64 { return 0.0 }
 // Snapshot is a no-op.
 func (NilMeter) Snapshot() Meter { return NilMeter{} }
 
+// Stop is a no-op.
+func (NilMeter) Stop() {}
+
 // StandardMeter is the standard implementation of a Meter.
 type StandardMeter struct {
 	lock        sync.RWMutex
 	snapshot    *MeterSnapshot
 	a1, a5, a15 EWMA
 	startTime   time.Time
+	stopped     bool
+	id          int64
 }
 
 func newStandardMeter() *StandardMeter {
@@ -126,6 +136,14 @@ func newStandardMeter() *StandardMeter {
 		a15:       NewEWMA15(),
 		startTime: time.Now(),
 	}
+}
+
+// Stop stops the meter, Mark() will panic if you use it after being stopped.
+func (m *StandardMeter) Stop() {
+	arbiter.Lock()
+	defer arbiter.Unlock()
+	m.stopped = true
+	delete(arbiter.meters, m.id)
 }
 
 // Count returns the number of events recorded.
@@ -140,6 +158,9 @@ func (m *StandardMeter) Count() int64 {
 func (m *StandardMeter) Mark(n int64) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+	if m.stopped {
+		panic("Mark called on a stopped Meter")
+	}
 	m.snapshot.count += n
 	m.a1.Update(n)
 	m.a5.Update(n)
@@ -208,11 +229,12 @@ func (m *StandardMeter) tick() {
 type meterArbiter struct {
 	sync.RWMutex
 	started bool
-	meters  []*StandardMeter
+	meters  map[int64]*StandardMeter
 	ticker  *time.Ticker
+	id      int64
 }
 
-var arbiter = meterArbiter{ticker: time.NewTicker(5e9)}
+var arbiter = meterArbiter{ticker: time.NewTicker(5e9), meters: make(map[int64]*StandardMeter)}
 
 // Ticks meters on the scheduled interval
 func (ma *meterArbiter) tick() {
@@ -222,6 +244,12 @@ func (ma *meterArbiter) tick() {
 			ma.tickMeters()
 		}
 	}
+}
+
+// should only be called with Lock() held
+func (ma *meterArbiter) newID() int64 {
+	ma.id++
+	return ma.id
 }
 
 func (ma *meterArbiter) tickMeters() {

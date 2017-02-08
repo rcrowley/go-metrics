@@ -24,9 +24,11 @@ func TestGetOrRegisterMeter(t *testing.T) {
 func TestMeterDecay(t *testing.T) {
 	ma := meterArbiter{
 		ticker: time.NewTicker(time.Millisecond),
+		meters: make(map[int64]*StandardMeter),
 	}
 	m := newStandardMeter()
-	ma.meters = append(ma.meters, m)
+	m.id = ma.newID()
+	ma.meters[m.id] = m
 	go ma.tick()
 	m.Mark(1)
 	rateMean := m.RateMean()
