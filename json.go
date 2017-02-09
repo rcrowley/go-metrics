@@ -45,6 +45,13 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["5m.rate"] = m.Rate5()
 			values["15m.rate"] = m.Rate15()
 			values["mean.rate"] = m.RateMean()
+		case Derive:
+			m := metric.Snapshot()
+			values["count"] = m.Count()
+			values["1m.rate"] = m.Rate1()
+			values["5m.rate"] = m.Rate5()
+			values["15m.rate"] = m.Rate15()
+			values["mean.rate"] = m.RateMean()
 		case Timer:
 			t := metric.Snapshot()
 			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
