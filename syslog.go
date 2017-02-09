@@ -51,6 +51,18 @@ func Syslog(r Registry, d time.Duration, w *syslog.Writer) {
 					m.Rate15(),
 					m.RateMean(),
 				))
+			case Derive:
+				m := metric.Snapshot()
+				w.Info(fmt.Sprintf(
+					"derive %s: count: %d base: %d 1-min: %.2f 5-min: %.2f 15-min: %.2f mean: %.2f",
+					name,
+					m.Count(),
+					m.Base(),
+					m.Rate1(),
+					m.Rate5(),
+					m.Rate15(),
+					m.RateMean(),
+				))
 			case Timer:
 				t := metric.Snapshot()
 				ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})

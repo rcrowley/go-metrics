@@ -56,6 +56,15 @@ func LogScaled(r Registry, freq time.Duration, scale time.Duration, l Logger) {
 				l.Printf("  5-min rate:  %12.2f\n", m.Rate5())
 				l.Printf("  15-min rate: %12.2f\n", m.Rate15())
 				l.Printf("  mean rate:   %12.2f\n", m.RateMean())
+			case Derive:
+				m := metric.Snapshot()
+				l.Printf("meter %s\n", name)
+				l.Printf("  base:       %9d\n", m.Base())
+				l.Printf("  count:       %9d\n", m.Count())
+				l.Printf("  1-min rate:  %12.2f\n", m.Rate1())
+				l.Printf("  5-min rate:  %12.2f\n", m.Rate5())
+				l.Printf("  15-min rate: %12.2f\n", m.Rate15())
+				l.Printf("  mean rate:   %12.2f\n", m.RateMean())
 			case Timer:
 				t := metric.Snapshot()
 				ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
