@@ -62,6 +62,24 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["5m.rate"] = t.Rate5()
 			values["15m.rate"] = t.Rate15()
 			values["mean.rate"] = t.RateMean()
+		case Sample:
+			s := metric.Snapshot()
+			ps := s.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
+			values["count"] = s.Count()
+			values["max"] = s.Max()
+			values["mean"] = s.Mean()
+			values["min"] = s.Min()
+			values["stddev"] = s.StdDev()
+			values["median"] = ps[0]
+			values["75%"] = ps[1]
+			values["95%"] = ps[2]
+			values["99%"] = ps[3]
+			values["99.9%"] = ps[4]
+			values["sum"] = s.Sum()
+			values["variance"] = s.Variance()
+		case EWMA:
+			e := metric.Snapshot()
+			values["rate"] = e.Rate()
 		}
 		data[name] = values
 	})
