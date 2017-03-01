@@ -12,8 +12,16 @@ import (
 // Unregister the existing metric.
 type DuplicateMetric string
 
+// UnknownMetric is an error returned by Registry.Register when an unknown
+// variable was passed to the method.
+type UnknownMetric string
+
 func (err DuplicateMetric) Error() string {
 	return fmt.Sprintf("duplicate metric: %s", string(err))
+}
+
+func (err UnknownMetric) Error() string {
+	return fmt.Sprintf("unknown metric: %s", string(err))
 }
 
 // A Registry holds references to a set of metrics by name and can iterate
@@ -130,8 +138,10 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 		return DuplicateMetric(name)
 	}
 	switch i.(type) {
-	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer:
+	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer, Sample, EWMA:
 		r.metrics[name] = i
+	default:
+		return UnknownMetric(name)
 	}
 	return nil
 }
