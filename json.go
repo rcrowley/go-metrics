@@ -37,14 +37,14 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["75%"] = ps[1]
 			values["95%"] = ps[2]
 			values["99%"] = ps[3]
-			values["99.9%"] = ps[4]
+			values["99-9%"] = ps[4]
 		case Meter:
 			m := metric.Snapshot()
 			values["count"] = m.Count()
-			values["1m.rate"] = m.Rate1()
-			values["5m.rate"] = m.Rate5()
-			values["15m.rate"] = m.Rate15()
-			values["mean.rate"] = m.RateMean()
+			values["1m-rate"] = m.Rate1()
+			values["5m-rate"] = m.Rate5()
+			values["15m-rate"] = m.Rate15()
+			values["mean-rate"] = m.RateMean()
 		case Timer:
 			t := metric.Snapshot()
 			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
@@ -57,11 +57,11 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["75%"] = ps[1]
 			values["95%"] = ps[2]
 			values["99%"] = ps[3]
-			values["99.9%"] = ps[4]
-			values["1m.rate"] = t.Rate1()
-			values["5m.rate"] = t.Rate5()
-			values["15m.rate"] = t.Rate15()
-			values["mean.rate"] = t.RateMean()
+			values["99-9%"] = ps[4]
+			values["1m-rate"] = t.Rate1()
+			values["5m-rate"] = t.Rate5()
+			values["15m-rate"] = t.Rate15()
+			values["mean-rate"] = t.RateMean()
 		}
 		data[name] = values
 	})
