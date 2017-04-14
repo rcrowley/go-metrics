@@ -46,6 +46,18 @@ func TestMeterNonzero(t *testing.T) {
 	}
 }
 
+func TestMeterStop(t *testing.T) {
+	l := len(arbiter.meters)
+	m := NewMeter()
+	if len(arbiter.meters) != l+1 {
+		t.Errorf("arbiter.meters: %d != %d\n", l+1, len(arbiter.meters))
+	}
+	m.Stop()
+	if len(arbiter.meters) != l {
+		t.Errorf("arbiter.meters: %d != %d\n", l, len(arbiter.meters))
+	}
+}
+
 func TestMeterSnapshot(t *testing.T) {
 	m := NewMeter()
 	m.Mark(1)

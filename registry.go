@@ -113,6 +113,7 @@ func (r *StandardRegistry) RunHealthchecks() {
 func (r *StandardRegistry) Unregister(name string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+	r.stop(name)
 	delete(r.metrics, name)
 }
 
@@ -121,6 +122,7 @@ func (r *StandardRegistry) UnregisterAll() {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	for name, _ := range r.metrics {
+		r.stop(name)
 		delete(r.metrics, name)
 	}
 }
@@ -144,6 +146,19 @@ func (r *StandardRegistry) registered() map[string]interface{} {
 		metrics[name] = i
 	}
 	return metrics
+}
+
+func (r *StandardRegistry) stop(name string) {
+	if i, ok := r.metrics[name]; ok {
+		if s, ok := i.(Stoppable); ok {
+			s.Stop()
+		}
+	}
+}
+
+// Stoppable defines the metrics which has to be stopped.
+type Stoppable interface {
+	Stop()
 }
 
 type PrefixedRegistry struct {
