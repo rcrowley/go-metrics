@@ -9,22 +9,34 @@ import (
 // MarshalJSON returns a byte slice containing a JSON representation of all
 // the metrics in the Registry.
 func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
-	data := make(map[string]map[string]interface{})
+	data := map[string]map[string]interface{}{
+		"counters":     {},
+		"gauges":       {},
+		"histograms":   {},
+		"meters":       {},
+		"timers":       {},
+		"healthchecks": {},
+	}
+
 	r.Each(func(name string, i interface{}) {
 		values := make(map[string]interface{})
 		switch metric := i.(type) {
 		case Counter:
 			values["count"] = metric.Count()
+			data["counters"][name] = values
 		case Gauge:
 			values["value"] = metric.Value()
+			data["gauges"][name] = values
 		case GaugeFloat64:
 			values["value"] = metric.Value()
+			data["gauges"][name] = values
 		case Healthcheck:
 			values["error"] = nil
 			metric.Check()
 			if err := metric.Error(); nil != err {
 				values["error"] = metric.Error().Error()
 			}
+			data["healthchecks"][name] = values
 		case Histogram:
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
@@ -38,6 +50,7 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["95%"] = ps[2]
 			values["99%"] = ps[3]
 			values["99.9%"] = ps[4]
+			data["histograms"][name] = values
 		case Meter:
 			m := metric.Snapshot()
 			values["count"] = m.Count()
@@ -45,6 +58,7 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["5m.rate"] = m.Rate5()
 			values["15m.rate"] = m.Rate15()
 			values["mean.rate"] = m.RateMean()
+			data["meters"][name] = values
 		case Timer:
 			t := metric.Snapshot()
 			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
@@ -62,8 +76,8 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 			values["5m.rate"] = t.Rate5()
 			values["15m.rate"] = t.Rate15()
 			values["mean.rate"] = t.RateMean()
+			data["timers"][name] = values
 		}
-		data[name] = values
 	})
 	return json.Marshal(data)
 }
