@@ -115,6 +115,15 @@ import "github.com/rcrowley/go-metrics/stathat"
 go stathat.Stathat(metrics.DefaultRegistry, 10e9, "example@example.com")
 ```
 
+Periodically emit every metric to SignalFX:
+
+```go
+import "github.com/rcrowley/go-metrics/signalfx"
+import "time"
+
+go signalfx.PublishToSignalFx(m.MetricsRegistry, 15*time.Second, nil, "<token>")
+```
+
 Maintain all metrics along with expvars at `/debug/metrics`:
 
 This uses the same mechanism as [the official expvar](http://golang.org/pkg/expvar/)
