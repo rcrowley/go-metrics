@@ -140,10 +140,15 @@ func newStandardMeter() *StandardMeter {
 
 // Stop stops the meter, Mark() will panic if you use it after being stopped.
 func (m *StandardMeter) Stop() {
-	arbiter.Lock()
-	defer arbiter.Unlock()
+	m.lock.Lock()
+	stopped := m.stopped
 	m.stopped = true
-	delete(arbiter.meters, m.id)
+	m.lock.Unlock()
+	if !stopped {
+		arbiter.Lock()
+		delete(arbiter.meters, m.id)
+		arbiter.Unlock()
+	}
 }
 
 // Count returns the number of events recorded.
@@ -159,7 +164,7 @@ func (m *StandardMeter) Mark(n int64) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if m.stopped {
-		panic("Mark called on a stopped Meter")
+		return
 	}
 	m.snapshot.count += n
 	m.a1.Update(n)
