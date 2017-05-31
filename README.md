@@ -162,3 +162,4 @@ Clients are available for the following destinations:
 * Ganglia - https://github.com/appscode/metlia
 * Prometheus - https://github.com/deathowl/go-metrics-prometheus
 * DataDog - https://github.com/syntaqx/go-metrics-datadog
+* SignalFX - https://github.com/pascallouisperez/go-metrics-signalfx
