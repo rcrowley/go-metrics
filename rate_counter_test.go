@@ -7,6 +7,15 @@ import (
 	"github.com/bountylabs/go-metrics/clock"
 )
 
+func TestRateCounterZero(t *testing.T) {
+	m := clock.NewMock()
+	rc := NewStandardRateCounter(60, 1000, m)
+
+	if v := rc.Rate1(); v != 0.0 {
+		t.Errorf("rc.Rate1(): 1.0 != %v\n", v)
+	}
+}
+
 func TestRateCounter(t *testing.T) {
 	m := clock.NewMock()
 	rc := NewStandardRateCounter(60, 1000, m)
