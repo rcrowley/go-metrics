@@ -77,8 +77,7 @@ func (this *StandardRateCounter) Mark(n int64) {
 }
 
 func (this *StandardRateCounter) Rate1() float64 {
-	this.maybeSampleCount()
-	return this.lastRate
+	return this.maybeSampleCount()
 }
 
 func (this *StandardRateCounter) Count() int64 {
@@ -105,24 +104,27 @@ func (this *StandardRateCounter) advance(index int) int {
  * algorithm, but given that we are computing a rate over a ring buffer of 60 samples, it
  * should not matter in practice.
  */
-func (this *StandardRateCounter) maybeSampleCount() {
+func (this *StandardRateCounter) maybeSampleCount() float64 {
 	var currentTimeMs int64 = this.clock.Now().UnixNano() / 1e6
 	currentSampleTimeMs := this.roundTime(currentTimeMs)
 
 	this.lock.RLock()
-	if currentSampleTimeMs > this.lastSampleTimeMs {
-		this.lock.RUnlock()
+	toSample := currentSampleTimeMs > this.lastSampleTimeMs
+	lastRateCopy := this.lastRate
+	this.lock.RUnlock()
 
-		this.lock.Lock()
-		defer this.lock.Unlock()
-
-		if currentSampleTimeMs > this.lastSampleTimeMs {
-			this.sampleCountAndUpdateRate(currentSampleTimeMs)
-		}
-	} else {
-		this.lock.RUnlock()
+	if !toSample {
+		return lastRateCopy
 	}
 
+	this.lock.Lock()
+	defer this.lock.Unlock()
+
+	if currentSampleTimeMs > this.lastSampleTimeMs {
+		this.sampleCountAndUpdateRate(currentSampleTimeMs)
+	}
+
+	return this.lastRate
 }
 
 /**
