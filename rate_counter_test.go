@@ -14,6 +14,10 @@ func TestRateCounterZero(t *testing.T) {
 	if v := rc.Rate1(); v != 0.0 {
 		t.Errorf("rc.Rate1(): 1.0 != %v\n", v)
 	}
+
+	if v := rc.Count(); v != 0.0 {
+		t.Errorf("rc.Count(): 1.0 != %v\n", v)
+	}
 }
 
 func TestRateCounter(t *testing.T) {
@@ -24,6 +28,9 @@ func TestRateCounter(t *testing.T) {
 	m.Add(1 * time.Second)
 	if v := rc.Rate1(); v != 1.0 {
 		t.Errorf("rc.Rate1(): 1.0 != %v\n", v)
+	}
+	if v := rc.Count(); v != 1.0 {
+		t.Errorf("rc.Count(): 1.0 != %v\n", v)
 	}
 }
 
@@ -42,6 +49,10 @@ func TestShouldNotTakeIntoAccountDataFromOverAMinuteAgo(t *testing.T) {
 	if v := rc.Rate1(); v != 1.0 {
 		t.Errorf("rc.Rate1(): 1.0 != %v\n", v)
 	}
+
+	if v := rc.Count(); v != 560.0 {
+		t.Errorf("rc.Count(): 560.0 != %v\n", v)
+	}
 }
 
 func TestShouldClearRateCounter(t *testing.T) {
@@ -55,6 +66,9 @@ func TestShouldClearRateCounter(t *testing.T) {
 
 	if v := rc.Rate1(); v != 0.0 {
 		t.Errorf("rc.Rate1(): 0.0 != %v\n", v)
+	}
+	if v := rc.Count(); v != 0.0 {
+		t.Errorf("rc.Count(): 0.0 != %v\n", v)
 	}
 }
 
@@ -70,5 +84,35 @@ func TestSnapshot(t *testing.T) {
 
 	if v := s.Rate1(); v != 1.0 {
 		t.Errorf("s.Rate1(): 1.0 != %v\n", v)
+	}
+	if v := s.Count(); v != 1.0 {
+		t.Errorf("s.Count(): 1.0 != %v\n", v)
+	}
+}
+
+func TestRateAndCountInSnapshotShouldBeConsistent(t *testing.T) {
+	// If new data isn't present in Snapshot.Rate1() it shouldn't be present in Snapshot.Count()
+
+	m := clock.NewMock()
+	rc := NewStandardRateCounter(60, 1000, m)
+
+	rc.Mark(1)
+	s := rc.Snapshot()
+
+	if v := s.Rate1(); v != 0.0 {
+		t.Errorf("s.Rate1(): 0.0 != %v\n", v)
+	}
+	if v := s.Count(); v != 0.0 {
+		t.Errorf("s.Count(): 0.0 != %v\n", v)
+	}
+
+	m.Add(1 * time.Second)
+	s = rc.Snapshot()
+
+	if v := s.Rate1(); v != 1.0 {
+		t.Errorf("s.Rate1(): 1.0 != %v\n", v)
+	}
+	if v := s.Count(); v != 1.0 {
+		t.Errorf("s.Count(): 1.0 != %v\n", v)
 	}
 }

@@ -35,6 +35,27 @@ type StandardRateCounter struct {
 	tailIndex        int // Array index to oldest written value.
 	lastSampleTimeMs int64
 	lastRate         float64
+	lastCount        int64
+}
+
+// GetOrRegisterRateCounter returns an existing RateCounter or constructs and registers a
+// new StandardRateCounter.
+func GetOrRegisterRateCounter(name string, r Registry) RateCounter {
+	if nil == r {
+		r = DefaultRegistry
+	}
+	return r.GetOrRegister(name, func() RateCounter { return NewStandardRateCounter(60, 1000, clock.New()) }).(RateCounter)
+}
+
+// NewRegisteredRateCounter constructs and registers a new StandardRateCounter.
+func NewRegisteredRateCounter(name string, r Registry, clock clock.Clock) RateCounter {
+	c := NewStandardRateCounter(60, 1000, clock)
+
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
 }
 
 func NewStandardRateCounter(numSamples int64, samplePeriodMs int64, clock clock.Clock) RateCounter {
@@ -65,6 +86,7 @@ func (this *StandardRateCounter) Clear() {
 
 	this.lastSampleTimeMs = resetTimeMs
 	this.lastRate = 0.0
+	this.lastCount = 0
 
 	// Head and tail never point to the same index.
 	this.headIndex = 0
@@ -77,17 +99,27 @@ func (this *StandardRateCounter) Mark(n int64) {
 }
 
 func (this *StandardRateCounter) Rate1() float64 {
-	return this.maybeSampleCount()
+	this.maybeSampleCount()
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+	return this.lastRate
 }
 
 func (this *StandardRateCounter) Count() int64 {
-	return atomic.LoadInt64(&this.counter)
+	this.maybeSampleCount()
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+	return this.lastCount
 }
 
 func (this *StandardRateCounter) Snapshot() RateCounter {
+	this.maybeSampleCount()
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+
 	return &RateCounterSnapshot{
-		count: this.Count(),
-		rate:  this.Rate1(),
+		count: this.lastCount,
+		rate:  this.lastRate,
 	}
 }
 
@@ -104,17 +136,16 @@ func (this *StandardRateCounter) advance(index int) int {
  * algorithm, but given that we are computing a rate over a ring buffer of 60 samples, it
  * should not matter in practice.
  */
-func (this *StandardRateCounter) maybeSampleCount() float64 {
+func (this *StandardRateCounter) maybeSampleCount() {
 	var currentTimeMs int64 = this.clock.Now().UnixNano() / 1e6
 	currentSampleTimeMs := this.roundTime(currentTimeMs)
 
 	this.lock.RLock()
 	toSample := currentSampleTimeMs > this.lastSampleTimeMs
-	lastRateCopy := this.lastRate
 	this.lock.RUnlock()
 
 	if !toSample {
-		return lastRateCopy
+		return
 	}
 
 	this.lock.Lock()
@@ -123,8 +154,6 @@ func (this *StandardRateCounter) maybeSampleCount() float64 {
 	if currentSampleTimeMs > this.lastSampleTimeMs {
 		this.sampleCountAndUpdateRate(currentSampleTimeMs)
 	}
-
-	return this.lastRate
 }
 
 /**
@@ -138,7 +167,9 @@ func (this *StandardRateCounter) sampleCountAndUpdateRate(currentSampleTimeMs in
 	// Advance head and write values.
 	this.headIndex = this.advance(this.headIndex)
 	this.timestampsMs[this.headIndex] = currentSampleTimeMs
-	this.counts[this.headIndex] = atomic.LoadInt64(&this.counter)
+
+	this.lastCount = atomic.LoadInt64(&this.counter)
+	this.counts[this.headIndex] = this.lastCount
 
 	// Ensure tail is always ahead of head.
 	if this.tailIndex == this.headIndex {
