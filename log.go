@@ -24,7 +24,7 @@ func LogOnCue(r Registry, ch chan interface{}, l Logger) {
 func LogScaled(r Registry, freq time.Duration, scale time.Duration, l Logger) {
 	ch := make(chan interface{}, 1)
 	go func() {
-		for range time.Tick(freq) {
+		for _ = range time.Tick(freq) {
 			ch <- struct{}{}
 		}
 	}()
