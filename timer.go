@@ -29,6 +29,8 @@ type Timer interface {
 
 // GetOrRegisterTimer returns an existing Timer or constructs and registers a
 // new StandardTimer.
+// Be sure to unregister the meter from the registry once it is of no use to
+// allow for garbage collection.
 func GetOrRegisterTimer(name string, r Registry) Timer {
 	if nil == r {
 		r = DefaultRegistry
@@ -37,6 +39,7 @@ func GetOrRegisterTimer(name string, r Registry) Timer {
 }
 
 // NewCustomTimer constructs a new StandardTimer from a Histogram and a Meter.
+// Be sure to call Stop() once the timer is of no use to allow for garbage collection.
 func NewCustomTimer(h Histogram, m Meter) Timer {
 	if UseNilMetrics {
 		return NilTimer{}
@@ -48,6 +51,8 @@ func NewCustomTimer(h Histogram, m Meter) Timer {
 }
 
 // NewRegisteredTimer constructs and registers a new StandardTimer.
+// Be sure to unregister the meter from the registry once it is of no use to
+// allow for garbage collection.
 func NewRegisteredTimer(name string, r Registry) Timer {
 	c := NewTimer()
 	if nil == r {
@@ -59,6 +64,7 @@ func NewRegisteredTimer(name string, r Registry) Timer {
 
 // NewTimer constructs a new StandardTimer using an exponentially-decaying
 // sample with the same reservoir size and alpha as UNIX load averages.
+// Be sure to call Stop() once the timer is of no use to allow for garbage collection.
 func NewTimer() Timer {
 	if UseNilMetrics {
 		return NilTimer{}

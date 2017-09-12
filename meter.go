@@ -20,6 +20,8 @@ type Meter interface {
 
 // GetOrRegisterMeter returns an existing Meter or constructs and registers a
 // new StandardMeter.
+// Be sure to unregister the meter from the registry once it is of no use to
+// allow for garbage collection.
 func GetOrRegisterMeter(name string, r Registry) Meter {
 	if nil == r {
 		r = DefaultRegistry
@@ -28,6 +30,7 @@ func GetOrRegisterMeter(name string, r Registry) Meter {
 }
 
 // NewMeter constructs a new StandardMeter and launches a goroutine.
+// Be sure to call Stop() once the meter is of no use to allow for garbage collection.
 func NewMeter() Meter {
 	if UseNilMetrics {
 		return NilMeter{}
@@ -35,8 +38,7 @@ func NewMeter() Meter {
 	m := newStandardMeter()
 	arbiter.Lock()
 	defer arbiter.Unlock()
-	m.id = arbiter.newID()
-	arbiter.meters[m.id] = m
+	arbiter.meters[m] = struct{}{}
 	if !arbiter.started {
 		arbiter.started = true
 		go arbiter.tick()
@@ -46,6 +48,8 @@ func NewMeter() Meter {
 
 // NewMeter constructs and registers a new StandardMeter and launches a
 // goroutine.
+// Be sure to unregister the meter from the registry once it is of no use to
+// allow for garbage collection.
 func NewRegisteredMeter(name string, r Registry) Meter {
 	c := NewMeter()
 	if nil == r {
@@ -125,7 +129,6 @@ type StandardMeter struct {
 	a1, a5, a15 EWMA
 	startTime   time.Time
 	stopped     bool
-	id          int64
 }
 
 func newStandardMeter() *StandardMeter {
@@ -138,7 +141,7 @@ func newStandardMeter() *StandardMeter {
 	}
 }
 
-// Stop stops the meter, Mark() will panic if you use it after being stopped.
+// Stop stops the meter, Mark() will be a no-op if you use it after being stopped.
 func (m *StandardMeter) Stop() {
 	m.lock.Lock()
 	stopped := m.stopped
@@ -146,7 +149,7 @@ func (m *StandardMeter) Stop() {
 	m.lock.Unlock()
 	if !stopped {
 		arbiter.Lock()
-		delete(arbiter.meters, m.id)
+		delete(arbiter.meters, m)
 		arbiter.Unlock()
 	}
 }
@@ -231,15 +234,16 @@ func (m *StandardMeter) tick() {
 	m.updateSnapshot()
 }
 
+// meterArbiter ticks meters every 5s from a single goroutine.
+// meters are references in a set for future stopping.
 type meterArbiter struct {
 	sync.RWMutex
 	started bool
-	meters  map[int64]*StandardMeter
+	meters  map[*StandardMeter]struct{}
 	ticker  *time.Ticker
-	id      int64
 }
 
-var arbiter = meterArbiter{ticker: time.NewTicker(5e9), meters: make(map[int64]*StandardMeter)}
+var arbiter = meterArbiter{ticker: time.NewTicker(5e9), meters: make(map[*StandardMeter]struct{})}
 
 // Ticks meters on the scheduled interval
 func (ma *meterArbiter) tick() {
@@ -251,16 +255,10 @@ func (ma *meterArbiter) tick() {
 	}
 }
 
-// should only be called with Lock() held
-func (ma *meterArbiter) newID() int64 {
-	ma.id++
-	return ma.id
-}
-
 func (ma *meterArbiter) tickMeters() {
 	ma.RLock()
 	defer ma.RUnlock()
-	for _, meter := range ma.meters {
+	for meter := range ma.meters {
 		meter.tick()
 	}
 }
