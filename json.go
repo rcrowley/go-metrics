@@ -9,6 +9,11 @@ import (
 // MarshalJSON returns a byte slice containing a JSON representation of all
 // the metrics in the Registry.
 func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.Dump())
+}
+
+// Dump all the metrics in the Registry
+func (r *StandardRegistry) Dump() map[string]map[string]interface{} {
 	data := make(map[string]map[string]interface{})
 	r.Each(func(name string, i interface{}) {
 		values := make(map[string]interface{})
@@ -65,7 +70,7 @@ func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
 		}
 		data[name] = values
 	})
-	return json.Marshal(data)
+	return data
 }
 
 // WriteJSON writes metrics from the given registry  periodically to the
