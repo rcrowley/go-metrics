@@ -9,7 +9,7 @@ import (
 // MarshalJSON returns a byte slice containing a JSON representation of all
 // the metrics in the Registry.
 func (r *StandardRegistry) MarshalJSON() ([]byte, error) {
-	return json.Marshal(r.Dump())
+	return json.Marshal(r.GetAll())
 }
 
 // WriteJSON writes metrics from the given registry  periodically to the
@@ -27,5 +27,5 @@ func WriteJSONOnce(r Registry, w io.Writer) {
 }
 
 func (p *PrefixedRegistry) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.Dump())
+	return json.Marshal(p.GetAll())
 }

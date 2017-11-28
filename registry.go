@@ -29,6 +29,9 @@ type Registry interface {
 	// Get the metric by the given name or nil if none is registered.
 	Get(string) interface{}
 
+	// GetAll metrics in the Registry.
+	GetAll() map[string]map[string]interface{}
+
 	// Gets an existing metric or registers the given one.
 	// The interface can be the metric to register if not found in registry,
 	// or a function returning the metric for lazy instantiation.
@@ -39,9 +42,6 @@ type Registry interface {
 
 	// Run all registered healthchecks.
 	RunHealthchecks()
-
-	// Dump all metrics.
-	Dump() map[string]map[string]interface{}
 
 	// Unregister the metric with the given name.
 	Unregister(string)
@@ -112,8 +112,8 @@ func (r *StandardRegistry) RunHealthchecks() {
 	}
 }
 
-// Dump all the metrics in the Registry
-func (r *StandardRegistry) Dump() map[string]map[string]interface{} {
+// GetAll metrics in the Registry
+func (r *StandardRegistry) GetAll() map[string]map[string]interface{} {
 	data := make(map[string]map[string]interface{})
 	r.Each(func(name string, i interface{}) {
 		values := make(map[string]interface{})
@@ -280,9 +280,9 @@ func (r *PrefixedRegistry) RunHealthchecks() {
 	r.underlying.RunHealthchecks()
 }
 
-// Dump all the metrics in the Registry
-func (r *PrefixedRegistry) Dump() map[string]map[string]interface{} {
-	return r.underlying.Dump()
+// GetAll metrics in the Registry
+func (r *PrefixedRegistry) GetAll() map[string]map[string]interface{} {
+	return r.underlying.GetAll()
 }
 
 // Unregister the metric with the given name. The name will be prefixed.
