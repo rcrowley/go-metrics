@@ -48,7 +48,7 @@ t.Time(func() {})
 t.Update(47)
 ```
 
-**NOTE:** Be sure to either unregister meters and timers otherwise and they will
+**NOTE:** Be sure to unregister short-lived meters and timers otherwise they will
 leak memory:
 
 ```go
