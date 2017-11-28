@@ -91,12 +91,13 @@ issues [#121](https://github.com/rcrowley/go-metrics/issues/121) and
 ```go
 import "github.com/vrischmann/go-metrics-influxdb"
 
-go influxdb.Influxdb(metrics.DefaultRegistry, 10e9, &influxdb.Config{
-    Host:     "127.0.0.1:8086",
-    Database: "metrics",
-    Username: "test",
-    Password: "test",
-})
+go influxdb.InfluxDB(metrics.DefaultRegistry,
+  10e9, 
+  "127.0.0.1:8086", 
+  "database-name", 
+  "username", 
+  "password"
+)
 ```
 
 Periodically upload every metric to Librato using the [Librato client](https://github.com/mihasya/go-metrics-librato):
