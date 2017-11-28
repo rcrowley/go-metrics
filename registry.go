@@ -51,7 +51,7 @@ type Registry interface {
 // of names to metrics.
 type StandardRegistry struct {
 	metrics map[string]interface{}
-	mutex   sync.Mutex
+	mutex   sync.RWMutex
 }
 
 // Create a new registry.
@@ -68,8 +68,8 @@ func (r *StandardRegistry) Each(f func(string, interface{})) {
 
 // Get the metric by the given name or nil if none is registered.
 func (r *StandardRegistry) Get(name string) interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	return r.metrics[name]
 }
 
@@ -78,15 +78,18 @@ func (r *StandardRegistry) Get(name string) interface{} {
 // The interface can be the metric to register if not found in registry,
 // or a function returning the metric for lazy instantiation.
 func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
 	if metric, ok := r.metrics[name]; ok {
+		r.mutex.RUnlock()
 		return metric
 	}
+	r.mutex.RUnlock()
 	if v := reflect.ValueOf(i); v.Kind() == reflect.Func {
 		i = v.Call(nil)[0].Interface()
 	}
+	r.mutex.Lock()
 	r.register(name, i)
+	r.mutex.Unlock()
 	return i
 }
 
@@ -100,8 +103,8 @@ func (r *StandardRegistry) Register(name string, i interface{}) error {
 
 // Run all registered healthchecks.
 func (r *StandardRegistry) RunHealthchecks() {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	for _, i := range r.metrics {
 		if h, ok := i.(Healthcheck); ok {
 			h.Check()
@@ -112,17 +115,17 @@ func (r *StandardRegistry) RunHealthchecks() {
 // Unregister the metric with the given name.
 func (r *StandardRegistry) Unregister(name string) {
 	r.mutex.Lock()
-	defer r.mutex.Unlock()
 	delete(r.metrics, name)
+	r.mutex.Unlock()
 }
 
 // Unregister all metrics.  (Mostly for testing.)
 func (r *StandardRegistry) UnregisterAll() {
 	r.mutex.Lock()
-	defer r.mutex.Unlock()
 	for name, _ := range r.metrics {
 		delete(r.metrics, name)
 	}
+	r.mutex.Unlock()
 }
 
 func (r *StandardRegistry) register(name string, i interface{}) error {
@@ -137,8 +140,8 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 }
 
 func (r *StandardRegistry) registered() map[string]interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	metrics := make(map[string]interface{}, len(r.metrics))
 	for name, i := range r.metrics {
 		metrics[name] = i
