@@ -42,10 +42,20 @@ t.Update(47)
 Register() is not threadsafe. For threadsafe metric registration use
 GetOrRegister:
 
-```
+```go
 t := metrics.GetOrRegisterTimer("account.create.latency", nil)
 t.Time(func() {})
 t.Update(47)
+```
+
+**NOTE:** Be sure to unregister short-lived meters and timers otherwise they will
+leak memory:
+
+```go
+// Will call Stop() on the Meter to allow for garbage collection
+metrics.Unregister("quux")
+// Or similarly for a Timer that embeds a Meter
+metrics.Unregister("bang")
 ```
 
 Periodically log every metric in human-readable form to standard error:
