@@ -24,7 +24,7 @@ func LogOnCue(r Registry, ch chan interface{}, l Logger) {
 func LogScaled(r Registry, freq time.Duration, scale time.Duration, l Logger) {
 	ch := make(chan interface{})
 	go func(channel chan interface{}) {
-		for range time.Tick(freq) {
+		for _ := range time.Tick(freq) {
 			channel <- struct{}{}
 		}
 	}(ch)
@@ -38,7 +38,7 @@ func LogScaledOnCue(r Registry, ch chan interface{}, scale time.Duration, l Logg
 	du := float64(scale)
 	duSuffix := scale.String()[1:]
 
-	for range ch {
+	for _ := range ch {
 		r.Each(func(name string, i interface{}) {
 			switch metric := i.(type) {
 			case Counter:
