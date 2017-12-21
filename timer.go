@@ -230,18 +230,18 @@ func (t *StandardTimer) Time(f func()) {
 
 // Record the duration of an event.
 func (t *StandardTimer) Update(d time.Duration) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	t.histogram.Update(int64(d))
-	t.meter.Mark(1)
+	// Partial workaround for detecting a clock change
+	if d >= 0 {
+		t.mutex.Lock()
+		defer t.mutex.Unlock()
+		t.histogram.Update(int64(d))
+		t.meter.Mark(1)
+	}
 }
 
 // Record the duration of an event that started at a time and ends now.
 func (t *StandardTimer) UpdateSince(ts time.Time) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	t.histogram.Update(int64(time.Since(ts)))
-	t.meter.Mark(1)
+	t.Update(time.Since(ts))
 }
 
 // Variance returns the variance of the values in the sample.
