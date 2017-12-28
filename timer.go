@@ -257,7 +257,7 @@ func (t *StandardTimer) Variance() float64 {
 func (t *StandardTimer) Clear(){
 	t.mutex.Lock()
 	t.mutex.Unlock()
-	t.meter.Stop()
+	t.meter.Clear()
 	t.histogram.Clear()
 }
 
