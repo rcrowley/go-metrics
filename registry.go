@@ -21,6 +21,8 @@ func (err DuplicateMetric) Error() string {
 //
 // This is an interface so as to encourage other structs to implement
 // the Registry API as appropriate.
+
+//go:generate counterfeiter . Registry
 type Registry interface {
 
 	// Call the given function for each registered metric.

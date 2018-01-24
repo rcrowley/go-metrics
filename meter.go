@@ -7,6 +7,7 @@ import (
 
 // Meters count events to produce exponentially-weighted moving average rates
 // at one-, five-, and fifteen-minutes and a mean rate.
+//go:generate counterfeiter . Meter
 type Meter interface {
 	Clear()
 	Count() int64
@@ -141,7 +142,7 @@ func newStandardMeter() *StandardMeter {
 func (m *StandardMeter) Clear() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	
+
 	m.snapshot = &MeterSnapshot{}
 	m.a1 = NewEWMA1()
 	m.a5 = NewEWMA5()
