@@ -7,6 +7,7 @@ import (
 	"github.com/bountylabs/go-metrics/clock"
 )
 
+//go:generate counterfeiter . RateCounter
 type RateCounter interface {
 	Mark(int64)
 	Count() int64
