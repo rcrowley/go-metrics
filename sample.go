@@ -165,13 +165,20 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.count++
-	if s.values.Size() == s.reservoirSize {
-		s.values.Pop()
-	}
-	s.values.Push(expDecaySample{
+	eds := expDecaySample{
 		k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(),
 		v: v,
-	})
+	}
+	if s.values.Size() == s.reservoirSize {
+		smallest := s.values.Pop()
+		if eds.k > smallest.k {
+			s.values.Push(eds)
+		} else {
+			s.values.Push(smallest)
+		}
+	} else {
+		s.values.Push(eds)
+	}
 	if t.After(s.t1) {
 		values := s.values.Values()
 		t0 := s.t0

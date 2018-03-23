@@ -78,6 +78,27 @@ func BenchmarkUniformSample1028(b *testing.B) {
 	benchmarkSample(b, NewUniformSample(1028))
 }
 
+func TestExpDecayDoesNotAlwaysIncludeLastItem(t *testing.T) {
+	rand.Seed(1)
+	s := NewExpDecaySample(100, 0.99).(*ExpDecaySample)
+	fail := true
+	for i := 0; i < 1000; i++ {
+		s.Update(int64(i))
+		found := false
+		for _, item := range s.values.s {
+			if item.v == int64(i) {
+				found = true
+			}
+		}
+		if !found {
+			fail = false
+		}
+	}
+	if fail {
+		t.Errorf("Latest updated item is always part of the sample\n")
+	}
+}
+
 func TestExpDecaySample10(t *testing.T) {
 	rand.Seed(1)
 	s := NewExpDecaySample(100, 0.99)
@@ -282,24 +303,24 @@ func testExpDecaySampleStatistics(t *testing.T, s Sample) {
 	if min := s.Min(); 107 != min {
 		t.Errorf("s.Min(): 107 != %v\n", min)
 	}
-	if max := s.Max(); 10000 != max {
-		t.Errorf("s.Max(): 10000 != %v\n", max)
+	if max := s.Max(); 9899 != max {
+		t.Errorf("s.Max(): 9899 != %v\n", max)
 	}
-	if mean := s.Mean(); 4965.98 != mean {
-		t.Errorf("s.Mean(): 4965.98 != %v\n", mean)
+	if mean := s.Mean(); 4935.88 != mean {
+		t.Errorf("s.Mean(): 49635.88 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 2959.825156930727 != stdDev {
-		t.Errorf("s.StdDev(): 2959.825156930727 != %v\n", stdDev)
+	if stdDev := s.StdDev(); 2923.561517327795 != stdDev {
+		t.Errorf("s.StdDev(): 2923.561517327795 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
 	if 4615 != ps[0] {
 		t.Errorf("median: 4615 != %v\n", ps[0])
 	}
-	if 7672 != ps[1] {
-		t.Errorf("75th percentile: 7672 != %v\n", ps[1])
+	if 7610.75 != ps[1] {
+		t.Errorf("75th percentile: 7610.75 != %v\n", ps[1])
 	}
-	if 9998.99 != ps[2] {
-		t.Errorf("99th percentile: 9998.99 != %v\n", ps[2])
+	if 9898.74 != ps[2] {
+		t.Errorf("99th percentile: 9898.74 != %v\n", ps[2])
 	}
 }
 
