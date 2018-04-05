@@ -13,6 +13,16 @@ func BenchmarkMeter(b *testing.B) {
 	}
 }
 
+func BenchmarkMeterParallel(b *testing.B) {
+	m := NewMeter()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			m.Mark(1)
+		}
+	})
+}
+
 func TestGetOrRegisterMeter(t *testing.T) {
 	r := NewRegistry()
 	NewRegisteredMeter("foo", r).Mark(47)
