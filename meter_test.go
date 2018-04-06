@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"math/rand"
+	"sync"
 	"testing"
 	"time"
 )
@@ -21,6 +23,28 @@ func BenchmarkMeterParallel(b *testing.B) {
 			m.Mark(1)
 		}
 	})
+}
+
+// exercise race detector
+func TestMeterConcurrency(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	ma := meterArbiter{
+		ticker: time.NewTicker(time.Millisecond),
+		meters: make(map[*StandardMeter]struct{}),
+	}
+	m := newStandardMeter()
+	ma.meters[m] = struct{}{}
+	go ma.tick()
+	wg := &sync.WaitGroup{}
+	reps := 100
+	for i := 0; i < reps; i++ {
+		wg.Add(1)
+		go func(m Meter, wg *sync.WaitGroup) {
+			m.Mark(1)
+			wg.Done()
+		}(m, wg)
+	}
+	wg.Wait()
 }
 
 func TestGetOrRegisterMeter(t *testing.T) {
