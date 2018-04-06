@@ -131,7 +131,7 @@ type StandardMeter struct {
 	snapshot    *MeterSnapshot
 	a1, a5, a15 EWMA
 	startTime   time.Time
-	stopped     bool
+	stopped     uint32
 }
 
 func newStandardMeter() *StandardMeter {
@@ -148,9 +148,9 @@ func newStandardMeter() *StandardMeter {
 func (m *StandardMeter) Stop() {
 	m.lock.Lock()
 	stopped := m.stopped
-	m.stopped = true
+	m.stopped = 1
 	m.lock.Unlock()
-	if !stopped {
+	if stopped != 1 {
 		arbiter.Lock()
 		delete(arbiter.meters, m)
 		arbiter.Unlock()
@@ -164,12 +164,12 @@ func (m *StandardMeter) Count() int64 {
 
 // Mark records the occurance of n events.
 func (m *StandardMeter) Mark(n int64) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	if m.stopped {
+	if atomic.LoadUint32(&m.stopped) == 1 {
 		return
 	}
-	m.snapshot.count += n
+
+	atomic.AddInt64(&m.snapshot.count, n)
+
 	m.a1.Update(n)
 	m.a5.Update(n)
 	m.a15.Update(n)
