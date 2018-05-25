@@ -146,10 +146,8 @@ func newStandardMeter() *StandardMeter {
 
 // Stop stops the meter, Mark() will be a no-op if you use it after being stopped.
 func (m *StandardMeter) Stop() {
-	m.lock.Lock()
-	stopped := m.stopped
-	m.stopped = 1
-	m.lock.Unlock()
+	stopped := atomic.LoadUint32(&m.stopped)
+	atomic.StoreUint32(&m.stopped, uint32(1))
 	if stopped != 1 {
 		arbiter.Lock()
 		delete(arbiter.meters, m)
