@@ -166,3 +166,5 @@ Clients are available for the following destinations:
 * SignalFX - https://github.com/pascallouisperez/go-metrics-signalfx
 * Honeycomb - https://github.com/getspine/go-metrics-honeycomb
 * Wavefront - https://github.com/wavefrontHQ/go-metrics-wavefront
+* Open-Falcon - https://github.com/g4zhuj/go-metrics-falcon
+
