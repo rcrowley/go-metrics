@@ -2,8 +2,12 @@ package main
 
 import (
 	"errors"
+	// "fmt"
 	"github.com/rcrowley/go-metrics"
+	// "github.com/rcrowley/go-metrics/exp"
 	// "github.com/rcrowley/go-metrics/stathat"
+	// "net"
+	// "net/http"
 	"log"
 	"math/rand"
 	"os"
@@ -69,7 +73,7 @@ func main() {
 	}
 
 	hc := metrics.NewHealthcheck(func(h metrics.Healthcheck) {
-		if 0 < rand.Intn(2) {
+		if 0 == rand.Intn(2) {
 			h.Healthy()
 		} else {
 			h.Unhealthy(errors.New("baz"))
@@ -135,6 +139,22 @@ func main() {
 	go metrics.CaptureRuntimeMemStats(r, 5e9)
 
 	metrics.Log(r, 60e9, log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+
+	/*
+		mux := http.NewServeMux()
+		mux.Handle("/", exp.ExpHandler(r))
+		server := &http.Server{Handler: mux}
+		addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
+		if err != nil {
+			panic(err)
+		}
+		listener, err := net.ListenTCP("tcp", addr)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Listening on %s\n", listener.Addr())
+		server.Serve(listener)
+	*/
 
 	/*
 		w, err := syslog.Dial("unixgram", "/dev/log", syslog.LOG_INFO, "metrics")
