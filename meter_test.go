@@ -34,7 +34,7 @@ func TestMeterConcurrency(t *testing.T) {
 	}
 	m := newStandardMeter()
 	ma.meters[m] = struct{}{}
-	go ma.tick()
+	go ma.tick(ma.ticker, nil)
 	wg := &sync.WaitGroup{}
 	reps := 100
 	for i := 0; i < reps; i++ {
@@ -67,7 +67,7 @@ func TestMeterDecay(t *testing.T) {
 	}
 	m := newStandardMeter()
 	ma.meters[m] = struct{}{}
-	go ma.tick()
+	go ma.tick(ma.ticker, nil)
 	m.Mark(1)
 	rateMean := m.RateMean()
 	time.Sleep(100 * time.Millisecond)
