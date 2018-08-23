@@ -5,6 +5,8 @@ import (
 	"runtime"
 	"testing"
 	"time"
+	"github.com/stretchr/testify/assert"
+	"fmt"
 )
 
 // Benchmark{Compute,Copy}{1000,1000000} demonstrate that, even for relatively
@@ -360,4 +362,17 @@ func TestUniformSampleConcurrentUpdateCount(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	quit <- struct{}{}
+}
+
+func TestDumpRestore(t *testing.T) {
+	s := NewExpDecaySample(2, 0.001).(*ExpDecaySample)
+	s.update(time.Now(), 1)
+	s.update(time.Now().Add(time.Hour+time.Microsecond), 1)
+
+	bb := s.Dump()
+	assert.NotNil(t, bb)
+	fmt.Println(len(bb))
+	s2 := NewExpDecaySampleFromDump(bb)
+	assert.NotNil(t, s2)
+	assert.Equal(t,s.Values(), s2.Values())
 }

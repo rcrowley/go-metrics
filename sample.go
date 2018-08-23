@@ -6,6 +6,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+	"bytes"
+	"encoding/gob"
 )
 
 const rescaleThreshold = time.Hour
@@ -43,6 +45,46 @@ type ExpDecaySample struct {
 	values        *expDecaySampleHeap
 }
 
+type dump struct {
+	A      float64
+	C      int64
+	S      int
+	T0, T1 time.Time
+	V      [] struct {
+		F float64
+		I int64
+	}
+}
+
+// Dumps the expDecaySample to a []byte using gob
+func (s *ExpDecaySample) Dump() (bb []byte) {
+	var b bytes.Buffer
+	d := dump{
+		A:  s.alpha,
+		C:  s.count,
+		S:  s.reservoirSize,
+		T0: s.t0,
+		T1: s.t1,
+		V: make([] struct {
+			F float64
+			I int64
+		}, 0, s.reservoirSize),
+	}
+	for _, v := range s.values.s {
+		d.V = append(d.V, struct {
+			F float64
+			I int64
+		}{F: v.k, I: v.v})
+	}
+	enc := gob.NewEncoder(&b)
+
+	err := enc.Encode(d)
+	if err == nil {
+		bb = b.Bytes()
+	}
+	return bb
+}
+
 // NewExpDecaySample constructs a new exponentially-decaying sample with the
 // given reservoir size and alpha.
 func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
@@ -57,6 +99,32 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 	}
 	s.t1 = s.t0.Add(rescaleThreshold)
 	return s
+}
+
+// NewExpDecaySample constructs a new exponentially-decaying sample from the dump
+func NewExpDecaySampleFromDump(b []byte) Sample {
+	if UseNilMetrics {
+		return NilSample{}
+	}
+	jef := bytes.NewBuffer(b)
+	dec := gob.NewDecoder(jef)
+	var d dump
+	err := dec.Decode(&d)
+	var sample *ExpDecaySample
+	if err == nil {
+		sample = &ExpDecaySample{
+			alpha:         d.A,
+			reservoirSize: d.S,
+			count:         d.C,
+			t0:            d.T0,
+			t1:            d.T1,
+			values:        newExpDecaySampleHeap(d.S),
+		}
+		for _, v := range d.V {
+			sample.values.s = append(sample.values.s, expDecaySample{k: v.F, v: v.I})
+		}
+	}
+	return sample
 }
 
 // Clear clears all samples.
@@ -542,6 +610,14 @@ type expDecaySample struct {
 
 func newExpDecaySampleHeap(reservoirSize int) *expDecaySampleHeap {
 	return &expDecaySampleHeap{make([]expDecaySample, 0, reservoirSize)}
+}
+
+func newExpDecaySampleHeapWithValues(reservoirSize int, values []int64) *expDecaySampleHeap {
+	ret := &expDecaySampleHeap{make([]expDecaySample, len(values), reservoirSize)}
+	for i := 0; i < len(values); i++ {
+		ret.s[i].v = values[i]
+	}
+	return ret
 }
 
 // expDecaySampleHeap is a min-heap of expDecaySamples.
