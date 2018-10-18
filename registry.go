@@ -212,8 +212,8 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 }
 
 func (r *StandardRegistry) registered() map[string]interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	metrics := make(map[string]interface{}, len(r.metrics))
 	for name, i := range r.metrics {
 		metrics[name] = i
