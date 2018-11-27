@@ -13,7 +13,7 @@ type Histogram interface {
 	Snapshot() Histogram
 	StdDev() float64
 	Sum() int64
-	Update(int64)
+	Update(int64) float64
 	Variance() float64
 }
 
@@ -97,7 +97,7 @@ func (h *HistogramSnapshot) StdDev() float64 { return h.sample.StdDev() }
 func (h *HistogramSnapshot) Sum() int64 { return h.sample.Sum() }
 
 // Update panics.
-func (*HistogramSnapshot) Update(int64) {
+func (*HistogramSnapshot) Update(int64) float64 {
 	panic("Update called on a HistogramSnapshot")
 }
 
@@ -143,7 +143,7 @@ func (NilHistogram) StdDev() float64 { return 0.0 }
 func (NilHistogram) Sum() int64 { return 0 }
 
 // Update is a no-op.
-func (NilHistogram) Update(v int64) {}
+func (NilHistogram) Update(v int64) float64 { return 0.0}
 
 // Variance is a no-op.
 func (NilHistogram) Variance() float64 { return 0.0 }
@@ -196,7 +196,7 @@ func (h *StandardHistogram) StdDev() float64 { return h.sample.StdDev() }
 func (h *StandardHistogram) Sum() int64 { return h.sample.Sum() }
 
 // Update samples a new value.
-func (h *StandardHistogram) Update(v int64) { h.sample.Update(v) }
+func (h *StandardHistogram) Update(v int64) float64 { return h.sample.Update(v) }
 
 // Variance returns the variance of the values in the sample.
 func (h *StandardHistogram) Variance() float64 { return h.sample.Variance() }

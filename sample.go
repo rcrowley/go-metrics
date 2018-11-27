@@ -26,7 +26,7 @@ type Sample interface {
 	Snapshot() Sample
 	StdDev() float64
 	Sum() int64
-	Update(int64)
+	Update(int64) float64
 	Values() []int64
 	Variance() float64
 }
@@ -42,7 +42,7 @@ type ExpDecaySample struct {
 	mutex         sync.Mutex
 	reservoirSize int
 	t0, t1        time.Time
-	values        *expDecaySampleHeap
+	values        sampleStore
 }
 
 type dump struct {
@@ -70,7 +70,7 @@ func (s *ExpDecaySample) Dump() (bb []byte) {
 			I int64
 		}, 0, s.reservoirSize),
 	}
-	for _, v := range s.values.s {
+	for _, v := range s.values.Values() {
 		d.V = append(d.V, struct {
 			F float64
 			I int64
@@ -101,6 +101,47 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 	return s
 }
 
+func NewExpDecaySampleLL(reservoirSize int, alpha float64) Sample {
+	if UseNilMetrics {
+		return NilSample{}
+	}
+	s := &ExpDecaySample{
+		alpha:         alpha,
+		reservoirSize: reservoirSize,
+		t0:            time.Now(),
+		values:        &expLL{},
+	}
+	s.t1 = s.t0.Add(rescaleThreshold)
+	return s
+}
+
+// NewExpDecaySample constructs a new exponentially-decaying sample from the dump
+func NewExpDecaySampleLLFromDump(b []byte) Sample {
+	if UseNilMetrics {
+		return NilSample{}
+	}
+	jef := bytes.NewBuffer(b)
+	dec := gob.NewDecoder(jef)
+	var d dump
+	err := dec.Decode(&d)
+	var sample *ExpDecaySample
+	if err == nil {
+		sample = &ExpDecaySample{
+			alpha:         d.A,
+			reservoirSize: d.S,
+			count:         d.C,
+			t0:            d.T0,
+			t1:            d.T1,
+		}
+		values := &expLL{}
+		for _, v := range d.V {
+			values.Push(expDecaySample{k: v.F, v: v.I})
+		}
+		sample.values = values
+	}
+	return sample
+}
+
 // NewExpDecaySample constructs a new exponentially-decaying sample from the dump
 func NewExpDecaySampleFromDump(b []byte) Sample {
 	if UseNilMetrics {
@@ -118,11 +159,12 @@ func NewExpDecaySampleFromDump(b []byte) Sample {
 			count:         d.C,
 			t0:            d.T0,
 			t1:            d.T1,
-			values:        newExpDecaySampleHeap(d.S),
 		}
+		values := newExpDecaySampleHeap(d.S)
 		for _, v := range d.V {
-			sample.values.s = append(sample.values.s, expDecaySample{k: v.F, v: v.I})
+			values.s = append(values.s, expDecaySample{k: v.F, v: v.I})
 		}
+		sample.values = values
 	}
 	return sample
 }
@@ -206,8 +248,8 @@ func (s *ExpDecaySample) Sum() int64 {
 }
 
 // Update samples a new value.
-func (s *ExpDecaySample) Update(v int64) {
-	s.update(time.Now(), v)
+func (s *ExpDecaySample) Update(v int64) float64 {
+	return s.update(time.Now(), v)
 }
 
 // Values returns a copy of the values in the sample.
@@ -229,14 +271,14 @@ func (s *ExpDecaySample) Variance() float64 {
 
 // update samples a new value at a particular timestamp.  This is a method all
 // its own to facilitate testing.
-func (s *ExpDecaySample) update(t time.Time, v int64) {
+func (s *ExpDecaySample) update(t time.Time, v int64) float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.count++
 	if s.values.Size() == s.reservoirSize {
 		s.values.Pop()
 	}
-	s.values.Push(expDecaySample{
+	i := s.values.Push(expDecaySample{
 		k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(),
 		v: v,
 	})
@@ -251,6 +293,7 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 			s.values.Push(v)
 		}
 	}
+	return float64(i) / float64(s.values.Size())
 }
 
 // NilSample is a no-op Sample.
@@ -292,7 +335,7 @@ func (NilSample) StdDev() float64 { return 0.0 }
 func (NilSample) Sum() int64 { return 0 }
 
 // Update is a no-op.
-func (NilSample) Update(v int64) {}
+func (NilSample) Update(v int64) float64 { return 0.0 }
 
 // Values is a no-op.
 func (NilSample) Values() []int64 { return []int64{} }
@@ -420,7 +463,7 @@ func (s *SampleSnapshot) StdDev() float64 { return SampleStdDev(s.values) }
 func (s *SampleSnapshot) Sum() int64 { return SampleSum(s.values) }
 
 // Update panics.
-func (*SampleSnapshot) Update(int64) {
+func (*SampleSnapshot) Update(int64) float64 {
 	panic("Update called on a SampleSnapshot")
 }
 
@@ -572,7 +615,7 @@ func (s *UniformSample) Sum() int64 {
 }
 
 // Update samples a new value.
-func (s *UniformSample) Update(v int64) {
+func (s *UniformSample) Update(v int64) float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.count++
@@ -584,6 +627,7 @@ func (s *UniformSample) Update(v int64) {
 			s.values[int(r)] = v
 		}
 	}
+	return 0.0
 }
 
 // Values returns a copy of the values in the sample.
@@ -612,13 +656,15 @@ func newExpDecaySampleHeap(reservoirSize int) *expDecaySampleHeap {
 	return &expDecaySampleHeap{make([]expDecaySample, 0, reservoirSize)}
 }
 
-func newExpDecaySampleHeapWithValues(reservoirSize int, values []int64) *expDecaySampleHeap {
-	ret := &expDecaySampleHeap{make([]expDecaySample, len(values), reservoirSize)}
-	for i := 0; i < len(values); i++ {
-		ret.s[i].v = values[i]
-	}
-	return ret
+type sampleStore interface {
+	Clear()
+	Push(s expDecaySample) int
+	Pop() expDecaySample
+	Size() int
+	Values() []expDecaySample
 }
+
+var _ sampleStore = &expDecaySampleHeap{}
 
 // expDecaySampleHeap is a min-heap of expDecaySamples.
 // The internal implementation is copied from the standard library's container/heap
@@ -630,11 +676,11 @@ func (h *expDecaySampleHeap) Clear() {
 	h.s = h.s[:0]
 }
 
-func (h *expDecaySampleHeap) Push(s expDecaySample) {
+func (h *expDecaySampleHeap) Push(s expDecaySample) int {
 	n := len(h.s)
 	h.s = h.s[0 : n+1]
 	h.s[n] = s
-	h.up(n)
+	return h.up(n)
 }
 
 func (h *expDecaySampleHeap) Pop() expDecaySample {
@@ -656,15 +702,17 @@ func (h *expDecaySampleHeap) Values() []expDecaySample {
 	return h.s
 }
 
-func (h *expDecaySampleHeap) up(j int) {
+func (h *expDecaySampleHeap) up(j int) int {
+	var i int
 	for {
-		i := (j - 1) / 2 // parent
+		i = (j - 1) / 2 // parent
 		if i == j || !(h.s[j].k < h.s[i].k) {
 			break
 		}
 		h.s[i], h.s[j] = h.s[j], h.s[i]
 		j = i
 	}
+	return i
 }
 
 func (h *expDecaySampleHeap) down(i, n int) {

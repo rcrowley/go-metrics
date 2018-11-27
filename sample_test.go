@@ -376,3 +376,20 @@ func TestDumpRestore(t *testing.T) {
 	assert.NotNil(t, s2)
 	assert.Equal(t,s.Values(), s2.Values())
 }
+
+func TestExpDecaySampleHeap(t *testing.T) {
+	x := newExpDecaySampleHeap(100)
+	x.Push(expDecaySample{k:0, v:1})
+	x.Push(expDecaySample{k:1, v:2})
+	x.Push(expDecaySample{k:2, v:3})
+	x.Push(expDecaySample{k:3, v:4})
+	x.Push(expDecaySample{k:4, v:5})
+	x.Push(expDecaySample{k:5, v:6})
+	fmt.Println( x.s[0], x.Pop(), x.s[0])
+	fmt.Println( x.s[0], x.Pop(), x.s[0])
+	fmt.Println( x.s[0], x.Pop(), x.s[0])
+	fmt.Println( x.s[0], x.Pop(), x.s[0])
+	fmt.Println( x.s[0], x.Pop(), x.s[0])
+
+}
+
