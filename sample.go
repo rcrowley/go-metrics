@@ -42,7 +42,8 @@ type ExpDecaySample struct {
 	mutex         sync.Mutex
 	reservoirSize int
 	t0, t1        time.Time
-	values        sampleStore
+	heap          *expDecaySampleHeap
+	list          *expLL
 }
 
 type dump struct {
@@ -70,7 +71,7 @@ func (s *ExpDecaySample) Dump() (bb []byte) {
 			I int64
 		}, 0, s.reservoirSize),
 	}
-	for _, v := range s.values.Values() {
+	for _, v := range s.heap.Values() {
 		d.V = append(d.V, struct {
 			F float64
 			I int64
@@ -95,51 +96,11 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 		alpha:         alpha,
 		reservoirSize: reservoirSize,
 		t0:            time.Now(),
-		values:        newExpDecaySampleHeap(reservoirSize),
+		heap:          newExpDecaySampleHeap(reservoirSize),
+		list:          newExpLL(reservoirSize),
 	}
 	s.t1 = s.t0.Add(rescaleThreshold)
 	return s
-}
-
-func NewExpDecaySampleLL(reservoirSize int, alpha float64) Sample {
-	if UseNilMetrics {
-		return NilSample{}
-	}
-	s := &ExpDecaySample{
-		alpha:         alpha,
-		reservoirSize: reservoirSize,
-		t0:            time.Now(),
-		values:        &expLL{},
-	}
-	s.t1 = s.t0.Add(rescaleThreshold)
-	return s
-}
-
-// NewExpDecaySample constructs a new exponentially-decaying sample from the dump
-func NewExpDecaySampleLLFromDump(b []byte) Sample {
-	if UseNilMetrics {
-		return NilSample{}
-	}
-	jef := bytes.NewBuffer(b)
-	dec := gob.NewDecoder(jef)
-	var d dump
-	err := dec.Decode(&d)
-	var sample *ExpDecaySample
-	if err == nil {
-		sample = &ExpDecaySample{
-			alpha:         d.A,
-			reservoirSize: d.S,
-			count:         d.C,
-			t0:            d.T0,
-			t1:            d.T1,
-		}
-		values := &expLL{}
-		for _, v := range d.V {
-			values.Push(expDecaySample{k: v.F, v: v.I})
-		}
-		sample.values = values
-	}
-	return sample
 }
 
 // NewExpDecaySample constructs a new exponentially-decaying sample from the dump
@@ -160,11 +121,14 @@ func NewExpDecaySampleFromDump(b []byte) Sample {
 			t0:            d.T0,
 			t1:            d.T1,
 		}
-		values := newExpDecaySampleHeap(d.S)
+		heap := newExpDecaySampleHeap(d.S)
+		list := newExpLL(d.S)
 		for _, v := range d.V {
-			values.s = append(values.s, expDecaySample{k: v.F, v: v.I})
+			heap.Push(expDecaySample{k: v.F, v: v.I})
+			list.Push(v.I)
 		}
-		sample.values = values
+		sample.heap = heap
+		sample.list = list
 	}
 	return sample
 }
@@ -176,7 +140,8 @@ func (s *ExpDecaySample) Clear() {
 	s.count = 0
 	s.t0 = time.Now()
 	s.t1 = s.t0.Add(rescaleThreshold)
-	s.values.Clear()
+	s.heap.Clear()
+	s.list.Clear()
 }
 
 // Count returns the number of samples recorded, which may exceed the
@@ -190,43 +155,54 @@ func (s *ExpDecaySample) Count() int64 {
 // Max returns the maximum value in the sample, which may not be the maximum
 // value ever to be part of the sample.
 func (s *ExpDecaySample) Max() int64 {
-	return SampleMax(s.Values())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.list.Max()
 }
 
 // Mean returns the mean of the values in the sample.
 func (s *ExpDecaySample) Mean() float64 {
-	return SampleMean(s.Values())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.list.Size() > 0 {
+		return float64(s.heap.Sum()) / float64(s.heap.Size())
+	}
+	return 0
 }
 
 // Min returns the minimum value in the sample, which may not be the minimum
 // value ever to be part of the sample.
 func (s *ExpDecaySample) Min() int64 {
-	return SampleMin(s.Values())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.list.Min()
 }
 
 // Percentile returns an arbitrary percentile of values in the sample.
 func (s *ExpDecaySample) Percentile(p float64) float64 {
-	return SamplePercentile(s.Values(), p)
+	return s.Percentiles([]float64{p})[0]
 }
 
 // Percentiles returns a slice of arbitrary percentiles of values in the
 // sample.
 func (s *ExpDecaySample) Percentiles(ps []float64) []float64 {
-	return SamplePercentiles(s.Values(), ps)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.list.Percentiles(ps)
 }
 
 // Size returns the size of the sample, which is at most the reservoir size.
 func (s *ExpDecaySample) Size() int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return s.values.Size()
+	return s.heap.Size()
 }
 
 // Snapshot returns a read-only copy of the sample.
-func (s *ExpDecaySample) Snapshot() Sample {
+func (s *ExpDecaySample) Snapshot() Sample { // TODO duplicate this using a list as well? we don't use it so maybe not?
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	vals := s.values.Values()
+	vals := s.heap.Values()
 	values := make([]int64, len(vals))
 	for i, v := range vals {
 		values[i] = v.v
@@ -239,12 +215,16 @@ func (s *ExpDecaySample) Snapshot() Sample {
 
 // StdDev returns the standard deviation of the values in the sample.
 func (s *ExpDecaySample) StdDev() float64 {
-	return SampleStdDev(s.Values())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return math.Sqrt(s.list.Variance())
 }
 
 // Sum returns the sum of the values in the sample.
 func (s *ExpDecaySample) Sum() int64 {
-	return SampleSum(s.Values())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.heap.Sum()
 }
 
 // Update samples a new value.
@@ -256,7 +236,7 @@ func (s *ExpDecaySample) Update(v int64) float64 {
 func (s *ExpDecaySample) Values() []int64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	vals := s.values.Values()
+	vals := s.heap.Values()
 	values := make([]int64, len(vals))
 	for i, v := range vals {
 		values[i] = v.v
@@ -264,9 +244,17 @@ func (s *ExpDecaySample) Values() []int64 {
 	return values
 }
 
+func (s *ExpDecaySample) ListValues() []int64 {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.list.Values()
+}
+
 // Variance returns the variance of the values in the sample.
 func (s *ExpDecaySample) Variance() float64 {
-	return SampleVariance(s.Values())
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.list.Variance()
 }
 
 // update samples a new value at a particular timestamp.  This is a method all
@@ -275,25 +263,27 @@ func (s *ExpDecaySample) update(t time.Time, v int64) float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.count++
-	if s.values.Size() == s.reservoirSize {
-		s.values.Pop()
+	if s.heap.Size() == s.reservoirSize {
+		v := s.heap.Pop()
+		s.list.Remove(v.v)
 	}
-	i := s.values.Push(expDecaySample{
-		k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(),
-		v: v,
-	})
+	samp := expDecaySample{k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(), v: v}
+	s.heap.Push(samp)
+	i := s.list.Push(samp.v)
+
+	// don't need to modify values in list as they're not keyed by time
 	if t.After(s.t1) {
-		values := s.values.Values()
+		values := s.heap.Values()
 		t0 := s.t0
-		s.values.Clear()
+		s.heap.Clear()
 		s.t0 = t
 		s.t1 = s.t0.Add(rescaleThreshold)
 		for _, v := range values {
 			v.k = v.k * math.Exp(-s.alpha*s.t0.Sub(t0).Seconds())
-			s.values.Push(v)
+			s.heap.Push(v)
 		}
 	}
-	return float64(i) / float64(s.values.Size())
+	return float64(i) / float64(s.list.Size()+1)
 }
 
 // NilSample is a no-op Sample.
@@ -656,20 +646,18 @@ func newExpDecaySampleHeap(reservoirSize int) *expDecaySampleHeap {
 	return &expDecaySampleHeap{make([]expDecaySample, 0, reservoirSize)}
 }
 
-type sampleStore interface {
-	Clear()
-	Push(s expDecaySample) int
-	Pop() expDecaySample
-	Size() int
-	Values() []expDecaySample
-}
-
-var _ sampleStore = &expDecaySampleHeap{}
-
 // expDecaySampleHeap is a min-heap of expDecaySamples.
 // The internal implementation is copied from the standard library's container/heap
 type expDecaySampleHeap struct {
 	s []expDecaySample
+}
+
+func (h *expDecaySampleHeap) Sum() int64 {
+	sum := int64(0)
+	for _, v := range h.s {
+		sum += v.v
+	}
+	return sum
 }
 
 func (h *expDecaySampleHeap) Clear() {

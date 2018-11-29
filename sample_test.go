@@ -44,6 +44,7 @@ func BenchmarkCopy1000(b *testing.B) {
 		copy(sCopy, s)
 	}
 }
+
 func BenchmarkCopy1000000(b *testing.B) {
 	s := make([]int64, 1000000)
 	for i := 0; i < len(s); i++ {
@@ -175,7 +176,7 @@ func TestExpDecaySampleRescale(t *testing.T) {
 	s := NewExpDecaySample(2, 0.001).(*ExpDecaySample)
 	s.update(time.Now(), 1)
 	s.update(time.Now().Add(time.Hour+time.Microsecond), 1)
-	for _, v := range s.values.Values() {
+	for _, v := range s.heap.Values() {
 		if v.k == 0.0 {
 			t.Fatal("v.k == 0.0")
 		}
@@ -290,7 +291,8 @@ func testExpDecaySampleStatistics(t *testing.T, s Sample) {
 	if mean := s.Mean(); 4965.98 != mean {
 		t.Errorf("s.Mean(): 4965.98 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 2959.825156930727 != stdDev {
+
+	if stdDev := s.StdDev(); 2959.825156930727 != stdDev && 2959.8251569307263 != stdDev {
 		t.Errorf("s.StdDev(): 2959.825156930727 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
@@ -375,21 +377,7 @@ func TestDumpRestore(t *testing.T) {
 	s2 := NewExpDecaySampleFromDump(bb)
 	assert.NotNil(t, s2)
 	assert.Equal(t,s.Values(), s2.Values())
-}
-
-func TestExpDecaySampleHeap(t *testing.T) {
-	x := newExpDecaySampleHeap(100)
-	x.Push(expDecaySample{k:0, v:1})
-	x.Push(expDecaySample{k:1, v:2})
-	x.Push(expDecaySample{k:2, v:3})
-	x.Push(expDecaySample{k:3, v:4})
-	x.Push(expDecaySample{k:4, v:5})
-	x.Push(expDecaySample{k:5, v:6})
-	fmt.Println( x.s[0], x.Pop(), x.s[0])
-	fmt.Println( x.s[0], x.Pop(), x.s[0])
-	fmt.Println( x.s[0], x.Pop(), x.s[0])
-	fmt.Println( x.s[0], x.Pop(), x.s[0])
-	fmt.Println( x.s[0], x.Pop(), x.s[0])
-
+	assert.Equal(t,s.Variance(), s2.Variance())
+	assert.Equal(t,s.StdDev(), s2.StdDev())
 }
 
