@@ -2,8 +2,8 @@ package metrics
 
 import (
 	"runtime/debug"
-	"time"
 	"sync"
+	"time"
 )
 
 var (

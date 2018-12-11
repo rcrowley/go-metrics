@@ -3,8 +3,8 @@ package metrics
 import (
 	"runtime"
 	"runtime/pprof"
-	"time"
 	"sync"
+	"time"
 )
 
 var (
@@ -50,7 +50,7 @@ var (
 	numGC       uint32
 	numCgoCalls int64
 
-	threadCreateProfile = pprof.Lookup("threadcreate")
+	threadCreateProfile        = pprof.Lookup("threadcreate")
 	registerRuntimeMetricsOnce = sync.Once{}
 )
 

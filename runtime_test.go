@@ -94,12 +94,12 @@ func TestRuntimeMemStatsDoubleRegister(t *testing.T) {
 	runtime.GC()
 	CaptureRuntimeMemStatsOnce(r)
 
-	if count := runtimeMetrics.MemStats.NumGC.Value(); 1 != count - zero {
-		t.Errorf("NumGC got %d, expected 1", count - zero)
+	if count := runtimeMetrics.MemStats.NumGC.Value(); 1 != count-zero {
+		t.Errorf("NumGC got %d, expected 1", count-zero)
 	}
 
 	RegisterRuntimeMemStats(r)
-	if count := runtimeMetrics.MemStats.NumGC.Value(); 1 != count - zero {
-		t.Errorf("NumGC got %d, expected 1", count - zero)
+	if count := runtimeMetrics.MemStats.NumGC.Value(); 1 != count-zero {
+		t.Errorf("NumGC got %d, expected 1", count-zero)
 	}
 }
