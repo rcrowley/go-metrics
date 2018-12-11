@@ -46,3 +46,19 @@ func testDebugGCStatsBlocking(ch chan int) {
 		}
 	}
 }
+
+func TestDebugGCStatsDoubleRegister(t *testing.T) {
+	r := NewRegistry()
+	RegisterDebugGCStats(r)
+	zero := debugMetrics.GCStats.NumGC.Value() // Get a "zero" since GC may have run before these tests.
+	runtime.GC()
+	CaptureDebugGCStatsOnce(r)
+	if numGC := debugMetrics.GCStats.NumGC.Value(); 1 != numGC - zero {
+		t.Errorf("NumGC got %d, expected 1", numGC)
+	}
+
+	RegisterDebugGCStats(r)
+	if numGC := debugMetrics.GCStats.NumGC.Value(); 1 != numGC - zero {
+		t.Errorf("NumGC got %d, expected 1", numGC - zero)
+	}
+}

@@ -86,3 +86,20 @@ func testRuntimeMemStatsBlocking(ch chan int) {
 		}
 	}
 }
+
+func TestRuntimeMemStatsDoubleRegister(t *testing.T) {
+	r := NewRegistry()
+	RegisterRuntimeMemStats(r)
+	zero := runtimeMetrics.MemStats.NumGC.Value() // Get a "zero" since GC may have run before these tests.
+	runtime.GC()
+	CaptureRuntimeMemStatsOnce(r)
+
+	if count := runtimeMetrics.MemStats.NumGC.Value(); 1 != count - zero {
+		t.Errorf("NumGC got %d, expected 1", count - zero)
+	}
+
+	RegisterRuntimeMemStats(r)
+	if count := runtimeMetrics.MemStats.NumGC.Value(); 1 != count - zero {
+		t.Errorf("NumGC got %d, expected 1", count - zero)
+	}
+}
