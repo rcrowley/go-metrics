@@ -50,15 +50,22 @@ func testDebugGCStatsBlocking(ch chan int) {
 func TestDebugGCStatsDoubleRegister(t *testing.T) {
 	r := NewRegistry()
 	RegisterDebugGCStats(r)
-	zero := debugMetrics.GCStats.NumGC.Value() // Get a "zero" since GC may have run before these tests.
+	var storedGauge = (r.Get("debug.GCStats.LastGC")).(Gauge)
+
 	runtime.GC()
 	CaptureDebugGCStatsOnce(r)
-	if numGC := debugMetrics.GCStats.NumGC.Value(); 1 != numGC-zero {
-		t.Errorf("NumGC got %d, expected 1", numGC)
+
+	firstGC := storedGauge.Value()
+	if 0 == firstGC {
+		t.Errorf("firstGC got %d, expected > 0", firstGC)
 	}
 
+	time.Sleep(time.Millisecond)
+
 	RegisterDebugGCStats(r)
-	if numGC := debugMetrics.GCStats.NumGC.Value(); 1 != numGC-zero {
-		t.Errorf("NumGC got %d, expected 1", numGC-zero)
+	runtime.GC()
+	CaptureDebugGCStatsOnce(r)
+	if lastGC := storedGauge.Value(); firstGC == lastGC {
+		t.Errorf("lastGC got %d, expected a higher timestamp value", lastGC)
 	}
 }
