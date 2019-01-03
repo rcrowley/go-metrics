@@ -12,6 +12,10 @@ func Log(r Registry, freq time.Duration, l Logger) {
 	LogScaled(r, freq, time.Nanosecond, l)
 }
 
+func LogJSON(r Registry, freq time.Duration, l Logger) {
+	LogJSONScaled(r, freq, time.Nanosecond, l)
+}
+
 // Output each metric in the given registry periodically using the given
 // logger. Print timings in `scale` units (eg time.Millisecond) rather than nanos.
 func LogScaled(r Registry, freq time.Duration, scale time.Duration, l Logger) {
@@ -76,5 +80,20 @@ func LogScaled(r Registry, freq time.Duration, scale time.Duration, l Logger) {
 				l.Printf("  mean rate:   %12.2f\n", t.RateMean())
 			}
 		})
+	}
+}
+
+// Output each metric in the given registry periodically, in JSON format using the given logger.
+// Timings are converted into `scale` units (eg time.Millisecond) rather than nanos when the JSON is marshaled.
+func LogJSONScaled(r Registry, freq time.Duration, scale time.Duration, l Logger) {
+
+	for _ = range time.Tick(freq) {
+		sr, ok := r.(*StandardRegistry)
+		if ok {
+			jsonMetrics, err := sr.MarshalJSONStringified(scale)
+			if err == nil {
+				l.Printf("%s\n", jsonMetrics)
+			}
+		}
 	}
 }
