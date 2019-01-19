@@ -146,6 +146,7 @@ func (s *ExpDecaySample) Update(v int64) {
 func (s *ExpDecaySample) Values() []int64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+	s.rescaleIfNeeded(time.Now())
 	vals := s.values.Values()
 	values := make([]int64, len(vals))
 	for i, v := range vals {
@@ -164,6 +165,7 @@ func (s *ExpDecaySample) Variance() float64 {
 func (s *ExpDecaySample) update(t time.Time, v int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+	s.rescaleIfNeeded(t)
 	s.count++
 	if s.values.Size() == s.reservoirSize {
 		s.values.Pop()
@@ -172,6 +174,9 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 		k: math.Exp(t.Sub(s.t0).Seconds()*s.alpha) / rand.Float64(),
 		v: v,
 	})
+}
+
+func (s *ExpDecaySample) rescaleIfNeeded(t time.Time) {
 	if t.After(s.t1) {
 		values := s.values.Values()
 		t0 := s.t0
