@@ -1,11 +1,11 @@
 package metrics
 
 import (
-	"testing"
+	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"math/rand"
-	"fmt"
 	"sort"
+	"testing"
 )
 
 func isInOrder(e *expLL) {
@@ -86,12 +86,12 @@ func TestEquiv(t *testing.T) {
 			}
 			oldRank := rank(values, v)
 			newRank := sample.Update(v)
-			if newRank > oldRank{
-				fmt.Println( v, oldRank, newRank, count)
+			if newRank > oldRank {
+				fmt.Println(v, oldRank, newRank, count)
 				count++
 			}
 		}
-		fmt.Println( count, "/", len(values), "greater in new model")
+		fmt.Println(count, "/", len(values), "greater in new model")
 	})
 }
 func TestExpLL(t *testing.T) {

@@ -1,13 +1,13 @@
 package metrics
 
 import (
+	"bytes"
+	"encoding/gob"
 	"math"
 	"math/rand"
 	"sort"
 	"sync"
 	"time"
-	"bytes"
-	"encoding/gob"
 )
 
 const rescaleThreshold = time.Hour
@@ -51,7 +51,7 @@ type dump struct {
 	C      int64
 	S      int
 	T0, T1 time.Time
-	V      [] struct {
+	V      []struct {
 		F float64
 		I int64
 	}
@@ -66,7 +66,7 @@ func (s *ExpDecaySample) Dump() (bb []byte) {
 		S:  s.reservoirSize,
 		T0: s.t0,
 		T1: s.t1,
-		V: make([] struct {
+		V: make([]struct {
 			F float64
 			I int64
 		}, 0, s.reservoirSize),
@@ -283,7 +283,7 @@ func (s *ExpDecaySample) update(t time.Time, v int64) float64 {
 			s.heap.Push(v)
 		}
 	}
-	return float64(i) / float64(s.list.Size()+1)
+	return float64(i) / (float64(s.list.Size()))
 }
 
 // NilSample is a no-op Sample.

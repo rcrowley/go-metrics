@@ -143,7 +143,7 @@ func (NilHistogram) StdDev() float64 { return 0.0 }
 func (NilHistogram) Sum() int64 { return 0 }
 
 // Update is a no-op.
-func (NilHistogram) Update(v int64) float64 { return 0.0}
+func (NilHistogram) Update(v int64) float64 { return 0.0 }
 
 // Variance is a no-op.
 func (NilHistogram) Variance() float64 { return 0.0 }

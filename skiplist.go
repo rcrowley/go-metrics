@@ -1,9 +1,9 @@
 package metrics
 
 import (
-	"sort"
 	"fmt"
 	"math"
+	"sort"
 )
 
 type llNode struct {

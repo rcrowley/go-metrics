@@ -1,12 +1,12 @@
 package metrics
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"runtime"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
-	"fmt"
 )
 
 // Benchmark{Compute,Copy}{1000,1000000} demonstrate that, even for relatively
@@ -376,8 +376,7 @@ func TestDumpRestore(t *testing.T) {
 	fmt.Println(len(bb))
 	s2 := NewExpDecaySampleFromDump(bb)
 	assert.NotNil(t, s2)
-	assert.Equal(t,s.Values(), s2.Values())
-	assert.Equal(t,s.Variance(), s2.Variance())
-	assert.Equal(t,s.StdDev(), s2.StdDev())
+	assert.Equal(t, s.Values(), s2.Values())
+	assert.Equal(t, s.Variance(), s2.Variance())
+	assert.Equal(t, s.StdDev(), s2.StdDev())
 }
-
