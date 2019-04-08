@@ -157,6 +157,7 @@ Publishing Metrics
 
 Clients are available for the following destinations:
 
+* AppOptics - https://github.com/ysamlan/go-metrics-appoptics
 * Librato - https://github.com/mihasya/go-metrics-librato
 * Graphite - https://github.com/cyberdelia/go-metrics-graphite
 * InfluxDB - https://github.com/vrischmann/go-metrics-influxdb
