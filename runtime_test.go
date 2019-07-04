@@ -6,6 +6,29 @@ import (
 	"time"
 )
 
+func TestRuntimeMemStatsDoubleRegister(t *testing.T) {
+	r := NewRegistry()
+	RegisterRuntimeMemStats(r)
+	storedGauge := r.Get("runtime.MemStats.LastGC").(Gauge)
+
+	runtime.GC()
+	CaptureRuntimeMemStatsOnce(r)
+
+	firstGC := storedGauge.Value()
+	if 0 == firstGC {
+		t.Errorf("firstGC got %d, expected timestamp > 0", firstGC)
+	}
+
+	time.Sleep(time.Millisecond)
+
+	RegisterRuntimeMemStats(r)
+	runtime.GC()
+	CaptureRuntimeMemStatsOnce(r)
+	if lastGC := storedGauge.Value(); firstGC == lastGC {
+		t.Errorf("lastGC got %d, expected a higher timestamp value", lastGC)
+	}
+}
+
 func BenchmarkRuntimeMemStats(b *testing.B) {
 	r := NewRegistry()
 	RegisterRuntimeMemStats(r)
