@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 )
@@ -11,6 +12,21 @@ func BenchmarkRegistry(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Each(func(string, interface{}) {})
+	}
+}
+
+func BenchmarkHugeRegistry(b *testing.B) {
+	r := NewRegistry()
+	for i := 0; i < 10000; i++ {
+		r.Register(fmt.Sprintf("foo%07d", i), NewCounter())
+	}
+	v := make([]string, 10000)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v := v[:0]
+		r.Each(func(k string, _ interface{}) {
+			v = append(v, k)
+		})
 	}
 }
 
