@@ -46,3 +46,26 @@ func testDebugGCStatsBlocking(ch chan int) {
 		}
 	}
 }
+
+func TestDebugGCStatsDoubleRegister(t *testing.T) {
+	r := NewRegistry()
+	RegisterDebugGCStats(r)
+	var storedGauge = (r.Get("debug.GCStats.LastGC")).(Gauge)
+
+	runtime.GC()
+	CaptureDebugGCStatsOnce(r)
+
+	firstGC := storedGauge.Value()
+	if 0 == firstGC {
+		t.Errorf("firstGC got %d, expected > 0", firstGC)
+	}
+
+	time.Sleep(time.Millisecond)
+
+	RegisterDebugGCStats(r)
+	runtime.GC()
+	CaptureDebugGCStatsOnce(r)
+	if lastGC := storedGauge.Value(); firstGC == lastGC {
+		t.Errorf("lastGC got %d, expected a higher timestamp value", lastGC)
+	}
+}

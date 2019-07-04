@@ -220,8 +220,8 @@ type metricKV struct {
 
 func (r *StandardRegistry) registered() []metricKV {
 	metrics := make([]metricKV, 0, len(r.metrics))
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	for name, i := range r.metrics {
 		metrics = append(metrics, metricKV{
 			name:  name,
@@ -230,6 +230,7 @@ func (r *StandardRegistry) registered() []metricKV {
 	}
 	return metrics
 }
+
 func (r *StandardRegistry) stop(name string) {
 	if i, ok := r.metrics[name]; ok {
 		if s, ok := i.(Stoppable); ok {
