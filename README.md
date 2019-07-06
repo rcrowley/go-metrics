@@ -168,4 +168,4 @@ Clients are available for the following destinations:
 * Honeycomb - https://github.com/getspine/go-metrics-honeycomb
 * Wavefront - https://github.com/wavefrontHQ/go-metrics-wavefront
 * Open-Falcon - https://github.com/g4zhuj/go-metrics-falcon
-
+* AWS CloudWatch - [https://github.com/savaki/cloudmetrics](https://github.com/savaki/cloudmetrics)
