@@ -133,13 +133,13 @@ type StandardMeter struct {
 }
 
 func newStandardMeter() *StandardMeter {
-	return &StandardMeter{
-		snapshot:  &MeterSnapshot{},
-		a1:        NewEWMA1(),
-		a5:        NewEWMA5(),
-		a15:       NewEWMA15(),
-		startTime: time.Now(),
-	}
+	ret := new(StandardMeter)
+	ret.snapshot = new(MeterSnapshot)
+	ret.a1 = NewEWMA1()
+	ret.a5 = NewEWMA5()
+	ret.a15 = NewEWMA15()
+	ret.startTime = time.Now()
+	return ret
 }
 
 // Stop stops the meter, Mark() will be a no-op if you use it after being stopped.
