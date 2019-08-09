@@ -20,7 +20,9 @@ func NewEWMA(alpha float64) EWMA {
 	if UseNilMetrics {
 		return NilEWMA{}
 	}
-	return &StandardEWMA{alpha: alpha}
+	ret := new(StandardEWMA)
+	ret.alpha = alpha
+	return ret
 }
 
 // NewEWMA1 constructs a new EWMA for a one-minute moving average.
