@@ -377,3 +377,17 @@ func TestConcurrentRegistryAccess(t *testing.T) {
 		t.Fatal(i)
 	}
 }
+
+// exercise race detector
+func TestRegisterAndRegisteredConcurrency(t *testing.T)  {
+	r := NewRegistry()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func(r Registry, wg *sync.WaitGroup) {
+		defer wg.Done()
+		r.Each(func(name string, iface interface{}) {
+		})
+	}(r, wg)
+	r.Register("foo", NewCounter())
+	wg.Wait()
+}
