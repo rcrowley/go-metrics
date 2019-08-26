@@ -379,7 +379,7 @@ func TestConcurrentRegistryAccess(t *testing.T) {
 }
 
 // exercise race detector
-func TestRegisterAndRegisteredConcurrency(t *testing.T)  {
+func TestRegisterAndRegisteredConcurrency(t *testing.T) {
 	r := NewRegistry()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
