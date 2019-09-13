@@ -21,7 +21,7 @@ type Sample interface {
 	Percentile(float64) float64
 	Percentiles([]float64) []float64
 	Size() int
-	Snapshot() Sample
+	Snapshot() Snapshot
 	StdDev() float64
 	Sum() int64
 	Update(int64)
@@ -113,7 +113,7 @@ func (s *ExpDecaySample) Size() int {
 }
 
 // Snapshot returns a read-only copy of the sample.
-func (s *ExpDecaySample) Snapshot() Sample {
+func (s *ExpDecaySample) Snapshot() Snapshot {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	vals := s.values.Values()
@@ -121,10 +121,7 @@ func (s *ExpDecaySample) Snapshot() Sample {
 	for i, v := range vals {
 		values[i] = v.v
 	}
-	return &SampleSnapshot{
-		count:  s.count,
-		values: values,
-	}
+	return NewSimpleSampleSnapshot(s.count, values)
 }
 
 // StdDev returns the standard deviation of the values in the sample.
@@ -215,7 +212,7 @@ func (NilSample) Percentiles(ps []float64) []float64 {
 func (NilSample) Size() int { return 0 }
 
 // Sample is a no-op.
-func (NilSample) Snapshot() Sample { return NilSample{} }
+func (NilSample) Snapshot() Snapshot { return NilSample{} }
 
 // StdDev is a no-op.
 func (NilSample) StdDev() float64 { return 0.0 }
@@ -295,76 +292,6 @@ func SamplePercentiles(values int64Slice, ps []float64) []float64 {
 	}
 	return scores
 }
-
-// SampleSnapshot is a read-only copy of another Sample.
-type SampleSnapshot struct {
-	count  int64
-	values []int64
-}
-
-func NewSampleSnapshot(count int64, values []int64) *SampleSnapshot {
-	return &SampleSnapshot{
-		count:  count,
-		values: values,
-	}
-}
-
-// Clear panics.
-func (*SampleSnapshot) Clear() {
-	panic("Clear called on a SampleSnapshot")
-}
-
-// Count returns the count of inputs at the time the snapshot was taken.
-func (s *SampleSnapshot) Count() int64 { return s.count }
-
-// Max returns the maximal value at the time the snapshot was taken.
-func (s *SampleSnapshot) Max() int64 { return SampleMax(s.values) }
-
-// Mean returns the mean value at the time the snapshot was taken.
-func (s *SampleSnapshot) Mean() float64 { return SampleMean(s.values) }
-
-// Min returns the minimal value at the time the snapshot was taken.
-func (s *SampleSnapshot) Min() int64 { return SampleMin(s.values) }
-
-// Percentile returns an arbitrary percentile of values at the time the
-// snapshot was taken.
-func (s *SampleSnapshot) Percentile(p float64) float64 {
-	return SamplePercentile(s.values, p)
-}
-
-// Percentiles returns a slice of arbitrary percentiles of values at the time
-// the snapshot was taken.
-func (s *SampleSnapshot) Percentiles(ps []float64) []float64 {
-	return SamplePercentiles(s.values, ps)
-}
-
-// Size returns the size of the sample at the time the snapshot was taken.
-func (s *SampleSnapshot) Size() int { return len(s.values) }
-
-// Snapshot returns the snapshot.
-func (s *SampleSnapshot) Snapshot() Sample { return s }
-
-// StdDev returns the standard deviation of values at the time the snapshot was
-// taken.
-func (s *SampleSnapshot) StdDev() float64 { return SampleStdDev(s.values) }
-
-// Sum returns the sum of values at the time the snapshot was taken.
-func (s *SampleSnapshot) Sum() int64 { return SampleSum(s.values) }
-
-// Update panics.
-func (*SampleSnapshot) Update(int64) {
-	panic("Update called on a SampleSnapshot")
-}
-
-// Values returns a copy of the values in the sample.
-func (s *SampleSnapshot) Values() []int64 {
-	values := make([]int64, len(s.values))
-	copy(values, s.values)
-	return values
-}
-
-// Variance returns the variance of values at the time the snapshot was taken.
-func (s *SampleSnapshot) Variance() float64 { return SampleVariance(s.values) }
 
 // SampleStdDev returns the standard deviation of the slice of int64.
 func SampleStdDev(values []int64) float64 {
@@ -478,15 +405,12 @@ func (s *UniformSample) Size() int {
 }
 
 // Snapshot returns a read-only copy of the sample.
-func (s *UniformSample) Snapshot() Sample {
+func (s *UniformSample) Snapshot() Snapshot {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	values := make([]int64, len(s.values))
 	copy(values, s.values)
-	return &SampleSnapshot{
-		count:  s.count,
-		values: values,
-	}
+	return NewSimpleSampleSnapshot(s.count, values)
 }
 
 // StdDev returns the standard deviation of the values in the sample.

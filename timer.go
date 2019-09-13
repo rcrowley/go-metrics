@@ -201,7 +201,7 @@ func (t *StandardTimer) Snapshot() Timer {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	return &TimerSnapshot{
-		histogram: t.histogram.Snapshot().(*HistogramSnapshot),
+		histogram: t.histogram.Snapshot(),
 		meter:     t.meter.Snapshot().(*MeterSnapshot),
 	}
 }
@@ -251,7 +251,7 @@ func (t *StandardTimer) Variance() float64 {
 
 // TimerSnapshot is a read-only copy of another Timer.
 type TimerSnapshot struct {
-	histogram *HistogramSnapshot
+	histogram Snapshot
 	meter     *MeterSnapshot
 }
 

@@ -275,7 +275,7 @@ func benchmarkSample(b *testing.B, s Sample) {
 	b.Logf("GC cost: %d ns/op", int(memStats.PauseTotalNs-pauseTotalNs)/b.N)
 }
 
-func testExpDecaySampleStatistics(t *testing.T, s Sample) {
+func testExpDecaySampleStatistics(t *testing.T, s Snapshot) {
 	if count := s.Count(); 10000 != count {
 		t.Errorf("s.Count(): 10000 != %v\n", count)
 	}
@@ -303,7 +303,7 @@ func testExpDecaySampleStatistics(t *testing.T, s Sample) {
 	}
 }
 
-func testUniformSampleStatistics(t *testing.T, s Sample) {
+func testUniformSampleStatistics(t *testing.T, s Snapshot) {
 	if count := s.Count(); 10000 != count {
 		t.Errorf("s.Count(): 10000 != %v\n", count)
 	}
