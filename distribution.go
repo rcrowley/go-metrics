@@ -1,43 +1,46 @@
 package metrics
 
+import "math"
+
 // Histograms calculate distribution statistics from a series of int64 values.
-type Histogram interface {
+type Distribution interface {
 	Clear()
 	Count() int64
 	Max() int64
 	Mean() float64
 	Min() int64
-	Percentile(float64) float64
-	Percentiles([]float64) []float64
-	Sample() Sample
-	Snapshot() Histogram
-	StdDev() float64
 	Sum() int64
 	Update(int64)
-	Variance() float64
+	Snapshot() Distribution
 }
 
 // GetOrRegisterHistogram returns an existing Histogram or constructs and
 // registers a new StandardHistogram.
-func GetOrRegisterHistogram(name string, r Registry, s Sample) Histogram {
+func GetOrRegisterDistribution(name string, r Registry, buckets []float64) Distribution {
 	if nil == r {
 		r = DefaultRegistry
 	}
-	return r.GetOrRegister(name, func() Histogram { return NewHistogram(s) }).(Histogram)
+	return r.GetOrRegister(name, func() Distribution { return NewDistribution(buckets) }).(Distribution)
 }
 
 // NewHistogram constructs a new StandardHistogram from a Sample.
-func NewHistogram(s Sample) Histogram {
+func NewDistribution(buckets []float64) Distribution {
 	if UseNilMetrics {
-		return NilHistogram{}
+		return NilDistribution{}
 	}
-	return &StandardHistogram{sample: s}
+
+	return &StandardDistribution{
+		buckets:      buckets,
+		bucketsCount: make(map[float64]int64, len(buckets)),
+		min:          math.MaxInt64,
+		max:          math.MinInt64,
+	}
 }
 
-// NewRegisteredHistogram constructs and registers a new StandardHistogram from
+// NewRegisteredDistribution constructs and registers a new StandardDistribution from
 // a Sample.
-func NewRegisteredHistogram(name string, r Registry, s Sample) Histogram {
-	c := NewHistogram(s)
+func NewRegisteredDistribution(name string, r Registry, buckets []float64) Distribution {
+	c := NewDistribution(buckets)
 	if nil == r {
 		r = DefaultRegistry
 	}
@@ -45,158 +48,164 @@ func NewRegisteredHistogram(name string, r Registry, s Sample) Histogram {
 	return c
 }
 
-// HistogramSnapshot is a read-only copy of another Histogram.
-type HistogramSnapshot struct {
-	sample *SampleSnapshot
+// StandardDistribution is the default implementation of a distribution
+type StandardDistribution struct {
+	sum          int64
+	min          int64
+	max          int64
+	count        int64
+	buckets      []float64
+	bucketsCount map[float64]int64
 }
 
-// Clear panics.
-func (*HistogramSnapshot) Clear() {
-	panic("Clear called on a HistogramSnapshot")
+func (s *StandardDistribution) Clear() {
+	s.bucketsCount = make(map[float64]int64, len(s.buckets))
+	s.sum = 0
+	s.min = math.MaxInt64
+	s.max = math.MinInt64
+	s.count = 0
 }
 
-// Count returns the number of samples recorded at the time the snapshot was
-// taken.
-func (h *HistogramSnapshot) Count() int64 { return h.sample.Count() }
-
-// Max returns the maximum value in the sample at the time the snapshot was
-// taken.
-func (h *HistogramSnapshot) Max() int64 { return h.sample.Max() }
-
-// Mean returns the mean of the values in the sample at the time the snapshot
-// was taken.
-func (h *HistogramSnapshot) Mean() float64 { return h.sample.Mean() }
-
-// Min returns the minimum value in the sample at the time the snapshot was
-// taken.
-func (h *HistogramSnapshot) Min() int64 { return h.sample.Min() }
-
-// Percentile returns an arbitrary percentile of values in the sample at the
-// time the snapshot was taken.
-func (h *HistogramSnapshot) Percentile(p float64) float64 {
-	return h.sample.Percentile(p)
+func (s *StandardDistribution) Count() int64 {
+	return s.count
 }
 
-// Percentiles returns a slice of arbitrary percentiles of values in the sample
-// at the time the snapshot was taken.
-func (h *HistogramSnapshot) Percentiles(ps []float64) []float64 {
-	return h.sample.Percentiles(ps)
+func (s *StandardDistribution) Max() int64 {
+	return s.max
 }
 
-// Sample returns the Sample underlying the histogram.
-func (h *HistogramSnapshot) Sample() Sample { return h.sample }
-
-// Snapshot returns the snapshot.
-func (h *HistogramSnapshot) Snapshot() Histogram { return h }
-
-// StdDev returns the standard deviation of the values in the sample at the
-// time the snapshot was taken.
-func (h *HistogramSnapshot) StdDev() float64 { return h.sample.StdDev() }
-
-// Sum returns the sum in the sample at the time the snapshot was taken.
-func (h *HistogramSnapshot) Sum() int64 { return h.sample.Sum() }
-
-// Update panics.
-func (*HistogramSnapshot) Update(int64) {
-	panic("Update called on a HistogramSnapshot")
+func (s *StandardDistribution) Mean() float64 {
+	return float64(s.sum) / float64(s.count)
 }
 
-// Variance returns the variance of inputs at the time the snapshot was taken.
-func (h *HistogramSnapshot) Variance() float64 { return h.sample.Variance() }
-
-// NilHistogram is a no-op Histogram.
-type NilHistogram struct{}
-
-// Clear is a no-op.
-func (NilHistogram) Clear() {}
-
-// Count is a no-op.
-func (NilHistogram) Count() int64 { return 0 }
-
-// Max is a no-op.
-func (NilHistogram) Max() int64 { return 0 }
-
-// Mean is a no-op.
-func (NilHistogram) Mean() float64 { return 0.0 }
-
-// Min is a no-op.
-func (NilHistogram) Min() int64 { return 0 }
-
-// Percentile is a no-op.
-func (NilHistogram) Percentile(p float64) float64 { return 0.0 }
-
-// Percentiles is a no-op.
-func (NilHistogram) Percentiles(ps []float64) []float64 {
-	return make([]float64, len(ps))
+func (s *StandardDistribution) Min() int64 {
+	return s.min
 }
 
-// Sample is a no-op.
-func (NilHistogram) Sample() Sample { return NilSample{} }
-
-// Snapshot is a no-op.
-func (NilHistogram) Snapshot() Histogram { return NilHistogram{} }
-
-// StdDev is a no-op.
-func (NilHistogram) StdDev() float64 { return 0.0 }
-
-// Sum is a no-op.
-func (NilHistogram) Sum() int64 { return 0 }
-
-// Update is a no-op.
-func (NilHistogram) Update(v int64) {}
-
-// Variance is a no-op.
-func (NilHistogram) Variance() float64 { return 0.0 }
-
-// StandardHistogram is the standard implementation of a Histogram and uses a
-// Sample to bound its memory use.
-type StandardHistogram struct {
-	sample Sample
+func (s *StandardDistribution) Sum() int64 {
+	return s.sum
 }
 
-// Clear clears the histogram and its sample.
-func (h *StandardHistogram) Clear() { h.sample.Clear() }
-
-// Count returns the number of samples recorded since the histogram was last
-// cleared.
-func (h *StandardHistogram) Count() int64 { return h.sample.Count() }
-
-// Max returns the maximum value in the sample.
-func (h *StandardHistogram) Max() int64 { return h.sample.Max() }
-
-// Mean returns the mean of the values in the sample.
-func (h *StandardHistogram) Mean() float64 { return h.sample.Mean() }
-
-// Min returns the minimum value in the sample.
-func (h *StandardHistogram) Min() int64 { return h.sample.Min() }
-
-// Percentile returns an arbitrary percentile of the values in the sample.
-func (h *StandardHistogram) Percentile(p float64) float64 {
-	return h.sample.Percentile(p)
+func (s *StandardDistribution) Update(v int64) {
+	for i := len(s.buckets) - 1; i > 0; i-- {
+		bucket := s.buckets[i]
+		if float64(v) <= bucket {
+			s.bucketsCount[bucket]++
+		} else {
+			break
+		}
+	}
+	s.sum += v
+	s.count++
+	if v < s.min {
+		s.min = v
+	}
+	if v > s.max {
+		s.max = v
+	}
 }
 
-// Percentiles returns a slice of arbitrary percentiles of the values in the
-// sample.
-func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
-	return h.sample.Percentiles(ps)
+func (s *StandardDistribution) Snapshot() Distribution {
+	return DistributionSnapshot{
+		StandardDistribution: StandardDistribution{
+			sum:          s.sum,
+			min:          s.min,
+			max:          s.max,
+			count:        s.count,
+			buckets:      s.buckets,
+			bucketsCount: s.bucketsCount,
+		},
+	}
 }
 
-// Sample returns the Sample underlying the histogram.
-func (h *StandardHistogram) Sample() Sample { return h.sample }
+// Nil implementation of Distribution
+type NilDistribution struct{}
 
-// Snapshot returns a read-only copy of the histogram.
-func (h *StandardHistogram) Snapshot() Histogram {
-	return &HistogramSnapshot{sample: h.sample.Snapshot().(*SampleSnapshot)}
+func (n NilDistribution) Clear() {}
+
+func (n NilDistribution) Count() int64 { return 0 }
+
+func (n NilDistribution) Max() int64 { return 0 }
+
+func (n NilDistribution) Mean() float64 { return 0 }
+
+func (n NilDistribution) Min() int64 { return 0 }
+
+func (n NilDistribution) Sum() int64 { return 0 }
+
+func (n NilDistribution) Update(int64) {}
+
+func (n NilDistribution) Snapshot() Distribution {
+	return nil
 }
 
-// StdDev returns the standard deviation of the values in the sample.
-func (h *StandardHistogram) StdDev() float64 { return h.sample.StdDev() }
+// Distribution snapshot
+type DistributionSnapshot struct {
+	StandardDistribution
+}
 
-// Sum returns the sum in the sample.
-func (h *StandardHistogram) Sum() int64 { return h.sample.Sum() }
+func (d DistributionSnapshot) Clear() {
+	panic("called clear on snapshot")
+}
 
-// Update samples a new value.
-func (h *StandardHistogram) Update(v int64) { h.sample.Update(v) }
+func (d DistributionSnapshot) Count() int64 {
+	return d.count
+}
 
-// Variance returns the variance of the values in the sample.
-func (h *StandardHistogram) Variance() float64 { return h.sample.Variance() }
+func (d DistributionSnapshot) Max() int64 {
+	return d.max
+}
+
+func (d DistributionSnapshot) Mean() float64 {
+	return float64(d.sum) / float64(d.count)
+}
+
+func (d DistributionSnapshot) Min() int64 {
+	return d.min
+}
+
+func (d DistributionSnapshot) Sum() int64 {
+	return d.sum
+}
+
+func (d DistributionSnapshot) Update(int64) {
+	panic("called update on snapshot")
+}
+
+func (d DistributionSnapshot) Snapshot() Distribution {
+	return d
+}
+
+// Utility functions
+
+// From github.com/prometheus/client_golang/prometheus/histogram
+func LinearBuckets(start, width float64, count int) []float64 {
+	if count < 1 {
+		panic("LinearBuckets needs a positive count")
+	}
+	buckets := make([]float64, count)
+	for i := range buckets {
+		buckets[i] = start
+		start += width
+	}
+	return buckets
+}
+
+// From github.com/prometheus/client_golang/prometheus/histogram
+func ExponentialBuckets(start, factor float64, count int) []float64 {
+	if count < 1 {
+		panic("ExponentialBuckets needs a positive count")
+	}
+	if start <= 0 {
+		panic("ExponentialBuckets needs a positive start value")
+	}
+	if factor <= 1 {
+		panic("ExponentialBuckets needs a factor greater than 1")
+	}
+	buckets := make([]float64, count)
+	for i := range buckets {
+		buckets[i] = start
+		start *= factor
+	}
+	return buckets
+}
