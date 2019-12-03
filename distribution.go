@@ -1,7 +1,5 @@
 package metrics
 
-import "math"
-
 // Histograms calculate distribution statistics from a series of int64 values.
 type Distribution interface {
 	Clear()
@@ -32,8 +30,6 @@ func NewDistribution(buckets []float64) Distribution {
 	return &StandardDistribution{
 		buckets:      buckets,
 		bucketsCount: make(map[float64]int64, len(buckets)),
-		min:          math.MaxInt64,
-		max:          math.MinInt64,
 	}
 }
 
@@ -61,8 +57,8 @@ type StandardDistribution struct {
 func (s *StandardDistribution) Clear() {
 	s.bucketsCount = make(map[float64]int64, len(s.buckets))
 	s.sum = 0
-	s.min = math.MaxInt64
-	s.max = math.MinInt64
+	s.min = 0
+	s.max = 0
 	s.count = 0
 }
 
@@ -75,6 +71,9 @@ func (s *StandardDistribution) Max() int64 {
 }
 
 func (s *StandardDistribution) Mean() float64 {
+	if s.count == 0 {
+		return 0
+	}
 	return float64(s.sum) / float64(s.count)
 }
 
@@ -97,7 +96,7 @@ func (s *StandardDistribution) Update(v int64) {
 	}
 	s.sum += v
 	s.count++
-	if v < s.min {
+	if v < s.min || s.min == 0 {
 		s.min = v
 	}
 	if v > s.max {
