@@ -3,15 +3,27 @@ package metrics
 import "testing"
 
 func BenchmarkDistribution(b *testing.B) {
-	d := NewDistribution(LinearBuckets(0, 10, 10))
+	d := NewDistribution(LinearBuckets(0, 10, 100))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		d.Update(int64(i))
 	}
 }
 
+func TestLinearDistribution(t *testing.T) {
+	d := NewDistribution(LinearBuckets(10, 10, 100))
+	for i := 1; i <= 1000; i++ {
+		d.Update(int64(i))
+	}
+	for i, v := range d.Buckets() {
+		if v != int64(i) {
+			t.Errorf("d.Buckets(): %v != %v\n", i, v)
+		}
+	}
+}
+
 func TestGetOrRegisterDistribution(t *testing.T) {
-	buckets := LinearBuckets(0, 10, 10)
+	buckets := LinearBuckets(0, 10, 1000)
 	r := NewRegistry()
 	NewRegisteredDistribution("foo", r, buckets).Update(47)
 	if d := GetOrRegisterDistribution("foo", r, buckets); 1 != d.Count() {

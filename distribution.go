@@ -10,6 +10,7 @@ type Distribution interface {
 	Sum() int64
 	Update(int64)
 	Snapshot() Distribution
+	Buckets() map[float64]int64
 }
 
 // GetOrRegisterHistogram returns an existing Histogram or constructs and
@@ -117,6 +118,10 @@ func (s *StandardDistribution) Snapshot() Distribution {
 	}
 }
 
+func (s *StandardDistribution) Buckets() map[float64]int64 {
+	return s.bucketsCount
+}
+
 // Nil implementation of Distribution
 type NilDistribution struct{}
 
@@ -135,7 +140,11 @@ func (n NilDistribution) Sum() int64 { return 0 }
 func (n NilDistribution) Update(int64) {}
 
 func (n NilDistribution) Snapshot() Distribution {
-	return nil
+	return n
+}
+
+func (n NilDistribution) Buckets() map[float64]int64 {
+	return make(map[float64]int64)
 }
 
 // Distribution snapshot
@@ -173,6 +182,10 @@ func (d DistributionSnapshot) Update(int64) {
 
 func (d DistributionSnapshot) Snapshot() Distribution {
 	return d
+}
+
+func (d DistributionSnapshot) Buckets() map[float64]int64 {
+	return d.bucketsCount
 }
 
 // Utility functions
