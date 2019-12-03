@@ -1,5 +1,7 @@
 package metrics
 
+import "sync"
+
 // Histograms calculate distribution statistics from a series of int64 values.
 type Distribution interface {
 	Clear()
@@ -53,6 +55,8 @@ type StandardDistribution struct {
 	count        int64
 	buckets      []float64
 	bucketsCount map[float64]int64
+
+	mutex sync.Mutex
 }
 
 func (s *StandardDistribution) Clear() {
@@ -87,6 +91,8 @@ func (s *StandardDistribution) Sum() int64 {
 }
 
 func (s *StandardDistribution) Update(v int64) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	for i := len(s.buckets) - 1; i > 0; i-- {
 		bucket := s.buckets[i]
 		if float64(v) <= bucket {
@@ -106,6 +112,8 @@ func (s *StandardDistribution) Update(v int64) {
 }
 
 func (s *StandardDistribution) Snapshot() Distribution {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return DistributionSnapshot{
 		StandardDistribution: StandardDistribution{
 			sum:          s.sum,
