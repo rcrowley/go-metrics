@@ -114,20 +114,33 @@ func (s *StandardDistribution) Update(v int64) {
 func (s *StandardDistribution) Snapshot() Distribution {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+	buckets := make([]float64, len(s.buckets))
+	copy(buckets, s.buckets)
+
+	bucketsCount := make(map[float64]int64)
+	for _, v := range buckets {
+		bucketsCount[v] = s.bucketsCount[v]
+	}
 	return DistributionSnapshot{
 		StandardDistribution: StandardDistribution{
 			sum:          s.sum,
 			min:          s.min,
 			max:          s.max,
 			count:        s.count,
-			buckets:      s.buckets,
-			bucketsCount: s.bucketsCount,
+			buckets:      buckets,
+			bucketsCount: bucketsCount,
 		},
 	}
 }
 
 func (s *StandardDistribution) Buckets() map[float64]int64 {
-	return s.bucketsCount
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	bucketsCount := make(map[float64]int64)
+	for _, v := range s.buckets {
+		bucketsCount[v] = s.bucketsCount[v]
+	}
+	return bucketsCount
 }
 
 // Nil implementation of Distribution
