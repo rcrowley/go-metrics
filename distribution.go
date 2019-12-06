@@ -93,7 +93,7 @@ func (s *StandardDistribution) Sum() int64 {
 func (s *StandardDistribution) Update(v int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	for i := len(s.buckets) - 1; i > 0; i-- {
+	for i := len(s.buckets) - 1; i >= 0; i-- {
 		bucket := s.buckets[i]
 		if float64(v) <= bucket {
 			s.bucketsCount[bucket]++
