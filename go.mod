@@ -1,4 +1,4 @@
-module github.com/rcrowley/go-metrics
+module github.com/subchord/go-metrics
 
 go 1.13
 
