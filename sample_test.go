@@ -63,6 +63,83 @@ func BenchmarkCopy1000000(b *testing.B) {
 	}
 }
 
+func BenchmarkSampleCalc4KSampleSum(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleSum(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleMax(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleMax(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleMin(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleMin(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleMean(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleMean(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleStdDev(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleStdDev(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleVariance(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleVariance(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSamplePercentile(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SamplePercentile(s, 0.5)
+	}
+}
+
 func BenchmarkExpDecaySample257(b *testing.B) {
 	benchmarkSample(b, NewExpDecaySample(257, 0.015))
 }
