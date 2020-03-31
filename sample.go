@@ -6,9 +6,19 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"golang.org/x/sys/cpu"
 )
 
 const rescaleThreshold = time.Hour
+
+var x86HasSSE42, x86HasAVX, x86HasAVX2 bool
+
+func init() {
+	x86HasSSE42 = cpu.X86.HasSSE42
+	x86HasAVX = cpu.X86.HasAVX
+	x86HasAVX2 = cpu.X86.HasAVX2
+}
 
 // Samples maintain a statistically-significant selection of values from
 // a stream.
@@ -233,18 +243,8 @@ func (NilSample) Values() []int64 { return []int64{} }
 func (NilSample) Variance() float64 { return 0.0 }
 
 // SampleMax returns the maximum value of the slice of int64.
-func SampleMax(values []int64) int64 {
-	if 0 == len(values) {
-		return 0
-	}
-	var max int64 = math.MinInt64
-	for _, v := range values {
-		if max < v {
-			max = v
-		}
-	}
-	return max
-}
+//go:noescape
+func SampleMax(values []int64) int64
 
 // SampleMean returns the mean value of the slice of int64.
 func SampleMean(values []int64) float64 {
@@ -255,18 +255,8 @@ func SampleMean(values []int64) float64 {
 }
 
 // SampleMin returns the minimum value of the slice of int64.
-func SampleMin(values []int64) int64 {
-	if 0 == len(values) {
-		return 0
-	}
-	var min int64 = math.MaxInt64
-	for _, v := range values {
-		if min > v {
-			min = v
-		}
-	}
-	return min
-}
+//go:noescape
+func SampleMin(values []int64) int64
 
 // SamplePercentiles returns an arbitrary percentile of the slice of int64.
 func SamplePercentile(values int64Slice, p float64) float64 {
@@ -372,27 +362,12 @@ func SampleStdDev(values []int64) float64 {
 }
 
 // SampleSum returns the sum of the slice of int64.
-func SampleSum(values []int64) int64 {
-	var sum int64
-	for _, v := range values {
-		sum += v
-	}
-	return sum
-}
+//go:noescape
+func SampleSum(values []int64) int64
 
 // SampleVariance returns the variance of the slice of int64.
-func SampleVariance(values []int64) float64 {
-	if 0 == len(values) {
-		return 0.0
-	}
-	m := SampleMean(values)
-	var sum float64
-	for _, v := range values {
-		d := float64(v) - m
-		sum += d * d
-	}
-	return sum / float64(len(values))
-}
+//go:noescape
+func SampleVariance(values []int64) float64
 
 // A uniform sample using Vitter's Algorithm R.
 //
@@ -614,3 +589,54 @@ type int64Slice []int64
 func (p int64Slice) Len() int           { return len(p) }
 func (p int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// sampleMax returns the maximum value of the slice of int64.
+func sampleMax(values []int64) int64 {
+	if 0 == len(values) {
+		return 0
+	}
+	var max int64 = math.MinInt64
+	for _, v := range values {
+		if max < v {
+			max = v
+		}
+	}
+	return max
+}
+
+// sampleMin returns the minimum value of the slice of int64.
+func sampleMin(values []int64) int64 {
+	if 0 == len(values) {
+		return 0
+	}
+	var min int64 = math.MaxInt64
+	for _, v := range values {
+		if min > v {
+			min = v
+		}
+	}
+	return min
+}
+
+// sampleSum returns the sum of the slice of int64.
+func sampleSum(values []int64) int64 {
+	var sum int64
+	for _, v := range values {
+		sum += v
+	}
+	return sum
+}
+
+// sampleVariance returns the variance of the slice of int64.
+func sampleVariance(values []int64) float64 {
+	if 0 == len(values) {
+		return 0.0
+	}
+	m := SampleMean(values)
+	var sum float64
+	for _, v := range values {
+		d := float64(v) - m
+		sum += d * d
+	}
+	return sum / float64(len(values))
+}

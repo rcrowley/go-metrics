@@ -447,3 +447,60 @@ func TestUniformSampleConcurrentUpdateCount(t *testing.T) {
 	}
 	quit <- struct{}{}
 }
+
+func TestSampleFunction(t *testing.T) {
+	var cases []struct {
+		slice []int64
+		sum   int64
+		max   int64
+		min   int64
+		va    float64
+	}
+	for i := 0; i < 4100; i++ {
+		var slice []int64
+		for j := 0; j < i; j++ {
+			slice = append(slice, rand.Int63())
+		}
+		sum := sampleSum(slice)
+		max := sampleMax(slice)
+		min := sampleMin(slice)
+		va := sampleVariance(slice)
+
+		cases = append(cases, struct {
+			slice []int64
+			sum   int64
+			max   int64
+			min   int64
+			va    float64
+		}{
+			slice,
+			sum,
+			max,
+			min,
+			va,
+		})
+	}
+
+	f0, f1, f2, empty := x86HasAVX2, x86HasAVX, x86HasSSE42, false
+	defer func() {
+		x86HasAVX2, x86HasAVX, x86HasSSE42 = f0, f1, f2
+	}()
+
+	for i, flag := range []*bool{&empty, &x86HasAVX2, &x86HasAVX, &x86HasSSE42} {
+		*flag = false
+		for j, v := range cases {
+			if sum := SampleSum(v.slice); sum != v.sum {
+				t.Fatalf("SampleSum %d:%d test failed, expect %v, got %v", i, j, v.sum, sum)
+			}
+			if max := SampleMax(v.slice); max != v.max {
+				t.Fatalf("SampleMax %d:%d test failed, expect %v, got %v", i, j, v.max, max)
+			}
+			if min := SampleMin(v.slice); min != v.min {
+				t.Fatalf("SampleMin %d:%d test failed, expect %v, got %v", i, j, v.min, min)
+			}
+			if va := SampleVariance(v.slice); float64NotEqual(va, v.va) {
+				t.Fatalf("SampleVariance %d:%d test failed, expect %v, got %v %v", i, j, v.va, va, math.Abs(va-v.va))
+			}
+		}
+	}
+}
