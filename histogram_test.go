@@ -38,20 +38,20 @@ func TestHistogramEmpty(t *testing.T) {
 	if max := h.Max(); 0 != max {
 		t.Errorf("h.Max(): 0 != %v\n", max)
 	}
-	if mean := h.Mean(); 0.0 != mean {
+	if mean := h.Mean(); float64NotEqual(0.0, mean) {
 		t.Errorf("h.Mean(): 0.0 != %v\n", mean)
 	}
-	if stdDev := h.StdDev(); 0.0 != stdDev {
+	if stdDev := h.StdDev(); float64NotEqual(0.0, stdDev) {
 		t.Errorf("h.StdDev(): 0.0 != %v\n", stdDev)
 	}
 	ps := h.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 0.0 != ps[0] {
+	if float64NotEqual(0.0, ps[0]) {
 		t.Errorf("median: 0.0 != %v\n", ps[0])
 	}
-	if 0.0 != ps[1] {
+	if float64NotEqual(0.0, ps[1]) {
 		t.Errorf("75th percentile: 0.0 != %v\n", ps[1])
 	}
-	if 0.0 != ps[2] {
+	if float64NotEqual(0.0, ps[2]) {
 		t.Errorf("99th percentile: 0.0 != %v\n", ps[2])
 	}
 }
@@ -76,20 +76,20 @@ func testHistogram10000(t *testing.T, h Histogram) {
 	if max := h.Max(); 10000 != max {
 		t.Errorf("h.Max(): 10000 != %v\n", max)
 	}
-	if mean := h.Mean(); 5000.5 != mean {
+	if mean := h.Mean(); float64NotEqual(5000.5, mean) {
 		t.Errorf("h.Mean(): 5000.5 != %v\n", mean)
 	}
-	if stdDev := h.StdDev(); 2886.751331514372 != stdDev {
+	if stdDev := h.StdDev(); float64NotEqual(2886.751331514372, stdDev) {
 		t.Errorf("h.StdDev(): 2886.751331514372 != %v\n", stdDev)
 	}
 	ps := h.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 5000.5 != ps[0] {
+	if float64NotEqual(5000.5, ps[0]) {
 		t.Errorf("median: 5000.5 != %v\n", ps[0])
 	}
-	if 7500.75 != ps[1] {
+	if float64NotEqual(7500.75, ps[1]) {
 		t.Errorf("75th percentile: 7500.75 != %v\n", ps[1])
 	}
-	if 9900.99 != ps[2] {
+	if float64NotEqual(9900.99, ps[2]) {
 		t.Errorf("99th percentile: 9900.99 != %v\n", ps[2])
 	}
 }

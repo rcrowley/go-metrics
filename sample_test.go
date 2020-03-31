@@ -1,11 +1,20 @@
 package metrics
 
 import (
+	"math"
 	"math/rand"
 	"runtime"
 	"testing"
 	"time"
 )
+
+func float64NotEqual(a, b float64) bool {
+	v := math.Abs(a - b)
+	if b == 0.0 && v > 0.00001 {
+		return false
+	}
+	return math.Abs(v/b) > 0.00001
+}
 
 // Benchmark{Compute,Copy}{1000,1000000} demonstrate that, even for relatively
 // expensive computations like Variance, the cost of copying the Sample, as
@@ -285,20 +294,20 @@ func testExpDecaySampleStatistics(t *testing.T, s Sample) {
 	if max := s.Max(); 10000 != max {
 		t.Errorf("s.Max(): 10000 != %v\n", max)
 	}
-	if mean := s.Mean(); 4965.98 != mean {
+	if mean := s.Mean(); float64NotEqual(4965.98, mean) {
 		t.Errorf("s.Mean(): 4965.98 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 2959.825156930727 != stdDev {
+	if stdDev := s.StdDev(); float64NotEqual(2959.825156930727, stdDev) {
 		t.Errorf("s.StdDev(): 2959.825156930727 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 4615 != ps[0] {
+	if float64NotEqual(4615, ps[0]) {
 		t.Errorf("median: 4615 != %v\n", ps[0])
 	}
-	if 7672 != ps[1] {
+	if float64NotEqual(7672, ps[1]) {
 		t.Errorf("75th percentile: 7672 != %v\n", ps[1])
 	}
-	if 9998.99 != ps[2] {
+	if float64NotEqual(9998.99, ps[2]) {
 		t.Errorf("99th percentile: 9998.99 != %v\n", ps[2])
 	}
 }
@@ -313,20 +322,20 @@ func testUniformSampleStatistics(t *testing.T, s Sample) {
 	if max := s.Max(); 9989 != max {
 		t.Errorf("s.Max(): 9989 != %v\n", max)
 	}
-	if mean := s.Mean(); 4748.14 != mean {
+	if mean := s.Mean(); float64NotEqual(4748.14, mean) {
 		t.Errorf("s.Mean(): 4748.14 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 2826.684117548333 != stdDev {
+	if stdDev := s.StdDev(); float64NotEqual(2826.684117548333, stdDev) {
 		t.Errorf("s.StdDev(): 2826.684117548333 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 4599 != ps[0] {
+	if float64NotEqual(4599, ps[0]) {
 		t.Errorf("median: 4599 != %v\n", ps[0])
 	}
-	if 7380.5 != ps[1] {
+	if float64NotEqual(7380.5, ps[1]) {
 		t.Errorf("75th percentile: 7380.5 != %v\n", ps[1])
 	}
-	if 9986.429999999998 != ps[2] {
+	if float64NotEqual(9986.429999999998, ps[2]) {
 		t.Errorf("99th percentile: 9986.429999999998 != %v\n", ps[2])
 	}
 }
