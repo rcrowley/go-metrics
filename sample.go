@@ -116,6 +116,7 @@ func (s *ExpDecaySample) Size() int {
 func (s *ExpDecaySample) Snapshot() Sample {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+	s.rescaleIfNeeded(time.Now())
 	vals := s.values.Values()
 	values := make([]int64, len(vals))
 	for i, v := range vals {
