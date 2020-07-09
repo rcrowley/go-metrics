@@ -48,6 +48,13 @@ func GetOrRegisterRateCounter(name string, r Registry) RateCounter {
 	return r.GetOrRegister(name, func() RateCounter { return NewStandardRateCounter(60, 1000, clock.New()) }).(RateCounter)
 }
 
+func NewRateCounter() RateCounter {
+	if UseNilMetrics {
+		return NilRateCounter{}
+	}
+	return NewStandardRateCounter(60, 1000, clock.New())
+}
+
 // NewRegisteredRateCounter constructs and registers a new StandardRateCounter.
 func NewRegisteredRateCounter(name string, r Registry, clock clock.Clock) RateCounter {
 	c := NewStandardRateCounter(60, 1000, clock)
@@ -228,4 +235,24 @@ func (this *RateCounterSnapshot) Clear() {
 
 func (this *RateCounterSnapshot) Snapshot() RateCounter {
 	return this
+}
+
+type NilRateCounter struct {}
+
+func (this NilRateCounter)	Mark(int64) {
+}
+
+func (this NilRateCounter)		Count() int64 {
+	return 0
+}
+
+func (this NilRateCounter)		Rate1() float64 {
+	return 0
+}
+
+func (this NilRateCounter)		Clear() {
+}
+
+func (this NilRateCounter)Snapshot() RateCounter {
+	return NilRateCounter{}
 }
