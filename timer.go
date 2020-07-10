@@ -65,7 +65,7 @@ func NewTimer() Timer {
 	}
 	return &StandardTimer{
 		histogram: NewHistogram(NewExpDecaySample(1028, 0.015)),
-		meter:     NewMeter(),
+		meter:     newMeter(),
 	}
 }
 

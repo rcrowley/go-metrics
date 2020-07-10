@@ -22,7 +22,7 @@ func BenchmarkMetrics(b *testing.B) {
 	g := NewRegisteredGauge("gauge", r)
 	gf := NewRegisteredGaugeFloat64("gaugefloat64", r)
 	h := NewRegisteredHistogram("histogram", r, NewUniformSample(100))
-	m := NewRegisteredMeter("meter", r)
+	m := newRegisteredMeter("meter", r)
 	t := NewRegisteredTimer("timer", r)
 	RegisterDebugGCStats(r)
 	RegisterRuntimeMemStats(r)

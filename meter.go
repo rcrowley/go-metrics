@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+// Meters are replaced by RateCounter as of Jul 2020 because of their exponential weighted nature that messes up MonViz.
+// As such we turn off their external use to force usage of RateCounter in the service repo.
+// Then next step is to actually use a mix of RateCounter and Meter for better efficiency.
+
 // Meters count events to produce exponentially-weighted moving average rates
 // at one-, five-, and fifteen-minutes and a mean rate.
 //go:generate counterfeiter . Meter
@@ -19,17 +23,17 @@ type Meter interface {
 	Snapshot() Meter
 }
 
-// GetOrRegisterMeter returns an existing Meter or constructs and registers a
+// getOrRegisterMeter returns an existing Meter or constructs and registers a
 // new StandardMeter.
-func GetOrRegisterMeter(name string, r Registry) Meter {
+func getOrRegisterMeter(name string, r Registry) Meter {
 	if nil == r {
 		r = DefaultRegistry
 	}
-	return r.GetOrRegister(name, NewMeter).(Meter)
+	return r.GetOrRegister(name, newMeter).(Meter)
 }
 
-// NewMeter constructs a new StandardMeter and launches a goroutine.
-func NewMeter() Meter {
+// newMeter constructs a new StandardMeter and launches a goroutine.
+func newMeter() Meter {
 	if UseNilMetrics {
 		return NilMeter{}
 	}
@@ -44,10 +48,10 @@ func NewMeter() Meter {
 	return m
 }
 
-// NewMeter constructs and registers a new StandardMeter and launches a
+// newMeter constructs and registers a new StandardMeter and launches a
 // goroutine.
-func NewRegisteredMeter(name string, r Registry) Meter {
-	c := NewMeter()
+func newRegisteredMeter(name string, r Registry) Meter {
+	c := newMeter()
 	if nil == r {
 		r = DefaultRegistry
 	}
