@@ -90,8 +90,9 @@ func TestSnapshot(t *testing.T) {
 	}
 }
 
-func TestRateAndCountInSnapshotShouldBeConsistent(t *testing.T) {
-	// If new data isn't present in Snapshot.Rate1() it shouldn't be present in Snapshot.Count()
+func TestRateAndLastCountInSnapshotShouldBeConsistent(t *testing.T) {
+	// If new data isn't present in Snapshot.Rate1() it shouldn't be present in counter.lastCount but it should
+	// in Snapshot.Count()
 
 	m := clock.NewMock()
 	rc := NewStandardRateCounter(60, 1000, m)
@@ -99,11 +100,16 @@ func TestRateAndCountInSnapshotShouldBeConsistent(t *testing.T) {
 	rc.Mark(1)
 	s := rc.Snapshot()
 
+	// since we don't advance the time, the sampling period is still current, and there is nothing finalized for rate or .lastCount
+	// but this doesn't matter for Count()
 	if v := s.Rate1(); v != 0.0 {
 		t.Errorf("s.Rate1(): 0.0 != %v\n", v)
 	}
-	if v := s.Count(); v != 0.0 {
-		t.Errorf("s.Count(): 0.0 != %v\n", v)
+	if v := rc.(*StandardRateCounter).lastCount; v != 0.0 {
+		t.Errorf("s.lastCount: 0.0 != %v\n", v)
+	}
+	if v := s.Count(); v != 1.0 {
+		t.Errorf("s.Count(): 1.0 != %v\n", v)
 	}
 
 	m.Add(1 * time.Second)

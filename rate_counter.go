@@ -10,6 +10,8 @@ import (
 //go:generate counterfeiter . RateCounter
 type RateCounter interface {
 	Mark(int64)
+	// Rate1() returns the rate up to the last full sampling period, so at time 5.3s it will only return the rate on [0, 5].
+	// Count() returns the total count ever, including the current sampling period.
 	Count() int64
 	Rate1() float64
 	Clear()
@@ -23,6 +25,8 @@ type RateCounter interface {
 type StandardRateCounter struct {
 	clock clock.Clock
 
+	// lastCount "lags behind" by a sample period by design, this one really counts all events so far.
+	// Note that lastCount is at par with lastRate, so that in MonViz rate(meter.lastCount) = meter.lastRate
 	counter        int64
 	samplePeriodMs int64
 	windowSizeMs   int64
@@ -114,10 +118,9 @@ func (this *StandardRateCounter) Rate1() float64 {
 }
 
 func (this *StandardRateCounter) Count() int64 {
-	this.maybeSampleCount()
 	this.lock.RLock()
 	defer this.lock.RUnlock()
-	return this.lastCount
+	return this.counter
 }
 
 func (this *StandardRateCounter) Snapshot() RateCounter {
@@ -126,7 +129,7 @@ func (this *StandardRateCounter) Snapshot() RateCounter {
 	defer this.lock.RUnlock()
 
 	return &RateCounterSnapshot{
-		count: this.lastCount,
+		count: this.counter,
 		rate:  this.lastRate,
 	}
 }
@@ -145,7 +148,7 @@ func (this *StandardRateCounter) advance(index int) int {
  * should not matter in practice.
  */
 func (this *StandardRateCounter) maybeSampleCount() {
-	var currentTimeMs int64 = this.clock.Now().UnixNano() / 1e6
+	currentTimeMs := this.clock.Now().UnixNano() / 1e6
 	currentSampleTimeMs := this.roundTime(currentTimeMs)
 
 	this.lock.RLock()
@@ -237,22 +240,22 @@ func (this *RateCounterSnapshot) Snapshot() RateCounter {
 	return this
 }
 
-type NilRateCounter struct {}
+type NilRateCounter struct{}
 
-func (this NilRateCounter)	Mark(int64) {
+func (this NilRateCounter) Mark(int64) {
 }
 
-func (this NilRateCounter)		Count() int64 {
+func (this NilRateCounter) Count() int64 {
 	return 0
 }
 
-func (this NilRateCounter)		Rate1() float64 {
+func (this NilRateCounter) Rate1() float64 {
 	return 0
 }
 
-func (this NilRateCounter)		Clear() {
+func (this NilRateCounter) Clear() {
 }
 
-func (this NilRateCounter)Snapshot() RateCounter {
+func (this NilRateCounter) Snapshot() RateCounter {
 	return NilRateCounter{}
 }
