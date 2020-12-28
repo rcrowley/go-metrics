@@ -8,6 +8,15 @@ type Healthcheck interface {
 	Unhealthy(error)
 }
 
+// GetOrRegisterHealthcheck returns an existing Healthcheck or
+// constructs and registers a new StandardHealthcheck.
+func GetOrRegisterHealthcheck(name string, r Registry, f func(Healthcheck)) Healthcheck {
+	if nil == r {
+		r = DefaultRegistry
+	}
+	return r.GetOrRegister(name, func() Healthcheck { return NewHealthcheck(f) }).(Healthcheck)
+}
+
 // NewHealthcheck constructs a new Healthcheck which will use the given
 // function to update its status.
 func NewHealthcheck(f func(Healthcheck)) Healthcheck {
@@ -15,6 +24,16 @@ func NewHealthcheck(f func(Healthcheck)) Healthcheck {
 		return NilHealthcheck{}
 	}
 	return &StandardHealthcheck{nil, f}
+}
+
+// NewRegisteredHealthcheck constructs and registers a new StandardHealthcheck.
+func NewRegisteredHealthcheck(name string, r Registry, f func(Healthcheck)) Healthcheck {
+	c := NewHealthcheck(f)
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, c)
+	return c
 }
 
 // NilHealthcheck is a no-op.
