@@ -1,11 +1,20 @@
 package metrics
 
 import (
+	"math"
 	"math/rand"
 	"runtime"
 	"testing"
 	"time"
 )
+
+func float64NotEqual(a, b float64) bool {
+	v := math.Abs(a - b)
+	if b == 0.0 && v > 0.00001 {
+		return false
+	}
+	return math.Abs(v/b) > 0.00001
+}
 
 // Benchmark{Compute,Copy}{1000,1000000} demonstrate that, even for relatively
 // expensive computations like Variance, the cost of copying the Sample, as
@@ -51,6 +60,83 @@ func BenchmarkCopy1000000(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		sCopy := make([]int64, len(s))
 		copy(sCopy, s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleSum(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleSum(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleMax(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleMax(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleMin(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleMin(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleMean(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleMean(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleStdDev(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleStdDev(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSampleVariance(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SampleVariance(s)
+	}
+}
+
+func BenchmarkSampleCalc4KSamplePercentile(b *testing.B) {
+	s := make([]int64, 4096)
+	for i := 0; i < len(s); i++ {
+		s[i] = int64(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SamplePercentile(s, 0.5)
 	}
 }
 
@@ -285,20 +371,20 @@ func testExpDecaySampleStatistics(t *testing.T, s Sample) {
 	if max := s.Max(); 10000 != max {
 		t.Errorf("s.Max(): 10000 != %v\n", max)
 	}
-	if mean := s.Mean(); 4965.98 != mean {
+	if mean := s.Mean(); float64NotEqual(4965.98, mean) {
 		t.Errorf("s.Mean(): 4965.98 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 2959.825156930727 != stdDev {
+	if stdDev := s.StdDev(); float64NotEqual(2959.825156930727, stdDev) {
 		t.Errorf("s.StdDev(): 2959.825156930727 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 4615 != ps[0] {
+	if float64NotEqual(4615, ps[0]) {
 		t.Errorf("median: 4615 != %v\n", ps[0])
 	}
-	if 7672 != ps[1] {
+	if float64NotEqual(7672, ps[1]) {
 		t.Errorf("75th percentile: 7672 != %v\n", ps[1])
 	}
-	if 9998.99 != ps[2] {
+	if float64NotEqual(9998.99, ps[2]) {
 		t.Errorf("99th percentile: 9998.99 != %v\n", ps[2])
 	}
 }
@@ -313,20 +399,20 @@ func testUniformSampleStatistics(t *testing.T, s Sample) {
 	if max := s.Max(); 9989 != max {
 		t.Errorf("s.Max(): 9989 != %v\n", max)
 	}
-	if mean := s.Mean(); 4748.14 != mean {
+	if mean := s.Mean(); float64NotEqual(4748.14, mean) {
 		t.Errorf("s.Mean(): 4748.14 != %v\n", mean)
 	}
-	if stdDev := s.StdDev(); 2826.684117548333 != stdDev {
+	if stdDev := s.StdDev(); float64NotEqual(2826.684117548333, stdDev) {
 		t.Errorf("s.StdDev(): 2826.684117548333 != %v\n", stdDev)
 	}
 	ps := s.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 4599 != ps[0] {
+	if float64NotEqual(4599, ps[0]) {
 		t.Errorf("median: 4599 != %v\n", ps[0])
 	}
-	if 7380.5 != ps[1] {
+	if float64NotEqual(7380.5, ps[1]) {
 		t.Errorf("75th percentile: 7380.5 != %v\n", ps[1])
 	}
-	if 9986.429999999998 != ps[2] {
+	if float64NotEqual(9986.429999999998, ps[2]) {
 		t.Errorf("99th percentile: 9986.429999999998 != %v\n", ps[2])
 	}
 }
@@ -360,4 +446,61 @@ func TestUniformSampleConcurrentUpdateCount(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	quit <- struct{}{}
+}
+
+func TestSampleFunction(t *testing.T) {
+	var cases []struct {
+		slice []int64
+		sum   int64
+		max   int64
+		min   int64
+		va    float64
+	}
+	for i := 0; i < 4100; i++ {
+		var slice []int64
+		for j := 0; j < i; j++ {
+			slice = append(slice, rand.Int63())
+		}
+		sum := sampleSum(slice)
+		max := sampleMax(slice)
+		min := sampleMin(slice)
+		va := sampleVariance(slice)
+
+		cases = append(cases, struct {
+			slice []int64
+			sum   int64
+			max   int64
+			min   int64
+			va    float64
+		}{
+			slice,
+			sum,
+			max,
+			min,
+			va,
+		})
+	}
+
+	f0, f1, f2, empty := x86HasAVX2, x86HasAVX, x86HasSSE42, false
+	defer func() {
+		x86HasAVX2, x86HasAVX, x86HasSSE42 = f0, f1, f2
+	}()
+
+	for i, flag := range []*bool{&empty, &x86HasAVX2, &x86HasAVX, &x86HasSSE42} {
+		*flag = false
+		for j, v := range cases {
+			if sum := SampleSum(v.slice); sum != v.sum {
+				t.Fatalf("SampleSum %d:%d test failed, expect %v, got %v", i, j, v.sum, sum)
+			}
+			if max := SampleMax(v.slice); max != v.max {
+				t.Fatalf("SampleMax %d:%d test failed, expect %v, got %v", i, j, v.max, max)
+			}
+			if min := SampleMin(v.slice); min != v.min {
+				t.Fatalf("SampleMin %d:%d test failed, expect %v, got %v", i, j, v.min, min)
+			}
+			if va := SampleVariance(v.slice); float64NotEqual(va, v.va) {
+				t.Fatalf("SampleVariance %d:%d test failed, expect %v, got %v %v", i, j, v.va, va, math.Abs(va-v.va))
+			}
+		}
+	}
 }

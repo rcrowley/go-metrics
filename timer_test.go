@@ -27,7 +27,7 @@ func TestTimerExtremes(t *testing.T) {
 	tm := NewTimer()
 	tm.Update(math.MaxInt64)
 	tm.Update(0)
-	if stdDev := tm.StdDev(); 4.611686018427388e+18 != stdDev {
+	if stdDev := tm.StdDev(); float64NotEqual(4.611686018427388e+18, stdDev) {
 		t.Errorf("tm.StdDev(): 4.611686018427388e+18 != %v\n", stdDev)
 	}
 }
@@ -63,32 +63,32 @@ func TestTimerZero(t *testing.T) {
 	if max := tm.Max(); 0 != max {
 		t.Errorf("tm.Max(): 0 != %v\n", max)
 	}
-	if mean := tm.Mean(); 0.0 != mean {
+	if mean := tm.Mean(); float64NotEqual(0.0, mean) {
 		t.Errorf("tm.Mean(): 0.0 != %v\n", mean)
 	}
-	if stdDev := tm.StdDev(); 0.0 != stdDev {
+	if stdDev := tm.StdDev(); float64NotEqual(0.0, stdDev) {
 		t.Errorf("tm.StdDev(): 0.0 != %v\n", stdDev)
 	}
 	ps := tm.Percentiles([]float64{0.5, 0.75, 0.99})
-	if 0.0 != ps[0] {
+	if float64NotEqual(0.0, ps[0]) {
 		t.Errorf("median: 0.0 != %v\n", ps[0])
 	}
-	if 0.0 != ps[1] {
+	if float64NotEqual(0.0, ps[1]) {
 		t.Errorf("75th percentile: 0.0 != %v\n", ps[1])
 	}
-	if 0.0 != ps[2] {
+	if float64NotEqual(0.0, ps[2]) {
 		t.Errorf("99th percentile: 0.0 != %v\n", ps[2])
 	}
-	if rate1 := tm.Rate1(); 0.0 != rate1 {
+	if rate1 := tm.Rate1(); float64NotEqual(0.0, rate1) {
 		t.Errorf("tm.Rate1(): 0.0 != %v\n", rate1)
 	}
-	if rate5 := tm.Rate5(); 0.0 != rate5 {
+	if rate5 := tm.Rate5(); float64NotEqual(0.0, rate5) {
 		t.Errorf("tm.Rate5(): 0.0 != %v\n", rate5)
 	}
-	if rate15 := tm.Rate15(); 0.0 != rate15 {
+	if rate15 := tm.Rate15(); float64NotEqual(0.0, rate15) {
 		t.Errorf("tm.Rate15(): 0.0 != %v\n", rate15)
 	}
-	if rateMean := tm.RateMean(); 0.0 != rateMean {
+	if rateMean := tm.RateMean(); float64NotEqual(0.0, rateMean) {
 		t.Errorf("tm.RateMean(): 0.0 != %v\n", rateMean)
 	}
 }
