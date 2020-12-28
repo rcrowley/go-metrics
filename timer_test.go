@@ -23,6 +23,15 @@ func TestGetOrRegisterTimer(t *testing.T) {
 	}
 }
 
+func TestNilTimerFunc(t *testing.T) {
+	tm := NilTimer{}
+	b := false
+	tm.Time(func() { b = true })
+	if !b {
+		t.Errorf("tm.Time(func()) did not execute argument")
+	}
+}
+
 func TestTimerExtremes(t *testing.T) {
 	tm := NewTimer()
 	tm.Update(math.MaxInt64)
