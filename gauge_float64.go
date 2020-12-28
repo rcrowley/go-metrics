@@ -18,7 +18,7 @@ func GetOrRegisterGaugeFloat64(name string, r Registry) GaugeFloat64 {
 	if nil == r {
 		r = DefaultRegistry
 	}
-	return r.GetOrRegister(name, NewGaugeFloat64()).(GaugeFloat64)
+	return r.GetOrRegister(name, NewGaugeFloat64).(GaugeFloat64)
 }
 
 // NewGaugeFloat64 constructs a new StandardGaugeFloat64.

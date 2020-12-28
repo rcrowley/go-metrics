@@ -66,4 +66,7 @@ func TestGetOrRegisterFunctionalGaugeFloat64(t *testing.T) {
 	if g := GetOrRegisterGaugeFloat64("foo", r); 47 != g.Value() {
 		t.Fatal(g)
 	}
+	if g := GetOrRegisterGaugeFloat64("foo.xxx", r); 0.0 != g.Value() {
+		t.Fatal(g)
+	}
 }
