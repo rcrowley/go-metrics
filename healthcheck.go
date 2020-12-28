@@ -17,6 +17,18 @@ func NewHealthcheck(f func(Healthcheck)) Healthcheck {
 	return &StandardHealthcheck{nil, f}
 }
 
+// NewRegisteredHealthcheck constructs a new Healthcheck which will use the given
+// function to update its status. This will also register the healthcheck in the registry
+// specified by r or the DefaultRegistry if r is nil
+func NewRegisteredHealthcheck(name string, f func(Healthcheck), r Registry) Healthcheck {
+	hc := NewHealthcheck(f)
+	if nil == r {
+		r = DefaultRegistry
+	}
+	r.Register(name, hc)
+	return hc
+}
+
 // NilHealthcheck is a no-op.
 type NilHealthcheck struct{}
 
