@@ -94,13 +94,14 @@ func (s *ExpDecaySample) Min() int64 {
 	return SampleMin(s.Values())
 }
 
-// Percentile returns an arbitrary percentile of values in the sample.
+// Percentile returns an arbitrary percentile of values in the
+// sample. To get the 75th percentile, use 0.75.
 func (s *ExpDecaySample) Percentile(p float64) float64 {
 	return SamplePercentile(s.Values(), p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of values in the
-// sample.
+// sample. To get the 75th percentile, use 0.75.
 func (s *ExpDecaySample) Percentiles(ps []float64) []float64 {
 	return SamplePercentiles(s.Values(), ps)
 }
@@ -268,13 +269,14 @@ func SampleMin(values []int64) int64 {
 	return min
 }
 
-// SamplePercentiles returns an arbitrary percentile of the slice of int64.
+// SamplePercentiles returns an arbitrary percentile of the slice of
+// int64. To get the 75th percentile, use 0.75.
 func SamplePercentile(values int64Slice, p float64) float64 {
 	return SamplePercentiles(values, []float64{p})[0]
 }
 
 // SamplePercentiles returns a slice of arbitrary percentiles of the slice of
-// int64.
+// int64. To get the 75th percentile, use 0.75.
 func SamplePercentiles(values int64Slice, ps []float64) []float64 {
 	scores := make([]float64, len(ps))
 	size := len(values)
@@ -327,13 +329,13 @@ func (s *SampleSnapshot) Mean() float64 { return SampleMean(s.values) }
 func (s *SampleSnapshot) Min() int64 { return SampleMin(s.values) }
 
 // Percentile returns an arbitrary percentile of values at the time the
-// snapshot was taken.
+// snapshot was taken. To get the 75th percentile, use 0.75.
 func (s *SampleSnapshot) Percentile(p float64) float64 {
 	return SamplePercentile(s.values, p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of values at the time
-// the snapshot was taken.
+// the snapshot was taken. To get the 75th percentile, use 0.75.
 func (s *SampleSnapshot) Percentiles(ps []float64) []float64 {
 	return SamplePercentiles(s.values, ps)
 }
@@ -455,7 +457,8 @@ func (s *UniformSample) Min() int64 {
 	return SampleMin(s.values)
 }
 
-// Percentile returns an arbitrary percentile of values in the sample.
+// Percentile returns an arbitrary percentile of values in the
+// sample. To get the 75th percentile, use 0.75.
 func (s *UniformSample) Percentile(p float64) float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -463,7 +466,7 @@ func (s *UniformSample) Percentile(p float64) float64 {
 }
 
 // Percentiles returns a slice of arbitrary percentiles of values in the
-// sample.
+// sample. To get the 75th percentile, use 0.75.
 func (s *UniformSample) Percentiles(ps []float64) []float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

@@ -72,13 +72,13 @@ func (h *HistogramSnapshot) Mean() float64 { return h.sample.Mean() }
 func (h *HistogramSnapshot) Min() int64 { return h.sample.Min() }
 
 // Percentile returns an arbitrary percentile of values in the sample at the
-// time the snapshot was taken.
+// time the snapshot was taken. To get the 75th percentile, use 0.75.
 func (h *HistogramSnapshot) Percentile(p float64) float64 {
 	return h.sample.Percentile(p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of values in the sample
-// at the time the snapshot was taken.
+// at the time the snapshot was taken. To get the 75th percentile, use 0.75.
 func (h *HistogramSnapshot) Percentiles(ps []float64) []float64 {
 	return h.sample.Percentiles(ps)
 }
@@ -170,13 +170,14 @@ func (h *StandardHistogram) Mean() float64 { return h.sample.Mean() }
 // Min returns the minimum value in the sample.
 func (h *StandardHistogram) Min() int64 { return h.sample.Min() }
 
-// Percentile returns an arbitrary percentile of the values in the sample.
+// Percentile returns an arbitrary percentile of the values in the
+// sample. To get the 75th percentile, use 0.75.
 func (h *StandardHistogram) Percentile(p float64) float64 {
 	return h.sample.Percentile(p)
 }
 
 // Percentiles returns a slice of arbitrary percentiles of the values in the
-// sample.
+// sample. To get the 75th percentile, use 0.75.
 func (h *StandardHistogram) Percentiles(ps []float64) []float64 {
 	return h.sample.Percentiles(ps)
 }
