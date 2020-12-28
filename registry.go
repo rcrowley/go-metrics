@@ -178,6 +178,8 @@ func (r *StandardRegistry) GetAll() map[string]map[string]interface{} {
 			values["5m.rate"] = t.Rate5()
 			values["15m.rate"] = t.Rate15()
 			values["mean.rate"] = t.RateMean()
+		case Distribution:
+
 		}
 		data[name] = values
 	})
@@ -207,7 +209,7 @@ func (r *StandardRegistry) register(name string, i interface{}) error {
 		return DuplicateMetric(name)
 	}
 	switch i.(type) {
-	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer:
+	case Counter, Gauge, GaugeFloat64, Healthcheck, Histogram, Meter, Timer, Distribution, VectorCounter:
 		r.metrics[name] = i
 	}
 	return nil

@@ -1,0 +1,4 @@
+github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 h1:dY6ETXrvDG7Sa4vE8ZQG4yqWg6UnOcbqTAahkV813vQ=
+github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
+github.com/stathat/go v1.0.0 h1:HFIS5YkyaI6tXu7JXIRRZBLRvYstdNZm034zcCeaybI=
+github.com/stathat/go v1.0.0/go.mod h1:+9Eg2szqkcOGWv6gfheJmBBsmq9Qf5KDbzy8/aYYR0c=
