@@ -78,6 +78,20 @@ func (exp *exp) getFloat(name string) *expvar.Float {
 	return v
 }
 
+func (exp *exp) getString(name string) *expvar.String {
+	var v *expvar.String
+	exp.expvarLock.Lock()
+	p := expvar.Get(name)
+	if p != nil {
+		v = p.(*expvar.String)
+	} else {
+		v = new(expvar.String)
+		expvar.Publish(name, v)
+	}
+	exp.expvarLock.Unlock()
+	return v
+}
+
 func (exp *exp) publishCounter(name string, metric metrics.Counter) {
 	v := exp.getInt(name)
 	v.Set(metric.Count())
@@ -134,6 +148,17 @@ func (exp *exp) publishTimer(name string, metric metrics.Timer) {
 	exp.getFloat(name + ".mean-rate").Set(float64(t.RateMean()))
 }
 
+func (exp *exp) publishHealthcheck(name string, metric metrics.Healthcheck) {
+	metric.Check()
+	if err := metric.Error(); err == nil {
+		exp.getInt(name + ".status").Set(1)
+		exp.getString(name + ".error").Set("")
+	} else {
+		exp.getInt(name + ".status").Set(0)
+		exp.getString(name + ".error").Set(err.Error())
+	}
+}
+
 func (exp *exp) syncToExpvar() {
 	exp.registry.Each(func(name string, i interface{}) {
 		switch i.(type) {
@@ -149,6 +174,8 @@ func (exp *exp) syncToExpvar() {
 			exp.publishMeter(name, i.(metrics.Meter))
 		case metrics.Timer:
 			exp.publishTimer(name, i.(metrics.Timer))
+		case metrics.Healthcheck:
+			exp.publishHealthcheck(name, i.(metrics.Healthcheck))
 		default:
 			panic(fmt.Sprintf("unsupported type for '%s': %T", name, i))
 		}
