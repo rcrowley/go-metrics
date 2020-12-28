@@ -15,9 +15,12 @@ func Write(r Registry, d time.Duration, w io.Writer) {
 	}
 }
 
-// WriteOnce sorts and writes metrics in the given registry to the given
+// WriteOnceScaled sorts and writes metrics in the given registry to the given
 // io.Writer.
-func WriteOnce(r Registry, w io.Writer) {
+func WriteOnceScaled(r Registry, w io.Writer, scale time.Duration) {
+	du := float64(scale)
+	duSuffix := scale.String()[1:]
+
 	var namedMetrics namedMetricSlice
 	r.Each(func(name string, i interface{}) {
 		namedMetrics = append(namedMetrics, namedMetric{name, i})
@@ -66,21 +69,27 @@ func WriteOnce(r Registry, w io.Writer) {
 			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 			fmt.Fprintf(w, "timer %s\n", namedMetric.name)
 			fmt.Fprintf(w, "  count:       %9d\n", t.Count())
-			fmt.Fprintf(w, "  min:         %9d\n", t.Min())
-			fmt.Fprintf(w, "  max:         %9d\n", t.Max())
-			fmt.Fprintf(w, "  mean:        %12.2f\n", t.Mean())
-			fmt.Fprintf(w, "  stddev:      %12.2f\n", t.StdDev())
-			fmt.Fprintf(w, "  median:      %12.2f\n", ps[0])
-			fmt.Fprintf(w, "  75%%:         %12.2f\n", ps[1])
-			fmt.Fprintf(w, "  95%%:         %12.2f\n", ps[2])
-			fmt.Fprintf(w, "  99%%:         %12.2f\n", ps[3])
-			fmt.Fprintf(w, "  99.9%%:       %12.2f\n", ps[4])
+			fmt.Fprintf(w, "  min:         %12.2f%s\n", float64(t.Min())/du, duSuffix)
+			fmt.Fprintf(w, "  max:         %12.2f%s\n", float64(t.Max())/du, duSuffix)
+			fmt.Fprintf(w, "  mean:        %12.2f%s\n", t.Mean()/du, duSuffix)
+			fmt.Fprintf(w, "  stddev:      %12.2f%s\n", t.StdDev()/du, duSuffix)
+			fmt.Fprintf(w, "  median:      %12.2f%s\n", ps[0]/du, duSuffix)
+			fmt.Fprintf(w, "  75%%:         %12.2f%s\n", ps[1]/du, duSuffix)
+			fmt.Fprintf(w, "  95%%:         %12.2f%s\n", ps[2]/du, duSuffix)
+			fmt.Fprintf(w, "  99%%:         %12.2f%s\n", ps[3]/du, duSuffix)
+			fmt.Fprintf(w, "  99.9%%:       %12.2f%s\n", ps[4]/du, duSuffix)
 			fmt.Fprintf(w, "  1-min rate:  %12.2f\n", t.Rate1())
 			fmt.Fprintf(w, "  5-min rate:  %12.2f\n", t.Rate5())
 			fmt.Fprintf(w, "  15-min rate: %12.2f\n", t.Rate15())
 			fmt.Fprintf(w, "  mean rate:   %12.2f\n", t.RateMean())
 		}
 	}
+}
+
+// WriteOnce sorts and writes metrics in the given registry to the given
+// io.Writer.
+func WriteOnce(r Registry, w io.Writer) {
+	WriteOnceScaled(r, w, time.Nanosecond)
 }
 
 type namedMetric struct {
