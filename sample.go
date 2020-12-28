@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const rescaleThreshold = time.Hour
+var SampleRescaleThreshold = time.Hour
 
 // Samples maintain a statistically-significant selection of values from
 // a stream.
@@ -55,7 +55,7 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 		t0:            time.Now(),
 		values:        newExpDecaySampleHeap(reservoirSize),
 	}
-	s.t1 = s.t0.Add(rescaleThreshold)
+	s.t1 = s.t0.Add(SampleRescaleThreshold)
 	return s
 }
 
@@ -65,7 +65,7 @@ func (s *ExpDecaySample) Clear() {
 	defer s.mutex.Unlock()
 	s.count = 0
 	s.t0 = time.Now()
-	s.t1 = s.t0.Add(rescaleThreshold)
+	s.t1 = s.t0.Add(SampleRescaleThreshold)
 	s.values.Clear()
 }
 
@@ -177,7 +177,7 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 		t0 := s.t0
 		s.values.Clear()
 		s.t0 = t
-		s.t1 = s.t0.Add(rescaleThreshold)
+		s.t1 = s.t0.Add(SampleRescaleThreshold)
 		for _, v := range values {
 			v.k = v.k * math.Exp(-s.alpha*s.t0.Sub(t0).Seconds())
 			s.values.Push(v)
