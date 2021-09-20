@@ -43,6 +43,21 @@ type ExpDecaySample struct {
 	values        *expDecaySampleHeap
 }
 
+type bufferedExpDecaySample struct {
+	s *ExpDecaySample
+	t time.Time
+	v int64
+}
+
+var chExpDecaySamples = make(chan bufferedExpDecaySample, 1024)
+var once sync.Once
+
+func updateExpDecaySample() {
+	for s := range chExpDecaySamples {
+		s.s.doUpdate(s.t, s.v)
+	}
+}
+
 // NewExpDecaySample constructs a new exponentially-decaying sample with the
 // given reservoir size and alpha.
 func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
@@ -56,6 +71,9 @@ func NewExpDecaySample(reservoirSize int, alpha float64) Sample {
 		values:        newExpDecaySampleHeap(reservoirSize),
 	}
 	s.t1 = s.t0.Add(rescaleThreshold)
+	once.Do(func() {
+		go updateExpDecaySample()
+	})
 	return s
 }
 
@@ -159,9 +177,7 @@ func (s *ExpDecaySample) Variance() float64 {
 	return SampleVariance(s.Values())
 }
 
-// update samples a new value at a particular timestamp.  This is a method all
-// its own to facilitate testing.
-func (s *ExpDecaySample) update(t time.Time, v int64) {
+func (s *ExpDecaySample) doUpdate(t time.Time, v int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.count++
@@ -183,6 +199,12 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 			s.values.Push(v)
 		}
 	}
+}
+
+// update samples a new value at a particular timestamp.  This is a method all
+// its own to facilitate testing.
+func (s *ExpDecaySample) update(t time.Time, v int64) {
+	chExpDecaySamples <- bufferedExpDecaySample{s: s, t: t, v: v}
 }
 
 // NilSample is a no-op Sample.

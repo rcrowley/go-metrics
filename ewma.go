@@ -2,16 +2,15 @@ package metrics
 
 import (
 	"math"
-	"sync"
 	"sync/atomic"
 )
 
-// EWMAs continuously calculate an exponentially-weighted moving average
+// EWMA continuously calculate an exponentially-weighted moving average
 // based on an outside source of clock ticks.
 type EWMA interface {
 	Rate() float64
 	Snapshot() EWMA
-	Tick()
+	Tick() // This function should not be called concurrently
 	Update(int64)
 }
 
@@ -80,8 +79,7 @@ type StandardEWMA struct {
 	uncounted int64 // /!\ this should be the first member to ensure 64-bit alignment
 	alpha     float64
 	rate      uint64
-	init      uint32
-	mutex     sync.Mutex
+	inited    bool
 }
 
 // Rate returns the moving average rate of events per second.
@@ -97,31 +95,18 @@ func (a *StandardEWMA) Snapshot() EWMA {
 
 // Tick ticks the clock to update the moving average.  It assumes it is called
 // every five seconds.
+// Note this function should not be called concurrently.
 func (a *StandardEWMA) Tick() {
-	// Optimization to avoid mutex locking in the hot-path.
-	if atomic.LoadUint32(&a.init) == 1 {
+	if a.inited {
 		a.updateRate(a.fetchInstantRate())
 	} else {
-		// Slow-path: this is only needed on the first Tick() and preserves transactional updating
-		// of init and rate in the else block. The first conditional is needed below because
-		// a different thread could have set a.init = 1 between the time of the first atomic load and when
-		// the lock was acquired.
-		a.mutex.Lock()
-		if atomic.LoadUint32(&a.init) == 1 {
-			// The fetchInstantRate() uses atomic loading, which is unecessary in this critical section
-			// but again, this section is only invoked on the first successful Tick() operation.
-			a.updateRate(a.fetchInstantRate())
-		} else {
-			atomic.StoreUint32(&a.init, 1)
-			atomic.StoreUint64(&a.rate, math.Float64bits(a.fetchInstantRate()))
-		}
-		a.mutex.Unlock()
+		a.inited = true
+		atomic.StoreUint64(&a.rate, math.Float64bits(a.fetchInstantRate()))
 	}
 }
 
 func (a *StandardEWMA) fetchInstantRate() float64 {
-	count := atomic.LoadInt64(&a.uncounted)
-	atomic.AddInt64(&a.uncounted, -count)
+	count := atomic.SwapInt64(&a.uncounted, 0)
 	instantRate := float64(count) / float64(5e9)
 	return instantRate
 }

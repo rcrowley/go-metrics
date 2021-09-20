@@ -23,7 +23,6 @@ func BenchmarkEWMAParallel(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			a.Update(1)
-			a.Tick()
 		}
 	})
 }
