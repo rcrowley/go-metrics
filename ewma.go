@@ -108,7 +108,7 @@ func (a *StandardEWMA) Tick() {
 		// the lock was acquired.
 		a.mutex.Lock()
 		if atomic.LoadUint32(&a.init) == 1 {
-			// The fetchInstantRate() uses atomic loading, which is unecessary in this critical section
+			// The fetchInstantRate() uses atomic loading, which is unnecessary in this critical section
 			// but again, this section is only invoked on the first successful Tick() operation.
 			a.updateRate(a.fetchInstantRate())
 		} else {
