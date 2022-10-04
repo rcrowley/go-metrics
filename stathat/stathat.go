@@ -2,10 +2,11 @@
 package stathat
 
 import (
-	"github.com/rcrowley/go-metrics"
-	"github.com/stathat/go"
 	"log"
 	"time"
+
+	"github.com/alexchowle/go-metrics"
+	stathat "github.com/stathat/go"
 )
 
 func Stathat(r metrics.Registry, d time.Duration, userkey string) {

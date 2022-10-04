@@ -2,13 +2,12 @@ package main
 
 import (
 	"errors"
-	"github.com/rcrowley/go-metrics"
-	// "github.com/rcrowley/go-metrics/stathat"
 	"log"
 	"math/rand"
 	"os"
-	// "syslog"
 	"time"
+
+	"github.com/alexchowle/go-metrics"
 )
 
 const fanout = 10
