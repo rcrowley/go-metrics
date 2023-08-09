@@ -1,4 +1,4 @@
-package metrics
+package logging
 
 import (
 	"sort"

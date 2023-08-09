@@ -93,3 +93,43 @@ func testHistogram10000(t *testing.T, h Histogram) {
 		t.Errorf("99th percentile: 9900.99 != %v\n", ps[2])
 	}
 }
+
+func TestHistogramLabels(t *testing.T) {
+	labels := []Label{Label{"key1", "value1"}}
+	h := NewHistogram(NewUniformSample(100), labels...)
+	if len(h.Labels()) != 1 {
+		t.Fatalf("Labels(): %v != 1", len(h.Labels()))
+	}
+	if lbls := h.Labels()[0]; lbls.Key != "key1" || lbls.Value != "value1" {
+		t.Errorf("Labels(): %v != key1; %v != value1", lbls.Key, lbls.Value)
+	}
+
+	// Labels passed by value.
+	labels[0] = Label{"key3", "value3"}
+	if lbls := h.Labels()[0]; lbls.Key != "key1" || lbls.Value != "value1" {
+		t.Error("Labels(): labels passed by reference")
+	}
+
+	// Labels in snapshot.
+	ss := h.Snapshot()
+	if len(ss.Labels()) != 1 {
+		t.Fatalf("Labels(): %v != 1", len(h.Labels()))
+	}
+	if lbls := ss.Labels()[0]; lbls.Key != "key1" || lbls.Value != "value1" {
+		t.Errorf("Labels(): %v != key1; %v != value1", lbls.Key, lbls.Value)
+	}
+}
+
+func TestHistogramWithLabels(t *testing.T) {
+	h := NewHistogram(NewUniformSample(100), Label{"foo", "bar"})
+	new := h.WithLabels(Label{"bar", "foo"})
+	if len(new.Labels()) != 2 {
+		t.Fatalf("WithLabels() len: %v != 2", len(new.Labels()))
+	}
+	if lbls:=new.Labels()[0]; lbls.Key != "foo" || lbls.Value != "bar" {
+		t.Errorf("WithLabels(): %v != foo; %v != bar", lbls.Key, lbls.Value)
+	}
+	if lbls:=new.Labels()[1]; lbls.Key != "bar" || lbls.Value != "foo" {
+		t.Errorf("WithLabels(): %v != bar; %v != foo", lbls.Key, lbls.Value)
+	}
+}

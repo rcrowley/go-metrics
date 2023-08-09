@@ -32,18 +32,6 @@ func TestTimerExtremes(t *testing.T) {
 	}
 }
 
-func TestTimerStop(t *testing.T) {
-	l := len(arbiter.meters)
-	tm := NewTimer()
-	if len(arbiter.meters) != l+1 {
-		t.Errorf("arbiter.meters: %d != %d\n", l+1, len(arbiter.meters))
-	}
-	tm.Stop()
-	if len(arbiter.meters) != l {
-		t.Errorf("arbiter.meters: %d != %d\n", l, len(arbiter.meters))
-	}
-}
-
 func TestTimerFunc(t *testing.T) {
 	tm := NewTimer()
 	tm.Time(func() { time.Sleep(50e6) })
@@ -90,6 +78,46 @@ func TestTimerZero(t *testing.T) {
 	}
 	if rateMean := tm.RateMean(); 0.0 != rateMean {
 		t.Errorf("tm.RateMean(): 0.0 != %v\n", rateMean)
+	}
+}
+
+func TestTimerLabels(t *testing.T) {
+	labels := []Label{Label{"key1", "value1"}}
+	c := NewTimer(labels...)
+	if len(c.Labels()) != 1 {
+		t.Fatalf("Labels(): %v != 1", len(c.Labels()))
+	}
+	if lbls := c.Labels()[0]; lbls.Key != "key1" || lbls.Value != "value1" {
+		t.Errorf("Labels(): %v != key1; %v != value1", lbls.Key, lbls.Value)
+	}
+
+	// Labels passed by value.
+	labels[0] = Label{"key3", "value3"}
+	if lbls := c.Labels()[0]; lbls.Key != "key1" || lbls.Value != "value1" {
+		t.Error("Labels(): labels passed by reference")
+	}
+
+	// Labels in snapshot.
+	ss := c.Snapshot()
+	if len(ss.Labels()) != 1 {
+		t.Fatalf("Labels(): %v != 1", len(c.Labels()))
+	}
+	if lbls := ss.Labels()[0]; lbls.Key != "key1" || lbls.Value != "value1" {
+		t.Errorf("Labels(): %v != key1; %v != value1", lbls.Key, lbls.Value)
+	}
+}
+
+func TestTimerWithLabels(t *testing.T) {
+	c := NewTimer(Label{"foo", "bar"})
+	new := c.WithLabels(Label{"bar", "foo"})
+	if len(new.Labels()) != 2 {
+		t.Fatalf("WithLabels() len: %v != 2", len(new.Labels()))
+	}
+	if lbls:=new.Labels()[0]; lbls.Key != "foo" || lbls.Value != "bar" {
+		t.Errorf("WithLabels(): %v != foo; %v != bar", lbls.Key, lbls.Value)
+	}
+	if lbls:=new.Labels()[1]; lbls.Key != "bar" || lbls.Value != "foo" {
+		t.Errorf("WithLabels(): %v != bar; %v != foo", lbls.Key, lbls.Value)
 	}
 }
 

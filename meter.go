@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"math"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -17,43 +15,32 @@ type Meter interface {
 	Rate15() float64
 	RateMean() float64
 	Snapshot() Meter
-	Stop()
+	Labels() []Label
+	WithLabels(...Label) Meter
 }
 
 // GetOrRegisterMeter returns an existing Meter or constructs and registers a
 // new StandardMeter.
-// Be sure to unregister the meter from the registry once it is of no use to
-// allow for garbage collection.
-func GetOrRegisterMeter(name string, r Registry) Meter {
+func GetOrRegisterMeter(name string, r Registry, labels ...Label) Meter {
 	if nil == r {
 		r = DefaultRegistry
 	}
-	return r.GetOrRegister(name, NewMeter).(Meter)
+	return r.GetOrRegister(name, func() Meter {
+		return NewMeter(labels...)
+	}).(Meter)
 }
 
-// NewMeter constructs a new StandardMeter and launches a goroutine.
-// Be sure to call Stop() once the meter is of no use to allow for garbage collection.
-func NewMeter() Meter {
+// NewMeter constructs a new StandardMeter.
+func NewMeter(labels ...Label) Meter {
 	if UseNilMetrics {
 		return NilMeter{}
 	}
-	m := newStandardMeter()
-	arbiter.Lock()
-	defer arbiter.Unlock()
-	arbiter.meters[m] = struct{}{}
-	if !arbiter.started {
-		arbiter.started = true
-		go arbiter.tick()
-	}
-	return m
+	return newStandardMeter(labels...)
 }
 
-// NewMeter constructs and registers a new StandardMeter and launches a
-// goroutine.
-// Be sure to unregister the meter from the registry once it is of no use to
-// allow for garbage collection.
-func NewRegisteredMeter(name string, r Registry) Meter {
-	c := NewMeter()
+// NewMeter constructs and registers a new StandardMeter.
+func NewRegisteredMeter(name string, r Registry, labels ...Label) Meter {
+	c := NewMeter(labels...)
 	if nil == r {
 		r = DefaultRegistry
 	}
@@ -64,7 +51,8 @@ func NewRegisteredMeter(name string, r Registry) Meter {
 // MeterSnapshot is a read-only copy of another Meter.
 type MeterSnapshot struct {
 	count                          int64
-	rate1, rate5, rate15, rateMean uint64
+	rate1, rate5, rate15, rateMean float64
+	labels                         []Label
 }
 
 // Count returns the count of events at the time the snapshot was taken.
@@ -77,25 +65,38 @@ func (*MeterSnapshot) Mark(n int64) {
 
 // Rate1 returns the one-minute moving average rate of events per second at the
 // time the snapshot was taken.
-func (m *MeterSnapshot) Rate1() float64 { return math.Float64frombits(m.rate1) }
+func (m *MeterSnapshot) Rate1() float64 { return m.rate1 }
 
 // Rate5 returns the five-minute moving average rate of events per second at
 // the time the snapshot was taken.
-func (m *MeterSnapshot) Rate5() float64 { return math.Float64frombits(m.rate5) }
+func (m *MeterSnapshot) Rate5() float64 { return m.rate5 }
 
 // Rate15 returns the fifteen-minute moving average rate of events per second
 // at the time the snapshot was taken.
-func (m *MeterSnapshot) Rate15() float64 { return math.Float64frombits(m.rate15) }
+func (m *MeterSnapshot) Rate15() float64 { return m.rate15 }
 
 // RateMean returns the meter's mean rate of events per second at the time the
 // snapshot was taken.
-func (m *MeterSnapshot) RateMean() float64 { return math.Float64frombits(m.rateMean) }
+func (m *MeterSnapshot) RateMean() float64 { return m.rateMean }
 
 // Snapshot returns the snapshot.
 func (m *MeterSnapshot) Snapshot() Meter { return m }
 
-// Stop is a no-op.
-func (m *MeterSnapshot) Stop() {}
+// Labels returns the snapshot's labels.
+func (m *MeterSnapshot) Labels() []Label { return deepCopyLabels(m.labels) }
+
+// WithLabels returns a copy of the snapshot with the given labels appended to
+// the current list of labels.
+func (m *MeterSnapshot) WithLabels(labels ...Label) Meter {
+	return &MeterSnapshot{
+		count:    m.Count(),
+		rate1:    m.Rate1(),
+		rate5:    m.Rate5(),
+		rate15:   m.Rate15(),
+		rateMean: m.RateMean(),
+		labels:   append(m.Labels(), deepCopyLabels(labels)...),
+	}
+}
 
 // NilMeter is a no-op Meter.
 type NilMeter struct{}
@@ -121,131 +122,80 @@ func (NilMeter) RateMean() float64 { return 0.0 }
 // Snapshot is a no-op.
 func (NilMeter) Snapshot() Meter { return NilMeter{} }
 
-// Stop is a no-op.
-func (NilMeter) Stop() {}
+// Labels is a no-op.
+func (NilMeter) Labels() []Label { return []Label{} }
+
+// WithLabels is a no-op.
+func (NilMeter) WithLabels(...Label) Meter { return NilMeter{} }
 
 // StandardMeter is the standard implementation of a Meter.
 type StandardMeter struct {
-	snapshot    *MeterSnapshot
+	count       atomic.Int64
 	a1, a5, a15 EWMA
 	startTime   time.Time
-	stopped     uint32
+	labels      []Label
 }
 
-func newStandardMeter() *StandardMeter {
+func newStandardMeter(labels ...Label) *StandardMeter {
 	return &StandardMeter{
-		snapshot:  &MeterSnapshot{},
 		a1:        NewEWMA1(),
 		a5:        NewEWMA5(),
 		a15:       NewEWMA15(),
 		startTime: time.Now(),
-	}
-}
-
-// Stop stops the meter, Mark() will be a no-op if you use it after being stopped.
-func (m *StandardMeter) Stop() {
-	if atomic.CompareAndSwapUint32(&m.stopped, 0, 1) {
-		arbiter.Lock()
-		delete(arbiter.meters, m)
-		arbiter.Unlock()
+		labels:    deepCopyLabels(labels),
 	}
 }
 
 // Count returns the number of events recorded.
 func (m *StandardMeter) Count() int64 {
-	return atomic.LoadInt64(&m.snapshot.count)
+	return m.count.Load()
 }
 
 // Mark records the occurance of n events.
 func (m *StandardMeter) Mark(n int64) {
-	if atomic.LoadUint32(&m.stopped) == 1 {
-		return
-	}
-
-	atomic.AddInt64(&m.snapshot.count, n)
-
+	m.count.Add(n)
 	m.a1.Update(n)
 	m.a5.Update(n)
 	m.a15.Update(n)
-	m.updateSnapshot()
 }
 
 // Rate1 returns the one-minute moving average rate of events per second.
 func (m *StandardMeter) Rate1() float64 {
-	return math.Float64frombits(atomic.LoadUint64(&m.snapshot.rate1))
+	return m.a1.Rate()
 }
 
 // Rate5 returns the five-minute moving average rate of events per second.
 func (m *StandardMeter) Rate5() float64 {
-	return math.Float64frombits(atomic.LoadUint64(&m.snapshot.rate5))
+	return m.a5.Rate()
 }
 
 // Rate15 returns the fifteen-minute moving average rate of events per second.
 func (m *StandardMeter) Rate15() float64 {
-	return math.Float64frombits(atomic.LoadUint64(&m.snapshot.rate15))
+	return m.a15.Rate()
 }
 
 // RateMean returns the meter's mean rate of events per second.
 func (m *StandardMeter) RateMean() float64 {
-	return math.Float64frombits(atomic.LoadUint64(&m.snapshot.rateMean))
+	return float64(m.Count()) / time.Since(m.startTime).Seconds()
 }
 
 // Snapshot returns a read-only copy of the meter.
 func (m *StandardMeter) Snapshot() Meter {
-	copiedSnapshot := MeterSnapshot{
-		count:    atomic.LoadInt64(&m.snapshot.count),
-		rate1:    atomic.LoadUint64(&m.snapshot.rate1),
-		rate5:    atomic.LoadUint64(&m.snapshot.rate5),
-		rate15:   atomic.LoadUint64(&m.snapshot.rate15),
-		rateMean: atomic.LoadUint64(&m.snapshot.rateMean),
-	}
-	return &copiedSnapshot
-}
-
-func (m *StandardMeter) updateSnapshot() {
-	rate1 := math.Float64bits(m.a1.Rate())
-	rate5 := math.Float64bits(m.a5.Rate())
-	rate15 := math.Float64bits(m.a15.Rate())
-	rateMean := math.Float64bits(float64(m.Count()) / time.Since(m.startTime).Seconds())
-
-	atomic.StoreUint64(&m.snapshot.rate1, rate1)
-	atomic.StoreUint64(&m.snapshot.rate5, rate5)
-	atomic.StoreUint64(&m.snapshot.rate15, rate15)
-	atomic.StoreUint64(&m.snapshot.rateMean, rateMean)
-}
-
-func (m *StandardMeter) tick() {
-	m.a1.Tick()
-	m.a5.Tick()
-	m.a15.Tick()
-	m.updateSnapshot()
-}
-
-// meterArbiter ticks meters every 5s from a single goroutine.
-// meters are references in a set for future stopping.
-type meterArbiter struct {
-	sync.RWMutex
-	started bool
-	meters  map[*StandardMeter]struct{}
-	ticker  *time.Ticker
-}
-
-var arbiter = meterArbiter{ticker: time.NewTicker(5e9), meters: make(map[*StandardMeter]struct{})}
-
-// Ticks meters on the scheduled interval
-func (ma *meterArbiter) tick() {
-	for {
-		select {
-		case <-ma.ticker.C:
-			ma.tickMeters()
-		}
+	return &MeterSnapshot{
+		count:    m.Count(),
+		rate1:    m.Rate1(),
+		rate5:    m.Rate5(),
+		rate15:   m.Rate15(),
+		rateMean: m.RateMean(),
+		labels:   m.Labels(),
 	}
 }
 
-func (ma *meterArbiter) tickMeters() {
-	ma.RLock()
-	defer ma.RUnlock()
-	for meter := range ma.meters {
-		meter.tick()
-	}
+// Labels returns a deep copy of the meter's labels.
+func (m *StandardMeter) Labels() []Label { return deepCopyLabels(m.labels) }
+
+// WithLabels returns a snapshot of the Meter with the given labels appended to
+// the current list of labels.
+func (m *StandardMeter) WithLabels(labels ...Label) Meter {
+	return m.Snapshot().WithLabels(labels...)
 }

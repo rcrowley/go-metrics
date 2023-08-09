@@ -40,6 +40,11 @@ type Registry interface {
 	// Register the given metric under the given name.
 	Register(string, interface{}) error
 
+	// SinkOnce stores a metric in the registry that will be returned by
+	// Each() only once. It is not accessible via Get() or GetAll() because
+	// it is not registered.
+	SinkOnce(string, interface{})
+
 	// Run all registered healthchecks.
 	RunHealthchecks()
 
@@ -53,8 +58,9 @@ type Registry interface {
 // The standard implementation of a Registry is a mutex-protected map
 // of names to metrics.
 type StandardRegistry struct {
-	metrics map[string]interface{}
-	mutex   sync.RWMutex
+	metrics   map[string]interface{}
+	tempQueue []metricKV
+	mutex     sync.RWMutex
 }
 
 // Create a new registry.
@@ -67,6 +73,14 @@ func (r *StandardRegistry) Each(f func(string, interface{})) {
 	metrics := r.registered()
 	for i := range metrics {
 		kv := &metrics[i]
+		f(kv.name, kv.value)
+	}
+	r.mutex.Lock()
+	queue := r.tempQueue
+	r.tempQueue = []metricKV{}
+	r.mutex.Unlock()
+	for i := range queue {
+		kv := &queue[i]
 		f(kv.name, kv.value)
 	}
 }
@@ -112,6 +126,15 @@ func (r *StandardRegistry) Register(name string, i interface{}) error {
 	return r.register(name, i)
 }
 
+// SinkOnce stores a metric in the registry that will be returned by
+// Each() only once. It is not accessible via Get() or GetAll() because
+// it is not registered.
+func (r *StandardRegistry) SinkOnce(name string, i interface{}) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.tempQueue = append(r.tempQueue, metricKV{name, i})
+}
+
 // Run all registered healthchecks.
 func (r *StandardRegistry) RunHealthchecks() {
 	r.mutex.RLock()
@@ -131,12 +154,16 @@ func (r *StandardRegistry) GetAll() map[string]map[string]interface{} {
 		switch metric := i.(type) {
 		case Counter:
 			values["count"] = metric.Count()
+			values["labels"] = metric.Labels()
 		case Gauge:
 			values["value"] = metric.Value()
+			values["labels"] = metric.Labels()
 		case GaugeFloat64:
 			values["value"] = metric.Value()
+			values["labels"] = metric.Labels()
 		case Healthcheck:
 			values["error"] = nil
+			values["labels"] = metric.Labels()
 			metric.Check()
 			if err := metric.Error(); nil != err {
 				values["error"] = metric.Error().Error()
@@ -154,6 +181,7 @@ func (r *StandardRegistry) GetAll() map[string]map[string]interface{} {
 			values["95%"] = ps[2]
 			values["99%"] = ps[3]
 			values["99.9%"] = ps[4]
+			values["labels"] = metric.Labels()
 		case Meter:
 			m := metric.Snapshot()
 			values["count"] = m.Count()
@@ -161,6 +189,7 @@ func (r *StandardRegistry) GetAll() map[string]map[string]interface{} {
 			values["5m.rate"] = m.Rate5()
 			values["15m.rate"] = m.Rate15()
 			values["mean.rate"] = m.RateMean()
+			values["labels"] = metric.Labels()
 		case Timer:
 			t := metric.Snapshot()
 			ps := t.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
@@ -178,6 +207,7 @@ func (r *StandardRegistry) GetAll() map[string]map[string]interface{} {
 			values["5m.rate"] = t.Rate5()
 			values["15m.rate"] = t.Rate15()
 			values["mean.rate"] = t.RateMean()
+			values["labels"] = metric.Labels()
 		}
 		data[name] = values
 	})
@@ -309,6 +339,11 @@ func (r *PrefixedRegistry) Register(name string, metric interface{}) error {
 	return r.underlying.Register(realName, metric)
 }
 
+// Sink once to the underlying registry.
+func (r *PrefixedRegistry) SinkOnce(name string, i interface{}) {
+	r.underlying.SinkOnce(name, i)
+}
+
 // Run all registered healthchecks.
 func (r *PrefixedRegistry) RunHealthchecks() {
 	r.underlying.RunHealthchecks()
@@ -360,6 +395,11 @@ func MustRegister(name string, i interface{}) {
 	if err := Register(name, i); err != nil {
 		panic(err)
 	}
+}
+
+// Sink once to the default registry.
+func SinkOnce(name string, i interface{}) {
+	DefaultRegistry.SinkOnce(name, i)
 }
 
 // Run all registered healthchecks.
