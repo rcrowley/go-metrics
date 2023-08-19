@@ -38,8 +38,8 @@ func NewMeter() Meter {
 		return NilMeter{}
 	}
 	m := newStandardMeter()
-	arbiter.Lock()
-	defer arbiter.Unlock()
+	arbiter.lock.Lock()
+	defer arbiter.lock.Unlock()
 	arbiter.meters[m] = struct{}{}
 	if !arbiter.started {
 		arbiter.started = true
@@ -145,9 +145,12 @@ func newStandardMeter() *StandardMeter {
 // Stop stops the meter, Mark() will be a no-op if you use it after being stopped.
 func (m *StandardMeter) Stop() {
 	if atomic.CompareAndSwapUint32(&m.stopped, 0, 1) {
-		arbiter.Lock()
+		arbiter.lock.Lock()
 		delete(arbiter.meters, m)
-		arbiter.Unlock()
+		if len(arbiter.meters) == 0 {
+			arbiter.started = false
+		}
+		arbiter.lock.Unlock()
 	}
 }
 
@@ -224,7 +227,7 @@ func (m *StandardMeter) tick() {
 // meterArbiter ticks meters every 5s from a single goroutine.
 // meters are references in a set for future stopping.
 type meterArbiter struct {
-	sync.RWMutex
+	lock    sync.RWMutex
 	started bool
 	meters  map[*StandardMeter]struct{}
 	ticker  *time.Ticker
@@ -237,15 +240,18 @@ func (ma *meterArbiter) tick() {
 	for {
 		select {
 		case <-ma.ticker.C:
-			ma.tickMeters()
+			if ma.tickMeters() {
+				return
+			}
 		}
 	}
 }
 
-func (ma *meterArbiter) tickMeters() {
-	ma.RLock()
-	defer ma.RUnlock()
+func (ma *meterArbiter) tickMeters() bool {
+	ma.lock.RLock()
+	defer ma.lock.RUnlock()
 	for meter := range ma.meters {
 		meter.tick()
 	}
+	return !ma.started
 }
