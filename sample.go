@@ -507,7 +507,6 @@ func (s *UniformSample) Sum() int64 {
 func (s *UniformSample) Update(v int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.count++
 	if len(s.values) < s.reservoirSize {
 		s.values = append(s.values, v)
 	} else {
@@ -516,6 +515,7 @@ func (s *UniformSample) Update(v int64) {
 			s.values[int(r)] = v
 		}
 	}
+	s.count++
 }
 
 // Values returns a copy of the values in the sample.
