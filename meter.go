@@ -156,7 +156,7 @@ func (m *StandardMeter) Count() int64 {
 	return atomic.LoadInt64(&m.snapshot.count)
 }
 
-// Mark records the occurance of n events.
+// Mark records the occurrence of n events.
 func (m *StandardMeter) Mark(n int64) {
 	if atomic.LoadUint32(&m.stopped) == 1 {
 		return
