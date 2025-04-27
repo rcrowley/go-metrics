@@ -43,7 +43,8 @@ func NewMeter() Meter {
 	arbiter.meters[m] = struct{}{}
 	if !arbiter.started {
 		arbiter.started = true
-		go arbiter.tick()
+		arbiter.cancel = make(chan struct{})
+		go arbiter.tick(arbiter.ticker, arbiter.cancel)
 	}
 	return m
 }
@@ -146,8 +147,20 @@ func newStandardMeter() *StandardMeter {
 func (m *StandardMeter) Stop() {
 	if atomic.CompareAndSwapUint32(&m.stopped, 0, 1) {
 		arbiter.Lock()
+		defer arbiter.Unlock()
+
 		delete(arbiter.meters, m)
-		arbiter.Unlock()
+
+		if len(arbiter.meters) > 0 {
+			return
+		}
+
+		// reset the arbiter to a newly intialized state, allows
+		// background goroutine (arbiter.tick) to terminate cleanly.
+		arbiter.ticker.Stop()
+		close(arbiter.cancel)
+		arbiter.ticker = time.NewTicker(5e9)
+		arbiter.started = false
 	}
 }
 
@@ -228,16 +241,19 @@ type meterArbiter struct {
 	started bool
 	meters  map[*StandardMeter]struct{}
 	ticker  *time.Ticker
+	cancel  chan struct{}
 }
 
 var arbiter = meterArbiter{ticker: time.NewTicker(5e9), meters: make(map[*StandardMeter]struct{})}
 
 // Ticks meters on the scheduled interval
-func (ma *meterArbiter) tick() {
+func (ma *meterArbiter) tick(ticker *time.Ticker, cancel <-chan struct{}) {
 	for {
 		select {
-		case <-ma.ticker.C:
+		case <-ticker.C:
 			ma.tickMeters()
+		case <-cancel:
+			return
 		}
 	}
 }
