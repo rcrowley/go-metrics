@@ -38,13 +38,7 @@ func NewMeter() Meter {
 		return NilMeter{}
 	}
 	m := newStandardMeter()
-	arbiter.Lock()
-	defer arbiter.Unlock()
-	arbiter.meters[m] = struct{}{}
-	if !arbiter.started {
-		arbiter.started = true
-		go arbiter.tick()
-	}
+	m.startArbiter()
 	return m
 }
 
@@ -145,9 +139,7 @@ func newStandardMeter() *StandardMeter {
 // Stop stops the meter, Mark() will be a no-op if you use it after being stopped.
 func (m *StandardMeter) Stop() {
 	if atomic.CompareAndSwapUint32(&m.stopped, 0, 1) {
-		arbiter.Lock()
-		delete(arbiter.meters, m)
-		arbiter.Unlock()
+		m.stopArbiter()
 	}
 }
 
@@ -156,7 +148,7 @@ func (m *StandardMeter) Count() int64 {
 	return atomic.LoadInt64(&m.snapshot.count)
 }
 
-// Mark records the occurance of n events.
+// Mark records the occurrance of n events.
 func (m *StandardMeter) Mark(n int64) {
 	if atomic.LoadUint32(&m.stopped) == 1 {
 		return
@@ -221,23 +213,54 @@ func (m *StandardMeter) tick() {
 	m.updateSnapshot()
 }
 
+func (m *StandardMeter) startArbiter() {
+	arbiter.Lock()
+	defer arbiter.Unlock()
+	arbiter.meters[m] = struct{}{}
+	if !arbiter.started {
+		arbiter.started = true
+		go arbiter.tick()
+	}
+}
+
+func (m *StandardMeter) stopArbiter() {
+	arbiter.Lock()
+	defer arbiter.Unlock()
+	delete(arbiter.meters, m)
+	if len(arbiter.meters) == 0 && arbiter.started {
+		arbiter.cancel <- struct{}{}
+		arbiter.started = false
+	}
+}
+
 // meterArbiter ticks meters every 5s from a single goroutine.
 // meters are references in a set for future stopping.
 type meterArbiter struct {
 	sync.RWMutex
-	started bool
-	meters  map[*StandardMeter]struct{}
-	ticker  *time.Ticker
+	started  bool
+	meters   map[*StandardMeter]struct{}
+	cancel   chan struct{}
+	interval time.Duration
 }
 
-var arbiter = meterArbiter{ticker: time.NewTicker(5e9), meters: make(map[*StandardMeter]struct{})}
+func newArbiter(d time.Duration) *meterArbiter {
+	return &meterArbiter{
+		meters:   make(map[*StandardMeter]struct{}),
+		cancel:   make(chan struct{}),
+		interval: d,
+	}
+}
 
 // Ticks meters on the scheduled interval
 func (ma *meterArbiter) tick() {
+	ticker := time.NewTicker(ma.interval)
+	defer ticker.Stop()
 	for {
 		select {
-		case <-ma.ticker.C:
+		case <-ticker.C:
 			ma.tickMeters()
+		case <-ma.cancel:
+			return
 		}
 	}
 }
@@ -249,3 +272,5 @@ func (ma *meterArbiter) tickMeters() {
 		meter.tick()
 	}
 }
+
+var arbiter = newArbiter(5 * time.Second)

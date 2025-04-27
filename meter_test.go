@@ -28,10 +28,7 @@ func BenchmarkMeterParallel(b *testing.B) {
 // exercise race detector
 func TestMeterConcurrency(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	ma := meterArbiter{
-		ticker: time.NewTicker(time.Millisecond),
-		meters: make(map[*StandardMeter]struct{}),
-	}
+	ma := newArbiter(time.Millisecond)
 	m := newStandardMeter()
 	ma.meters[m] = struct{}{}
 	go ma.tick()
@@ -61,10 +58,7 @@ func TestGetOrRegisterMeter(t *testing.T) {
 }
 
 func TestMeterDecay(t *testing.T) {
-	ma := meterArbiter{
-		ticker: time.NewTicker(time.Millisecond),
-		meters: make(map[*StandardMeter]struct{}),
-	}
+	ma := newArbiter(time.Millisecond)
 	m := newStandardMeter()
 	ma.meters[m] = struct{}{}
 	go ma.tick()
